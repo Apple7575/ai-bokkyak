@@ -62,9 +62,13 @@ echo ""
 echo "📝 Saved: $OUT"
 
 # Surface the verdict as the exit code so the loop can branch on it.
-if grep -qi 'VERDICT:\s*CHANGES_REQUESTED' "$OUT"; then
-  echo "❌ Codex requested changes."
+# Codex lists each finding as a line beginning "- [P0]".."- [P3]". Match only those
+# leading bullets (not severity tags quoted in prose) and treat P0/P1/P2 as actionable
+# (P3 = nit). `|| true` keeps `set -e` from aborting when there are zero findings.
+FINDINGS="$(grep -Ec '^[[:space:]]*-[[:space:]]*\[P[012]\]' "$OUT" || true)"
+if grep -qiE 'VERDICT:[[:space:]]*CHANGES_REQUESTED' "$OUT" || [ "${FINDINGS:-0}" -gt 0 ]; then
+  echo "❌ Codex requested changes (${FINDINGS:-0} actionable finding(s): P0/P1/P2)."
   exit 1
 fi
-echo "✅ Codex approved."
+echo "✅ Codex approved (no P0/P1/P2 findings)."
 exit 0
