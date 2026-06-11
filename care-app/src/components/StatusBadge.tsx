@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { CheckCircle2, Clock, AlertCircle, RotateCcw } from "lucide-react-native";
-import { colors, radii, spacing } from "../theme/tokens";
+import { colors, radii, spacing, fontSizes } from "../theme/tokens";
 import type { IntakeStatus } from "../lib/supabase";
 
 type IconType = React.ComponentType<{ size?: number; color?: string }>;
@@ -33,5 +33,5 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     alignSelf: "flex-start",
   },
-  text: { fontSize: 15, fontWeight: "700" },
+  text: { fontSize: fontSizes.body, fontWeight: "700" },
 });

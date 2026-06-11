@@ -34,7 +34,7 @@ export function STTResponseScreen() {
         return;
       }
     }
-    nav.navigate("StatusCheck", { scheduleId, scheduledFor });
+    nav.reset({ index: 1, routes: [{ name: "Tabs" }, { name: "StatusCheck", params: { scheduleId, scheduledFor } }] });
   }
   async function snooze() {
     const pid = await getPatientId();

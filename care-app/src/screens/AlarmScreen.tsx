@@ -44,7 +44,7 @@ export function AlarmScreen() {
       return;
     }
     speak(status === "복용완료" ? "복약 완료로 기록했습니다." : "미복용으로 기록했습니다.");
-    nav.navigate("StatusCheck", { scheduleId, scheduledFor: slot.toISOString() });
+    nav.reset({ index: 1, routes: [{ name: "Tabs" }, { name: "StatusCheck", params: { scheduleId, scheduledFor: slot.toISOString() } }] });
   }
   async function snooze(method: "음성" | "버튼") {
     const pid = await getPatientId();
