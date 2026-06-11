@@ -8,14 +8,33 @@ import { RootStackParamList } from "./src/navigation/types";
 
 export const navRef = createNavigationContainerRef<RootStackParamList>();
 
+function navigateToAlarm(scheduleId: string | undefined, attempt = 0) {
+  if (navRef.isReady()) {
+    navRef.navigate("Alarm", { scheduleId });
+  } else if (attempt < 50) {
+    setTimeout(() => navigateToAlarm(scheduleId, attempt + 1), 100);
+  }
+}
+
 export default function App() {
   useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener((resp) => {
+    let handled = false;
+    const open = (resp: Notifications.NotificationResponse | null) => {
+      if (!resp || handled) return;
+      handled = true;
       const scheduleId = resp.notification.request.content.data?.scheduleId as string | undefined;
-      if (navRef.isReady()) navRef.navigate("Alarm", { scheduleId });
+      navigateToAlarm(scheduleId);
+    };
+    // cold start: app launched by tapping a notification
+    Notifications.getLastNotificationResponseAsync().then(open);
+    // warm/background taps
+    const sub = Notifications.addNotificationResponseReceivedListener((resp) => {
+      handled = false; // allow subsequent taps
+      open(resp);
     });
     return () => sub.remove();
   }, []);
+
   return (
     <SafeAreaProvider>
       <NavigationContainer ref={navRef}>

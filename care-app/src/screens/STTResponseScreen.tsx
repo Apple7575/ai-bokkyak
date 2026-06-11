@@ -7,6 +7,8 @@ import { startRecording, stopAndTranscribe } from "../lib/stt";
 import { classifyIntent } from "../lib/intent";
 import { getPatientId } from "../lib/storage";
 import { recordIntake } from "../lib/records";
+import { supabase } from "../lib/supabase";
+import { scheduleSnooze } from "../lib/notifications";
 import { colors, fontSizes, spacing } from "../theme/tokens";
 
 export function STTResponseScreen() {
@@ -27,6 +29,19 @@ export function STTResponseScreen() {
     }
     nav.navigate("StatusCheck", { scheduleId, scheduledFor });
   }
+  async function snooze() {
+    const pid = await getPatientId();
+    if (pid && scheduleId) {
+      const { data: sch } = await supabase.from("schedules").select("*").eq("id", scheduleId).single();
+      await recordIntake({
+        patientId: pid, scheduleId,
+        scheduledFor: scheduledFor ? new Date(scheduledFor) : new Date(),
+        status: "재알림", method: "음성",
+      });
+      if (sch) await scheduleSnooze(scheduleId, sch.medicine_name, 30);
+    }
+    nav.navigate("Tabs");
+  }
   async function onMic() {
     if (!recording) { setRecording(true); await startRecording(); return; }
     setRecording(false);
@@ -35,7 +50,7 @@ export function STTResponseScreen() {
       const intent = classifyIntent(text);
       if (intent === "복용완료") return commit("복용완료");
       if (intent === "미복용") return commit("미복용");
-      if (intent === "재알림") { nav.navigate("Tabs"); return; }
+      if (intent === "재알림") return snooze();
     } catch { setHeard("(인식 실패)"); }
   }
 
