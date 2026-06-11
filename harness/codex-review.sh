@@ -49,10 +49,13 @@ EOF
 
 echo "▶ Codex review — $TASK (mode=$MODE, base=$BASE)"
 
+# NOTE: `codex review --base` cannot take a custom PROMPT (CLI constraint), so in
+# base mode we rely on AGENTS.md (which encodes the 3 pinned decisions + review
+# focus) for guidance. Custom PROMPT is only used in uncommitted mode.
 if [ "$MODE" = "uncommitted" ]; then
   codex review --uncommitted "$PROMPT" 2>&1 | tee "$OUT"
 else
-  codex review --base "$BASE" "$PROMPT" 2>&1 | tee "$OUT"
+  codex review --base "$BASE" 2>&1 | tee "$OUT"
 fi
 
 echo ""
