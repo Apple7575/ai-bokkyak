@@ -19,6 +19,7 @@ export function AlarmScreen() {
   const scheduleId: string | undefined = route.params?.scheduleId;
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [recording, setRecording] = useState(false);
+  const ready = !scheduleId || !!schedule;
 
   useEffect(() => {
     (async () => {
@@ -70,11 +71,17 @@ export function AlarmScreen() {
     <View style={styles.c}>
       <Text style={styles.bell}>🔔</Text>
       <Text style={styles.title}>{schedule ? `${schedule.medicine_name} 드실 시간이에요` : "복약 시간이에요"}</Text>
-      <MicButton recording={recording} onPress={onMic} />
-      <View style={{ height: spacing.lg }} />
-      <BigButton label="복용 완료" onPress={() => write("복용완료", "버튼")} />
-      <BigButton label="아직 안 먹었어요" variant="secondary" onPress={() => write("미복용", "버튼")} />
-      <BigButton label="30분 뒤 다시 알려주세요" variant="secondary" onPress={() => snooze("버튼")} />
+      {ready ? (
+        <>
+          <MicButton recording={recording} onPress={onMic} />
+          <View style={{ height: spacing.lg }} />
+          <BigButton label="복용 완료" onPress={() => write("복용완료", "버튼")} />
+          <BigButton label="아직 안 먹었어요" variant="secondary" onPress={() => write("미복용", "버튼")} />
+          <BigButton label="30분 뒤 다시 알려주세요" variant="secondary" onPress={() => snooze("버튼")} />
+        </>
+      ) : (
+        <Text style={{ textAlign: "center", fontSize: fontSizes.body, color: colors.textSecondary }}>불러오는 중...</Text>
+      )}
     </View>
   );
 }

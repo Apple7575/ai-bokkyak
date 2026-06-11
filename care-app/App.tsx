@@ -19,11 +19,12 @@ function navigateToAlarm(scheduleId: string | undefined, attempt = 0) {
 export default function App() {
   useEffect(() => {
     let handled = false;
-    const open = (resp: Notifications.NotificationResponse | null) => {
+    const open = async (resp: Notifications.NotificationResponse | null) => {
       if (!resp || handled) return;
       handled = true;
       const scheduleId = resp.notification.request.content.data?.scheduleId as string | undefined;
       navigateToAlarm(scheduleId);
+      try { await Notifications.clearLastNotificationResponseAsync(); } catch {}
     };
     // cold start: app launched by tapping a notification
     Notifications.getLastNotificationResponseAsync().then(open);

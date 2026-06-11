@@ -3,7 +3,7 @@ import { View, Text, TextInput, StyleSheet, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { BigButton } from "../components/BigButton";
 import { supabase } from "../lib/supabase";
-import { setPatient } from "../lib/storage";
+import { setPatient, setRole } from "../lib/storage";
 import { colors, fontSizes, spacing } from "../theme/tokens";
 
 export function GuardianLinkScreen() {
@@ -14,6 +14,7 @@ export function GuardianLinkScreen() {
       .eq("patient_code", code.trim().toUpperCase()).single();
     if (error || !data) { Alert.alert("연결 실패", "코드를 다시 확인해 주세요."); return; }
     await setPatient(data.id, data.patient_code);
+    await setRole("guardian");
     nav.reset({ index: 0, routes: [{ name: "GuardianHome" }] });
   }
   return (

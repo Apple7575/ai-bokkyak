@@ -27,7 +27,6 @@ export function RoleSelectScreen() {
     nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
   }
   async function startAsGuardian() {
-    await setRole("guardian");
     nav.navigate("GuardianLink");
   }
 
