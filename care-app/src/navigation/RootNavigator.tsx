@@ -16,16 +16,54 @@ import { AlarmScreen } from "../screens/AlarmScreen";
 import { STTResponseScreen } from "../screens/STTResponseScreen";
 import { StatusCheckScreen } from "../screens/StatusCheckScreen";
 import { GuardianLinkScreen } from "../screens/GuardianLinkScreen";
+import { Home as HomeIcon, ClipboardList, Users } from "lucide-react-native";
+import { colors } from "../theme/tokens";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
 function PatientTabs() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }}>
-      <Tab.Screen name="Home" component={HomeScreen} options={{ title: "홈" }} />
-      <Tab.Screen name="Record" component={RecordScreen} options={{ title: "기록" }} />
-      <Tab.Screen name="Guardian" component={GuardianDashboardScreen} options={{ title: "보호자" }} />
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: colors.primaryBlue,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: colors.cardBg,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+          height: 64,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: "700" },
+      }}
+    >
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{
+          title: "홈",
+          tabBarIcon: ({ color, size }) => <HomeIcon size={size ?? 24} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Record"
+        component={RecordScreen}
+        options={{
+          title: "기록",
+          tabBarIcon: ({ color, size }) => <ClipboardList size={size ?? 24} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Guardian"
+        component={GuardianDashboardScreen}
+        options={{
+          title: "보호자",
+          tabBarIcon: ({ color, size }) => <Users size={size ?? 24} color={color} />,
+        }}
+      />
     </Tab.Navigator>
   );
 }
