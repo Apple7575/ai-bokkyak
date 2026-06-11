@@ -1,5 +1,54 @@
-import React from "react";
-import { View, Text } from "react-native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, Alert } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { BigButton } from "../components/BigButton";
+import { MicButton } from "../components/MicButton";
+import { startRecording, stopAndTranscribe } from "../lib/stt";
+import { classifyIntent } from "../lib/intent";
+import { getPatientId } from "../lib/storage";
+import { recordIntake } from "../lib/records";
+import { colors, fontSizes, spacing } from "../theme/tokens";
+
 export function STTResponseScreen() {
-  return <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}><Text>STTResponseScreen</Text></View>;
+  const nav = useNavigation<any>();
+  const scheduleId: string | undefined = useRoute<any>().params?.scheduleId;
+  const [recording, setRecording] = useState(false);
+  const [heard, setHeard] = useState<string | null>(null);
+
+  async function commit(status: "복용완료" | "미복용") {
+    const pid = await getPatientId();
+    if (pid && scheduleId) {
+      await recordIntake({ patientId: pid, scheduleId, scheduledFor: new Date(), status, method: "음성" });
+    }
+    nav.navigate("StatusCheck", { scheduleId });
+  }
+  async function onMic() {
+    if (!recording) { setRecording(true); await startRecording(); return; }
+    setRecording(false);
+    try {
+      const text = await stopAndTranscribe(); setHeard(text || "(들리지 않음)");
+      const intent = classifyIntent(text);
+      if (intent === "복용완료") return commit("복용완료");
+      if (intent === "미복용") return commit("미복용");
+      if (intent === "재알림") { nav.navigate("Tabs"); return; }
+    } catch { setHeard("(인식 실패)"); }
+  }
+
+  return (
+    <View style={styles.c}>
+      <Text style={styles.title}>다시 한번 말씀해 주세요</Text>
+      {heard ? <Text style={styles.heard}>들은 내용: {heard}</Text> : null}
+      <MicButton recording={recording} onPress={onMic} />
+      <View style={{ height: spacing.lg }} />
+      <Text style={styles.or}>버튼으로 선택하기</Text>
+      <BigButton label="복용 완료" onPress={() => commit("복용완료")} />
+      <BigButton label="아직 안 먹었어요" variant="secondary" onPress={() => commit("미복용")} />
+    </View>
+  );
 }
+const styles = StyleSheet.create({
+  c: { flex: 1, padding: spacing.lg, justifyContent: "center" },
+  title: { fontSize: fontSizes.title, fontWeight: "800", color: colors.text, textAlign: "center", marginBottom: spacing.md },
+  heard: { fontSize: fontSizes.body, color: colors.textSecondary, textAlign: "center", marginBottom: spacing.lg },
+  or: { fontSize: fontSizes.body, color: colors.textSecondary, textAlign: "center", marginVertical: spacing.sm },
+});
