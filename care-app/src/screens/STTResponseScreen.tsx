@@ -21,24 +21,34 @@ export function STTResponseScreen() {
   async function commit(status: "복용완료" | "미복용", method: "음성" | "버튼") {
     const pid = await getPatientId();
     if (pid && scheduleId) {
-      await recordIntake({
-        patientId: pid, scheduleId,
-        scheduledFor: scheduledFor ? new Date(scheduledFor) : new Date(),
-        status, method,
-      });
+      try {
+        await recordIntake({
+          patientId: pid, scheduleId,
+          scheduledFor: scheduledFor ? new Date(scheduledFor) : new Date(),
+          status, method,
+        });
+      } catch {
+        Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
+        return;
+      }
     }
     nav.navigate("StatusCheck", { scheduleId, scheduledFor });
   }
   async function snooze() {
     const pid = await getPatientId();
     if (pid && scheduleId) {
-      const { data: sch } = await supabase.from("schedules").select("*").eq("id", scheduleId).single();
-      await recordIntake({
-        patientId: pid, scheduleId,
-        scheduledFor: scheduledFor ? new Date(scheduledFor) : new Date(),
-        status: "재알림", method: "음성",
-      });
-      if (sch) await scheduleSnooze(scheduleId, sch.medicine_name, 30);
+      try {
+        const { data: sch } = await supabase.from("schedules").select("*").eq("id", scheduleId).single();
+        await recordIntake({
+          patientId: pid, scheduleId,
+          scheduledFor: scheduledFor ? new Date(scheduledFor) : new Date(),
+          status: "재알림", method: "음성",
+        });
+        if (sch) await scheduleSnooze(scheduleId, sch.medicine_name, 30);
+      } catch {
+        Alert.alert("다시 알림 설정에 실패했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
+        return;
+      }
     }
     nav.navigate("Tabs");
   }

@@ -34,7 +34,12 @@ export function AlarmScreen() {
     const pid = await getPatientId();
     if (!pid || !scheduleId || !schedule) { nav.navigate("Tabs"); return; }
     const slot = doseSlot(schedule.hour, schedule.minute, new Date());
-    await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status, method });
+    try {
+      await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status, method });
+    } catch {
+      Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
+      return;
+    }
     speak(status === "복용완료" ? "복약 완료로 기록했습니다." : "미복용으로 기록했습니다.");
     nav.navigate("StatusCheck", { scheduleId, scheduledFor: slot.toISOString() });
   }
@@ -42,8 +47,13 @@ export function AlarmScreen() {
     const pid = await getPatientId();
     if (pid && scheduleId && schedule) {
       const slot = doseSlot(schedule.hour, schedule.minute, new Date());
-      await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "재알림", method });
-      await scheduleSnooze(scheduleId, schedule.medicine_name, 30);
+      try {
+        await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "재알림", method });
+        await scheduleSnooze(scheduleId, schedule.medicine_name, 30);
+      } catch {
+        Alert.alert("다시 알림 설정에 실패했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
+        return;
+      }
     }
     speak("30분 뒤에 다시 알려드릴게요.");
     nav.navigate("Tabs");
