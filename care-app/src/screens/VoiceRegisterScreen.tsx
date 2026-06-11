@@ -19,7 +19,15 @@ export function VoiceRegisterScreen() {
   const [transcript, setTranscript] = useState("");
 
   async function onMic() {
-    if (!recording) { setRecording(true); await startRecording(); return; }
+    if (!recording) {
+      try {
+        await startRecording();
+        setRecording(true);
+      } catch {
+        Alert.alert("마이크를 사용할 수 없어요", "마이크 권한을 확인하시거나 버튼으로 선택해 주세요.");
+      }
+      return;
+    }
     setRecording(false);
     try {
       const text = await stopAndTranscribe(); setTranscript(text);
