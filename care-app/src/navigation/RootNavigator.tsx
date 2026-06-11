@@ -3,7 +3,7 @@ import { ActivityIndicator, View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { RootStackParamList, TabParamList } from "./types";
-import { getRole, Role } from "../lib/storage";
+import { getRole, getPatientId, Role } from "../lib/storage";
 import { RoleSelectScreen } from "../screens/RoleSelectScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { RecordScreen } from "../screens/RecordScreen";
@@ -31,15 +31,26 @@ function PatientTabs() {
 }
 
 export function RootNavigator() {
-  const [role, setRoleState] = useState<Role | null | "loading">("loading");
-  useEffect(() => { getRole().then(setRoleState); }, []);
-  if (role === "loading") {
+  const [init, setInit] = useState<{ role: Role | null; linked: boolean } | "loading">("loading");
+  useEffect(() => {
+    (async () => {
+      const role = await getRole();
+      const pid = await getPatientId();
+      setInit({ role, linked: !!pid });
+    })();
+  }, []);
+  if (init === "loading") {
     return <View style={{ flex: 1, justifyContent: "center" }}><ActivityIndicator /></View>;
   }
+  const initialRouteName: keyof RootStackParamList =
+    !init.role ? "RoleSelect"
+      : init.role === "guardian" ? (init.linked ? "GuardianHome" : "GuardianLink")
+        : "Tabs";
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {!role && <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />}
+    <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
       <Stack.Screen name="Tabs" component={PatientTabs} />
+      <Stack.Screen name="GuardianHome" component={GuardianDashboardScreen} options={{ headerShown: true, title: "보호자 확인" }} />
       <Stack.Screen name="MedicineList" component={MedicineListScreen} options={{ headerShown: true, title: "복약 관리" }} />
       <Stack.Screen name="RegisterMethod" component={RegisterMethodScreen} options={{ headerShown: true, title: "약 등록" }} />
       <Stack.Screen name="ButtonRegister" component={ButtonRegisterScreen} options={{ headerShown: true, title: "버튼으로 등록" }} />

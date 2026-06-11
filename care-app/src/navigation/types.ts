@@ -1,6 +1,7 @@
 export type RootStackParamList = {
   RoleSelect: undefined;
   Tabs: undefined;
+  GuardianHome: undefined;
   MedicineList: undefined;
   RegisterMethod: undefined;
   ButtonRegister: undefined;
