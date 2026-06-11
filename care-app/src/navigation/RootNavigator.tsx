@@ -50,15 +50,15 @@ export function RootNavigator() {
     <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>
       <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
       <Stack.Screen name="Tabs" component={PatientTabs} />
-      <Stack.Screen name="GuardianHome" component={GuardianDashboardScreen} options={{ headerShown: true, title: "보호자 확인" }} />
-      <Stack.Screen name="MedicineList" component={MedicineListScreen} options={{ headerShown: true, title: "복약 관리" }} />
-      <Stack.Screen name="RegisterMethod" component={RegisterMethodScreen} options={{ headerShown: true, title: "약 등록" }} />
-      <Stack.Screen name="ButtonRegister" component={ButtonRegisterScreen} options={{ headerShown: true, title: "버튼으로 등록" }} />
-      <Stack.Screen name="VoiceRegister" component={VoiceRegisterScreen} options={{ headerShown: true, title: "음성으로 등록" }} />
+      <Stack.Screen name="GuardianHome" component={GuardianDashboardScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="MedicineList" component={MedicineListScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="RegisterMethod" component={RegisterMethodScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="ButtonRegister" component={ButtonRegisterScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="VoiceRegister" component={VoiceRegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Alarm" component={AlarmScreen} />
-      <Stack.Screen name="STTResponse" component={STTResponseScreen} options={{ headerShown: true, title: "음성 응답" }} />
-      <Stack.Screen name="StatusCheck" component={StatusCheckScreen} options={{ headerShown: true, title: "상태 확인" }} />
-      <Stack.Screen name="GuardianLink" component={GuardianLinkScreen} options={{ headerShown: true, title: "보호자 연결" }} />
+      <Stack.Screen name="STTResponse" component={STTResponseScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="StatusCheck" component={StatusCheckScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="GuardianLink" component={GuardianLinkScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

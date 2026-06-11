@@ -2,6 +2,7 @@ import React, { useCallback, useState } from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { BigButton } from "../components/BigButton";
+import { ScreenHeader } from "../components/ScreenHeader";
 import { ScheduleCard } from "../components/ScheduleCard";
 import { supabase, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
@@ -19,9 +20,7 @@ export function MedicineListScreen() {
   }, []));
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>복약 관리</Text>
-      </View>
+      <ScreenHeader title="복약 관리" />
       <ScrollView contentContainerStyle={styles.list}>
         {items.length === 0 ? <Text style={styles.empty}>등록된 약이 없어요.</Text> : null}
         {items.map((s) => (
@@ -37,15 +36,6 @@ export function MedicineListScreen() {
 }
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F7FAFF" },
-  header: {
-    backgroundColor: colors.cardBg,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl + spacing.lg,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  headerTitle: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.primaryNavy },
   list: { padding: spacing.lg, gap: spacing.xs },
   footer: {
     padding: spacing.lg,

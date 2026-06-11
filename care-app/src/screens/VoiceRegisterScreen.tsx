@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Pill, Clock, RefreshCw } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
+import { ScreenHeader } from "../components/ScreenHeader";
 import { MicButton } from "../components/MicButton";
 import { startRecording, stopAndTranscribe } from "../lib/stt";
 import { gptParseSchedule } from "../lib/openai";
@@ -54,8 +55,8 @@ export function VoiceRegisterScreen() {
 
   return (
     <View style={styles.screen}>
+      <ScreenHeader title="음성으로 약 등록" />
       <ScrollView contentContainerStyle={styles.c}>
-        <Text style={styles.title}>음성으로 약 등록</Text>
         <Text style={styles.guide}>복용하는 약과 시간을 말씀해 주세요</Text>
         <View style={styles.exampleCard}>
           <Text style={styles.exampleText}>예: "매일 아침 8시에 고혈압약 먹어요"</Text>

@@ -2,12 +2,14 @@ import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Mic, ListChecks, Camera, ChevronRight } from "lucide-react-native";
+import { ScreenHeader } from "../components/ScreenHeader";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
 
 export function RegisterMethodScreen() {
   const nav = useNavigation<any>();
   return (
     <View style={styles.screen}>
+      <ScreenHeader title="약 등록" />
       <View style={styles.header}>
         <Text style={styles.title}>어떻게 약을 등록할까요?</Text>
         <Text style={styles.subtitle}>원하는 방법을 선택해 주세요.</Text>
@@ -65,10 +67,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.cardBg },
   header: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl + spacing.lg,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   title: { fontSize: fontSizes.title, fontWeight: "700", color: colors.text, lineHeight: 32 },
   subtitle: { fontSize: 15, color: colors.textSecondary, marginTop: spacing.xs },

@@ -3,6 +3,7 @@ import { View, Text, TextInput, ScrollView, StyleSheet, Alert } from "react-nati
 import { useNavigation } from "@react-navigation/native";
 import { Pill } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
+import { ScreenHeader } from "../components/ScreenHeader";
 import { TimeChip } from "../components/TimeChip";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
@@ -33,6 +34,7 @@ export function ButtonRegisterScreen() {
 
   return (
     <View style={styles.screen}>
+      <ScreenHeader title="버튼으로 등록" />
       <ScrollView contentContainerStyle={styles.c}>
         {/* 약 이름 */}
         <View style={styles.section}>
