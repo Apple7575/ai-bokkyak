@@ -19,4 +19,8 @@ describe("classifyIntent", () => {
     expect(classifyIntent("오늘 날씨 좋네")).toBe("인식실패");
     expect(classifyIntent("")).toBe("인식실패");
   });
+  it("non-medication 했어요 utterances are 인식실패, not 복용완료", () => {
+    expect(classifyIntent("운동했어요")).toBe("인식실패");
+    expect(classifyIntent("전화했어요")).toBe("인식실패");
+  });
 });

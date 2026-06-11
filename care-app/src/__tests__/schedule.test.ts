@@ -10,6 +10,9 @@ describe("normalizeRepeatDays", () => {
   it("nullish → []", () => {
     expect(normalizeRepeatDays(undefined)).toEqual([]);
   });
+  it("filters out-of-domain and non-integer values, keeps 0..6 ints", () => {
+    expect(normalizeRepeatDays([7, -1, 1.5, 3, 1, 1])).toEqual([1, 3]);
+  });
 });
 
 describe("nextNotificationTime", () => {

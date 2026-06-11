@@ -1,7 +1,9 @@
 export function normalizeRepeatDays(input: unknown): number[] {
   if (input === "매일" || input == null) return [];
   if (Array.isArray(input)) {
-    return Array.from(new Set(input.filter((n) => typeof n === "number"))).sort((a, b) => a - b);
+    return Array.from(
+      new Set(input.filter((n) => Number.isInteger(n) && n >= 0 && n <= 6))
+    ).sort((a, b) => a - b);
   }
   return [];
 }
