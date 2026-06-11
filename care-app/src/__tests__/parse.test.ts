@@ -20,4 +20,16 @@ describe("validateParsedSchedule", () => {
     const r = validateParsedSchedule({ time_of_day: "아침", hour: 8, minute: 0 });
     expect(r.ok).toBe(false);
   });
+  it("rejects null hour (GPT found no time)", () => {
+    const r = validateParsedSchedule({ medicine_name: "약", time_of_day: "아침", hour: null, minute: 0 });
+    expect(r.ok).toBe(false);
+  });
+  it("rejects empty-string hour", () => {
+    const r = validateParsedSchedule({ medicine_name: "약", time_of_day: "아침", hour: "", minute: 0 });
+    expect(r.ok).toBe(false);
+  });
+  it("rejects missing (undefined) hour", () => {
+    const r = validateParsedSchedule({ medicine_name: "약", time_of_day: "아침", minute: 0 });
+    expect(r.ok).toBe(false);
+  });
 });
