@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   },
   summaryTextWrap: { flexShrink: 1 },
   summaryTitle: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text },
-  summarySub: { fontSize: 14, color: colors.textSecondary, marginTop: 4 },
+  summarySub: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 4 },
   summaryIconCircle: {
     marginLeft: "auto", width: 40, height: 40, borderRadius: radii.pill,
     alignItems: "center", justifyContent: "center", backgroundColor: colors.lightBlueBg,
@@ -129,5 +129,5 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   name: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text },
-  meta: { fontSize: 14, color: colors.textSecondary, marginTop: 4 },
+  meta: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 4 },
 });
