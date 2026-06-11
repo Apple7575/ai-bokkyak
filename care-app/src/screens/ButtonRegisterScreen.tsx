@@ -1,5 +1,54 @@
-import React from "react";
-import { View, Text } from "react-native";
+import React, { useState } from "react";
+import { View, Text, TextInput, ScrollView, StyleSheet, Alert } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { BigButton } from "../components/BigButton";
+import { TimeChip } from "../components/TimeChip";
+import { supabase } from "../lib/supabase";
+import { getPatientId } from "../lib/storage";
+import { ensurePermission, scheduleReminders } from "../lib/notifications";
+import { colors, fontSizes, spacing } from "../theme/tokens";
+
+const TODS = ["아침", "점심", "저녁", "취침"];
+const HOURS = [7, 8, 9, 12, 13, 18, 19, 20, 21];
+
 export function ButtonRegisterScreen() {
-  return <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}><Text>ButtonRegisterScreen</Text></View>;
+  const nav = useNavigation<any>();
+  const [name, setName] = useState("");
+  const [tod, setTod] = useState("아침");
+  const [hour, setHour] = useState(8);
+
+  async function save() {
+    if (!name.trim()) { Alert.alert("약 이름을 입력해 주세요"); return; }
+    const pid = await getPatientId(); if (!pid) return;
+    const { data, error } = await supabase.from("schedules").insert({
+      patient_id: pid, medicine_name: name.trim(), time_of_day: tod,
+      hour, minute: 0, repeat_days: [], active: true,
+    }).select().single();
+    if (error || !data) { Alert.alert("저장 실패", error?.message ?? ""); return; }
+    if (await ensurePermission()) await scheduleReminders(data.id, data.medicine_name, hour, 0, data.repeat_days ?? []);
+    Alert.alert("복약 일정을 등록했습니다.");
+    nav.navigate("Tabs");
+  }
+
+  return (
+    <ScrollView contentContainerStyle={styles.c}>
+      <Text style={styles.label}>약 이름</Text>
+      <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="예: 고혈압약" />
+      <Text style={styles.label}>언제 드시나요?</Text>
+      <View style={styles.row}>{TODS.map((t) => (
+        <TimeChip key={t} label={t} selected={tod === t} onPress={() => setTod(t)} />
+      ))}</View>
+      <Text style={styles.label}>세부 시간</Text>
+      <View style={styles.row}>{HOURS.map((h) => (
+        <TimeChip key={h} label={`${h}시`} selected={hour === h} onPress={() => setHour(h)} />
+      ))}</View>
+      <BigButton label="저장하기" onPress={save} />
+    </ScrollView>
+  );
 }
+const styles = StyleSheet.create({
+  c: { padding: spacing.lg },
+  label: { fontSize: fontSizes.body, fontWeight: "700", color: colors.text, marginTop: spacing.md, marginBottom: spacing.sm },
+  input: { backgroundColor: "#fff", borderColor: colors.border, borderWidth: 1, borderRadius: 12, fontSize: fontSizes.body, padding: 14 },
+  row: { flexDirection: "row", flexWrap: "wrap" },
+});
