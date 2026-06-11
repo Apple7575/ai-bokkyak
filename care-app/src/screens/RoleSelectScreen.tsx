@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, StyleSheet, Alert } from "react-native";
+import { View, Text, TextInput, StyleSheet, Alert, ScrollView, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { BigButton } from "../components/BigButton";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Pill, User, Users } from "lucide-react-native";
 import { setRole, setPatient } from "../lib/storage";
 import { supabase } from "../lib/supabase";
-import { colors, fontSizes, spacing } from "../theme/tokens";
+import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 
 function makeCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -14,6 +15,7 @@ function makeCode(): string {
 
 export function RoleSelectScreen() {
   const nav = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
 
   async function startAsPatient() {
@@ -31,21 +33,83 @@ export function RoleSelectScreen() {
   }
 
   return (
-    <View style={styles.c}>
-      <Text style={styles.title}>케어</Text>
-      <Text style={styles.sub}>어떻게 사용하시나요?</Text>
-      <Text style={styles.label}>이름</Text>
-      <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="예: 안석찬" />
-      <BigButton label="본인이 복약해요" onPress={startAsPatient} />
-      <BigButton label="가족을 확인해요 (보호자)" variant="secondary" onPress={startAsGuardian} />
-    </View>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={[styles.c, { paddingTop: insets.top + spacing.xl }]}
+    >
+      {/* Brand */}
+      <View style={styles.brand}>
+        <View style={styles.logo}>
+          <Pill size={40} color={colors.primaryBlue} strokeWidth={1.8} />
+        </View>
+        <Text style={styles.title}>케어</Text>
+        <Text style={styles.sub}>어떻게 사용하시나요?</Text>
+      </View>
+
+      {/* Name input card */}
+      <View style={styles.card}>
+        <Text style={styles.label}>이름</Text>
+        <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="예: 안석찬" />
+      </View>
+
+      {/* Role choices */}
+      <Pressable
+        onPress={startAsPatient}
+        style={({ pressed }) => [styles.choice, styles.choicePrimary, pressed && { opacity: 0.9 }]}
+      >
+        <View style={[styles.choiceIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
+          <User size={24} color="#fff" />
+        </View>
+        <Text style={[styles.choiceText, { color: "#fff" }]}>본인이 복약해요</Text>
+      </Pressable>
+      <Pressable
+        onPress={startAsGuardian}
+        style={({ pressed }) => [styles.choice, styles.choiceSecondary, pressed && { opacity: 0.9 }]}
+      >
+        <View style={[styles.choiceIcon, { backgroundColor: colors.lightBlueBg }]}>
+          <Users size={24} color={colors.primaryBlue} />
+        </View>
+        <Text style={[styles.choiceText, { color: colors.primaryBlue }]}>가족을 확인해요 (보호자)</Text>
+      </Pressable>
+    </ScrollView>
   );
 }
 const styles = StyleSheet.create({
-  c: { flex: 1, padding: spacing.lg, justifyContent: "center", backgroundColor: colors.lightBlueBg },
+  screen: { flex: 1, backgroundColor: colors.lightBlueBg },
+  c: { padding: spacing.lg, paddingBottom: spacing.xl, flexGrow: 1, justifyContent: "center" },
+  brand: { alignItems: "center", marginBottom: spacing.xl },
+  logo: {
+    width: 88, height: 88, borderRadius: 26, backgroundColor: colors.cardBg,
+    alignItems: "center", justifyContent: "center", marginBottom: spacing.md,
+    shadowColor: colors.primaryNavy, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08, shadowRadius: 12, elevation: 2,
+  },
   title: { fontSize: 40, fontWeight: "800", color: colors.primaryNavy, textAlign: "center" },
-  sub: { fontSize: fontSizes.emphasis, color: colors.text, textAlign: "center", marginVertical: spacing.lg },
-  label: { fontSize: fontSizes.body, color: colors.text, marginBottom: spacing.sm },
-  input: { backgroundColor: "#fff", borderColor: colors.border, borderWidth: 1, borderRadius: 12,
-    fontSize: fontSizes.body, padding: 14, marginBottom: spacing.lg },
+  sub: { fontSize: fontSizes.emphasis, color: colors.textSecondary, textAlign: "center", marginTop: spacing.sm },
+  card: {
+    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
+    borderRadius: radii.card, padding: spacing.lg, marginBottom: spacing.lg,
+  },
+  label: { fontSize: fontSizes.body, color: colors.text, fontWeight: "700", marginBottom: spacing.sm },
+  input: {
+    backgroundColor: colors.lightBlueBg, borderColor: colors.border, borderWidth: 1,
+    borderRadius: radii.button, fontSize: fontSizes.body, padding: 14,
+  },
+  choice: {
+    flexDirection: "row", alignItems: "center", gap: spacing.md,
+    minHeight: minTouch, borderRadius: radii.button,
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.md, marginVertical: 6,
+  },
+  choicePrimary: {
+    backgroundColor: colors.primaryBlue,
+    shadowColor: colors.primaryBlue, shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3, shadowRadius: 14, elevation: 4,
+  },
+  choiceSecondary: {
+    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
+    shadowColor: colors.primaryNavy, shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06, shadowRadius: 6, elevation: 1,
+  },
+  choiceIcon: { width: 44, height: 44, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  choiceText: { fontSize: fontSizes.emphasis, fontWeight: "700", flexShrink: 1 },
 });
