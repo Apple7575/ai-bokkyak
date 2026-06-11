@@ -3,9 +3,18 @@ import { createClient } from "@supabase/supabase-js";
 import Constants from "expo-constants";
 
 const extra = Constants.expoConfig?.extra ?? {};
+const url = (extra.supabaseUrl as string) ?? "";
+const anonKey = (extra.supabaseAnonKey as string) ?? "";
+
+// True only when real creds are present. When false we still construct a client
+// against a harmless placeholder URL so the app BOOTS (createClient throws on an
+// invalid URL); any data call then fails gracefully into the existing Korean alerts.
+export const isSupabaseConfigured =
+  /^https?:\/\/.+/.test(url) && !url.startsWith("REPLACE") && anonKey.length > 0 && !anonKey.startsWith("REPLACE");
+
 export const supabase = createClient(
-  extra.supabaseUrl as string,
-  extra.supabaseAnonKey as string,
+  isSupabaseConfigured ? url : "https://placeholder.supabase.co",
+  isSupabaseConfigured ? anonKey : "placeholder-anon-key",
   { auth: { persistSession: false } }
 );
 
