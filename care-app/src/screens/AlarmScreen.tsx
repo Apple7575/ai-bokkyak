@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { View, Text, StyleSheet, Alert, ScrollView } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Bell } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
 import { MicButton } from "../components/MicButton";
 import { speak } from "../lib/tts";
@@ -16,6 +18,7 @@ import { colors, fontSizes, spacing } from "../theme/tokens";
 export function AlarmScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
+  const insets = useSafeAreaInsets();
   const scheduleId: string | undefined = route.params?.scheduleId;
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [recording, setRecording] = useState(false);
@@ -86,26 +89,68 @@ export function AlarmScreen() {
   }
 
   return (
-    <View style={styles.c}>
-      <Text style={styles.bell}>🔔</Text>
-      <Text style={styles.title}>{schedule ? `${schedule.medicine_name} 드실 시간이에요` : "복약 시간이에요"}</Text>
-      {ready ? (
-        <>
-          <MicButton recording={recording} onPress={onMic} />
-          <View style={{ height: spacing.lg }} />
-          <BigButton label="복용 완료" onPress={() => write("복용완료", "버튼")} />
-          <BigButton label="아직 안 먹었어요" variant="secondary" onPress={() => write("미복용", "버튼")} />
-          <BigButton label="30분 뒤 다시 알려주세요" variant="secondary" onPress={() => snooze("버튼")} />
-        </>
-      ) : (
-        <Text style={{ textAlign: "center", fontSize: fontSizes.body, color: colors.textSecondary }}>불러오는 중...</Text>
-      )}
+    <View style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl },
+        ]}
+      >
+        {/* Bell emphasis */}
+        <View style={styles.bellWrap}>
+          <View style={styles.bellHalo}>
+            <View style={styles.bellCircle}>
+              <Bell size={48} color={colors.primaryBlue} strokeWidth={1.8} />
+            </View>
+          </View>
+        </View>
+
+        {/* Title */}
+        <Text style={styles.title}>
+          {schedule ? `${schedule.medicine_name} 드실 시간이에요` : "복약 시간이에요"}
+        </Text>
+        <Text style={styles.subtitle}>복용하신 뒤 말씀해 주세요.</Text>
+
+        {ready ? (
+          <>
+            <View style={{ height: spacing.lg }} />
+            <MicButton recording={recording} onPress={onMic} />
+            <View style={{ height: spacing.xl }} />
+            <BigButton label="복용 완료" onPress={() => write("복용완료", "버튼")} />
+            <BigButton label="아직 안 먹었어요" variant="secondary" onPress={() => write("미복용", "버튼")} />
+            <BigButton label="30분 뒤 다시 알려주세요" variant="secondary" onPress={() => snooze("버튼")} />
+          </>
+        ) : (
+          <Text style={styles.loading}>불러오는 중...</Text>
+        )}
+      </ScrollView>
     </View>
   );
 }
 const styles = StyleSheet.create({
-  c: { flex: 1, padding: spacing.lg, justifyContent: "center", backgroundColor: colors.lightBlueBg },
-  bell: { fontSize: 56, textAlign: "center" },
-  title: { fontSize: fontSizes.title, fontWeight: "800", color: colors.text,
-    textAlign: "center", marginVertical: spacing.lg },
+  screen: { flex: 1, backgroundColor: colors.lightBlueBg },
+  scroll: { flexGrow: 1, padding: spacing.lg, justifyContent: "center" },
+  bellWrap: { alignItems: "center", marginBottom: spacing.md },
+  bellHalo: {
+    width: 132, height: 132, borderRadius: 66,
+    alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(37,99,235,0.12)",
+  },
+  bellCircle: {
+    width: 96, height: 96, borderRadius: 48,
+    alignItems: "center", justifyContent: "center",
+    backgroundColor: colors.cardBg,
+    shadowColor: colors.primaryBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18, shadowRadius: 16, elevation: 4,
+  },
+  title: {
+    fontSize: fontSizes.title, fontWeight: "800", color: colors.primaryNavy,
+    textAlign: "center", marginTop: spacing.md,
+  },
+  subtitle: {
+    fontSize: fontSizes.body, color: colors.textSecondary,
+    textAlign: "center", marginTop: spacing.sm,
+  },
+  loading: { textAlign: "center", fontSize: fontSizes.body, color: colors.textSecondary, marginTop: spacing.lg },
 });
