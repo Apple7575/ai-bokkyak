@@ -12,15 +12,20 @@ import { colors, fontSizes, spacing } from "../theme/tokens";
 export function STTResponseScreen() {
   const nav = useNavigation<any>();
   const scheduleId: string | undefined = useRoute<any>().params?.scheduleId;
+  const scheduledFor: string | undefined = useRoute<any>().params?.scheduledFor;
   const [recording, setRecording] = useState(false);
   const [heard, setHeard] = useState<string | null>(null);
 
   async function commit(status: "복용완료" | "미복용") {
     const pid = await getPatientId();
     if (pid && scheduleId) {
-      await recordIntake({ patientId: pid, scheduleId, scheduledFor: new Date(), status, method: "음성" });
+      await recordIntake({
+        patientId: pid, scheduleId,
+        scheduledFor: scheduledFor ? new Date(scheduledFor) : new Date(),
+        status, method: "음성",
+      });
     }
-    nav.navigate("StatusCheck", { scheduleId });
+    nav.navigate("StatusCheck", { scheduleId, scheduledFor });
   }
   async function onMic() {
     if (!recording) { setRecording(true); await startRecording(); return; }

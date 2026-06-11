@@ -8,6 +8,7 @@ import { supabase, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { recordIntake } from "../lib/records";
 import { scheduleSnooze } from "../lib/notifications";
+import { doseSlot } from "../lib/schedule";
 import { startRecording, stopAndTranscribe } from "../lib/stt";
 import { classifyIntent } from "../lib/intent";
 import { colors, fontSizes, spacing } from "../theme/tokens";
@@ -30,15 +31,17 @@ export function AlarmScreen() {
 
   async function write(status: "복용완료" | "미복용", method: "음성" | "버튼") {
     const pid = await getPatientId();
-    if (!pid || !scheduleId) { nav.navigate("Tabs"); return; }
-    await recordIntake({ patientId: pid, scheduleId, scheduledFor: new Date(), status, method });
+    if (!pid || !scheduleId || !schedule) { nav.navigate("Tabs"); return; }
+    const slot = doseSlot(schedule.hour, schedule.minute, new Date());
+    await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status, method });
     speak(status === "복용완료" ? "복약 완료로 기록했습니다." : "미복용으로 기록했습니다.");
-    nav.navigate("StatusCheck", { scheduleId });
+    nav.navigate("StatusCheck", { scheduleId, scheduledFor: slot.toISOString() });
   }
   async function snooze(method: "음성" | "버튼") {
     const pid = await getPatientId();
     if (pid && scheduleId && schedule) {
-      await recordIntake({ patientId: pid, scheduleId, scheduledFor: new Date(), status: "재알림", method });
+      const slot = doseSlot(schedule.hour, schedule.minute, new Date());
+      await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "재알림", method });
       await scheduleSnooze(scheduleId, schedule.medicine_name, 30);
     }
     speak("30분 뒤에 다시 알려드릴게요.");
@@ -54,7 +57,10 @@ export function AlarmScreen() {
       if (intent === "복용완료") return write("복용완료", "음성");
       if (intent === "미복용") return write("미복용", "음성");
       if (intent === "재알림") return snooze("음성");
-      nav.navigate("STTResponse", { scheduleId });
+      nav.navigate("STTResponse", {
+        scheduleId,
+        scheduledFor: schedule ? doseSlot(schedule.hour, schedule.minute, new Date()).toISOString() : undefined,
+      });
     } catch {
       Alert.alert("잘 듣지 못했어요", "버튼으로 선택해 주세요.");
     }

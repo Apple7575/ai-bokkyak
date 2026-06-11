@@ -25,3 +25,11 @@ export function nextNotificationTime(spec: TimeSpec, now: Date): Date {
   }
   return candidate;
 }
+
+// The canonical dose-time slot for a schedule on the date of `now` (seconds/ms zeroed).
+// Used as the dedup key for intake_records so re-taps within the same dose map to one row.
+export function doseSlot(hour: number, minute: number, now: Date): Date {
+  const d = new Date(now);
+  d.setHours(hour, minute, 0, 0);
+  return d;
+}

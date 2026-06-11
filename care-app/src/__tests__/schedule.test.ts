@@ -1,4 +1,4 @@
-import { normalizeRepeatDays, nextNotificationTime } from "../lib/schedule";
+import { normalizeRepeatDays, nextNotificationTime, doseSlot } from "../lib/schedule";
 
 describe("normalizeRepeatDays", () => {
   it("매일 → []", () => {
@@ -25,5 +25,17 @@ describe("nextNotificationTime", () => {
     const now = new Date("2026-06-11T09:00:00");
     const next = nextNotificationTime({ hour: 8, minute: 0, repeat_days: [] }, now);
     expect(next.toISOString()).toBe(new Date("2026-06-12T08:00:00").toISOString());
+  });
+});
+
+describe("doseSlot", () => {
+  it("normalizes to the given hour:minute today with zero seconds/ms", () => {
+    const now = new Date("2026-06-11T20:05:30.500");
+    expect(doseSlot(20, 0, now).toISOString()).toBe(new Date("2026-06-11T20:00:00.000").toISOString());
+  });
+  it("is stable across calls in the same dose window (dedup key)", () => {
+    const a = doseSlot(8, 0, new Date("2026-06-11T08:03:00"));
+    const b = doseSlot(8, 0, new Date("2026-06-11T08:09:45"));
+    expect(a.toISOString()).toBe(b.toISOString());
   });
 });
