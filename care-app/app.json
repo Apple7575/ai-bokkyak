@@ -21,7 +21,15 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-notifications"],
+    "plugins": [
+      "expo-notifications",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "음성으로 복약 응답과 약 등록을 하기 위해 마이크를 사용합니다."
+        }
+      ]
+    ],
     "extra": {
       "supabaseUrl": "REPLACE_WITH_SUPABASE_URL",
       "supabaseAnonKey": "REPLACE_WITH_SUPABASE_ANON_KEY",
