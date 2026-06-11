@@ -1,39 +1,33 @@
 import Constants from "expo-constants";
 import { validateParsedSchedule, ParseResult } from "./parse";
 
-const KEY = (Constants.expoConfig?.extra?.openaiApiKey as string) ?? "";
+// OpenAI 키는 클라이언트에 두지 않는다. Supabase Edge Function("ai")이 서버
+// 시크릿 OPENAI_API_KEY로 OpenAI를 대신 호출한다. 앱은 anon 키로 함수만 호출.
+const extra = Constants.expoConfig?.extra ?? {};
+const SUPABASE_URL = (extra.supabaseUrl as string) ?? "";
+const ANON = (extra.supabaseAnonKey as string) ?? "";
+const FN = `${SUPABASE_URL}/functions/v1/ai`;
 
 export async function whisperTranscribe(fileUri: string): Promise<string> {
   const form = new FormData();
   form.append("file", { uri: fileUri, name: "audio.m4a", type: "audio/m4a" } as any);
-  form.append("model", "whisper-1");
-  form.append("language", "ko");
-  const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+  const res = await fetch(`${FN}?op=transcribe`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${KEY}` },
+    headers: { Authorization: `Bearer ${ANON}`, apikey: ANON },
     body: form,
   });
-  if (!res.ok) throw new Error(`whisper ${res.status}`);
+  if (!res.ok) throw new Error(`transcribe ${res.status}`);
   const json = await res.json();
   return (json.text as string) ?? "";
 }
 
 export async function gptParseSchedule(text: string): Promise<ParseResult> {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  const res = await fetch(`${FN}?op=parse`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content:
-          '복약 문장에서 다음 JSON만 출력하세요. repeat_days는 매일이면 문자열 "매일", 특정 요일이면 정수 배열을 사용하고 0=일,1=월,2=화,3=수,4=목,5=금,6=토 규칙을 따르세요 (예: 월수금 → [1,3,5]). 형식: {"medicine_name":string,"time_of_day":"아침|점심|저녁|취침","hour":0-23,"minute":0-59,"repeat_days":"매일" 또는 number[]}.' },
-        { role: "user", content: text },
-      ],
-    }),
+    headers: { Authorization: `Bearer ${ANON}`, apikey: ANON, "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
   });
-  if (!res.ok) throw new Error(`gpt ${res.status}`);
+  if (!res.ok) throw new Error(`parse ${res.status}`);
   const json = await res.json();
-  const content = json.choices?.[0]?.message?.content ?? "{}";
-  return validateParsedSchedule(JSON.parse(content));
+  return validateParsedSchedule(JSON.parse(json.content ?? "{}"));
 }
