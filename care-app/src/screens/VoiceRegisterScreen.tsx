@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { View, Text, ScrollView, StyleSheet, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { Pill, Clock, RefreshCw } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
 import { MicButton } from "../components/MicButton";
 import { startRecording, stopAndTranscribe } from "../lib/stt";
@@ -10,7 +11,7 @@ import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders } from "../lib/notifications";
 import { speak } from "../lib/tts";
-import { colors, fontSizes, spacing } from "../theme/tokens";
+import { colors, fontSizes, spacing, radii } from "../theme/tokens";
 
 export function VoiceRegisterScreen() {
   const nav = useNavigation<any>();
@@ -52,28 +53,111 @@ export function VoiceRegisterScreen() {
   }
 
   return (
-    <View style={styles.c}>
-      <Text style={styles.title}>음성으로 약 등록</Text>
-      <Text style={styles.hint}>예: "매일 아침 8시에 고혈압약 먹어요"</Text>
-      <MicButton recording={recording} onPress={onMic} />
-      {transcript ? <Text style={styles.heard}>들은 내용: {transcript}</Text> : null}
-      {parsed ? (
-        <View style={styles.confirm}>
-          <Text style={styles.row}>약 이름: {parsed.medicine_name}</Text>
-          <Text style={styles.row}>복용 시간: {parsed.hour}시 {parsed.minute}분</Text>
-          <Text style={styles.row}>반복: {parsed.repeat_days.length === 0 ? "매일" : parsed.repeat_days.join(",")}</Text>
-          <BigButton label="이대로 등록하기" onPress={confirm} />
-          <BigButton label="다시 말하기" variant="secondary" onPress={() => { setParsed(null); setTranscript(""); }} />
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.c}>
+        <Text style={styles.title}>음성으로 약 등록</Text>
+        <Text style={styles.guide}>복용하는 약과 시간을 말씀해 주세요</Text>
+        <View style={styles.exampleCard}>
+          <Text style={styles.exampleText}>예: "매일 아침 8시에 고혈압약 먹어요"</Text>
         </View>
-      ) : null}
+
+        <View style={styles.micWrap}>
+          <MicButton recording={recording} onPress={onMic} />
+        </View>
+
+        {transcript ? (
+          <View style={styles.heardCard}>
+            <Text style={styles.heardLabel}>인식된 문장</Text>
+            <Text style={styles.heardText}>{transcript}</Text>
+          </View>
+        ) : null}
+
+        {parsed ? (
+          <View style={styles.confirm}>
+            <Text style={styles.confirmTitle}>자동 분류 결과</Text>
+
+            <View style={styles.resultRow}>
+              <View style={styles.resultIcon}>
+                <Pill size={18} color={colors.primaryBlue} />
+              </View>
+              <Text style={styles.resultLabel}>약 이름</Text>
+              <Text style={styles.resultValue}>{parsed.medicine_name}</Text>
+            </View>
+
+            <View style={styles.resultRow}>
+              <View style={styles.resultIcon}>
+                <Clock size={18} color={colors.primaryBlue} />
+              </View>
+              <Text style={styles.resultLabel}>복용 시간</Text>
+              <Text style={styles.resultValue}>{parsed.hour}시 {parsed.minute}분</Text>
+            </View>
+
+            <View style={styles.resultRow}>
+              <View style={styles.resultIcon}>
+                <RefreshCw size={18} color={colors.primaryBlue} />
+              </View>
+              <Text style={styles.resultLabel}>반복</Text>
+              <Text style={styles.resultValue}>{parsed.repeat_days.length === 0 ? "매일" : parsed.repeat_days.join(",")}</Text>
+            </View>
+
+            <BigButton label="이대로 등록하기" onPress={confirm} />
+            <BigButton label="다시 말하기" variant="secondary" onPress={() => { setParsed(null); setTranscript(""); }} />
+          </View>
+        ) : null}
+      </ScrollView>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
-  c: { flex: 1, padding: spacing.lg, justifyContent: "center" },
-  title: { fontSize: fontSizes.title, fontWeight: "800", color: colors.text, textAlign: "center" },
-  hint: { fontSize: fontSizes.body, color: colors.textSecondary, textAlign: "center", marginVertical: spacing.md },
-  heard: { fontSize: fontSizes.body, color: colors.textSecondary, textAlign: "center", marginTop: spacing.md },
-  confirm: { marginTop: spacing.lg, backgroundColor: colors.lightBlueBg, borderRadius: 16, padding: spacing.lg },
-  row: { fontSize: fontSizes.emphasis, color: colors.text, marginBottom: spacing.sm },
+  screen: { flex: 1, backgroundColor: colors.cardBg },
+  c: { padding: spacing.lg, paddingBottom: spacing.xl },
+  title: { fontSize: fontSizes.title, fontWeight: "800", color: colors.primaryNavy, textAlign: "center" },
+  guide: { fontSize: fontSizes.body, fontWeight: "600", color: colors.text, textAlign: "center", marginTop: spacing.md },
+  exampleCard: {
+    backgroundColor: colors.lightBlueBg,
+    borderRadius: radii.button,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.md,
+    alignSelf: "center",
+  },
+  exampleText: { fontSize: 15, color: colors.secondaryBlue, textAlign: "center" },
+  micWrap: { marginVertical: spacing.xl, alignItems: "center" },
+  heardCard: {
+    backgroundColor: colors.lightBlueBg,
+    borderRadius: radii.card,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  heardLabel: { fontSize: 14, color: colors.textSecondary, marginBottom: spacing.xs },
+  heardText: { fontSize: fontSizes.body, fontWeight: "600", color: colors.text },
+  confirm: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.cardBg,
+    borderRadius: radii.card,
+    padding: spacing.lg,
+    borderColor: colors.border,
+    borderWidth: 1,
+  },
+  confirmTitle: { fontSize: fontSizes.body, fontWeight: "700", color: colors.text, marginBottom: spacing.md },
+  resultRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.lightBlueBg,
+    borderRadius: radii.button,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  resultIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: colors.cardBg,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.md,
+  },
+  resultLabel: { fontSize: 15, color: colors.textSecondary },
+  resultValue: { fontSize: fontSizes.body, fontWeight: "700", color: colors.text, marginLeft: "auto" },
 });
