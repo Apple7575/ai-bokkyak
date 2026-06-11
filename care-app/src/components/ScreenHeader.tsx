@@ -5,10 +5,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChevronLeft } from "lucide-react-native";
 import { colors, fontSizes } from "../theme/tokens";
 
-export function ScreenHeader({ title }: { title: string }) {
+export function ScreenHeader({ title, showBack = true }: { title: string; showBack?: boolean }) {
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const canGoBack = nav.canGoBack();
+  // Hide back even when the stack could go back (e.g. post-recording screens that
+  // must not let the user return to an already-handled alarm).
+  const canGoBack = showBack && nav.canGoBack();
   return (
     <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
       {canGoBack ? (

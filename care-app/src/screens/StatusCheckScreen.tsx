@@ -14,7 +14,7 @@ export function StatusCheckScreen() {
   ] as const;
   return (
     <View style={styles.screen}>
-      <ScreenHeader title="상태 확인" />
+      <ScreenHeader title="상태 확인" showBack={false} />
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.q}>오늘 컨디션은 어떤가요?</Text>
         <View style={styles.options}>
