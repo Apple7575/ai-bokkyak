@@ -42,4 +42,8 @@ describe("doseSlot", () => {
     const now = new Date("2026-06-12T00:15:00");
     expect(doseSlot(23, 45, now).toISOString()).toBe(new Date("2026-06-11T23:45:00.000").toISOString());
   });
+  it("assigns a late next-day response to the prior day's occurrence (not a future slot)", () => {
+    const now = new Date("2026-06-12T00:15:00");
+    expect(doseSlot(8, 0, now).toISOString()).toBe(new Date("2026-06-11T08:00:00.000").toISOString());
+  });
 });

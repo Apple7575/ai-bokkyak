@@ -55,9 +55,9 @@ export function AlarmScreen() {
     try {
       const text = await stopAndTranscribe();
       const intent = classifyIntent(text);
-      if (intent === "복용완료") return write("복용완료", "음성");
-      if (intent === "미복용") return write("미복용", "음성");
-      if (intent === "재알림") return snooze("음성");
+      if (intent === "복용완료") { await write("복용완료", "음성"); return; }
+      if (intent === "미복용") { await write("미복용", "음성"); return; }
+      if (intent === "재알림") { await snooze("음성"); return; }
       nav.navigate("STTResponse", {
         scheduleId,
         scheduledFor: schedule ? doseSlot(schedule.hour, schedule.minute, new Date()).toISOString() : undefined,
