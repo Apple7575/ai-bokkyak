@@ -21,6 +21,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": ["expo-notifications"],
     "extra": {
       "supabaseUrl": "REPLACE_WITH_SUPABASE_URL",
       "supabaseAnonKey": "REPLACE_WITH_SUPABASE_ANON_KEY",
