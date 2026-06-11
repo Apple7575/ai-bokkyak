@@ -20,6 +20,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "supabaseUrl": "REPLACE_WITH_SUPABASE_URL",
+      "supabaseAnonKey": "REPLACE_WITH_SUPABASE_ANON_KEY",
+      "openaiApiKey": "REPLACE_WITH_OPENAI_API_KEY"
     }
   }
 }
