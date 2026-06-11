@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     alignSelf: "center",
   },
-  exampleText: { fontSize: 15, color: colors.secondaryBlue, textAlign: "center" },
+  exampleText: { fontSize: fontSizes.body, color: colors.secondaryBlue, textAlign: "center" },
   micWrap: { marginVertical: spacing.xl, alignItems: "center" },
   heardCard: {
     backgroundColor: colors.lightBlueBg,
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.md,
   },
-  heardLabel: { fontSize: 14, color: colors.textSecondary, marginBottom: spacing.xs },
+  heardLabel: { fontSize: fontSizes.body, color: colors.textSecondary, marginBottom: spacing.xs },
   heardText: { fontSize: fontSizes.body, fontWeight: "600", color: colors.text },
   confirm: {
     marginTop: spacing.sm,
@@ -159,6 +159,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: spacing.md,
   },
-  resultLabel: { fontSize: 15, color: colors.textSecondary },
+  resultLabel: { fontSize: fontSizes.body, color: colors.textSecondary },
   resultValue: { fontSize: fontSizes.body, fontWeight: "700", color: colors.text, marginLeft: "auto" },
 });

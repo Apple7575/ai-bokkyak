@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   left: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexShrink: 1 },
   iconBox: { width: 48, height: 48, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   name: { fontSize: fontSizes.body, fontWeight: "700" },
-  meta: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
+  meta: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 2 },
   track: { width: 48, height: 28, borderRadius: radii.pill, justifyContent: "center" },
   knob: { position: "absolute", top: 4, width: 20, height: 20, borderRadius: radii.pill, backgroundColor: "#fff" },
 });

@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.lightBlueBg, borderRadius: radii.card,
     paddingVertical: spacing.md, paddingHorizontal: spacing.lg, marginBottom: spacing.md,
   },
-  heardLabel: { fontSize: 13, color: colors.textSecondary, marginBottom: spacing.xs },
+  heardLabel: { fontSize: fontSizes.body, color: colors.textSecondary, marginBottom: spacing.xs },
   heardValue: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text },
   subtitle: { fontSize: fontSizes.body, color: colors.textSecondary, textAlign: "center", marginBottom: spacing.sm },
   or: { fontSize: fontSizes.body, color: colors.textSecondary, textAlign: "center", marginVertical: spacing.sm },

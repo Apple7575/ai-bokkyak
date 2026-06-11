@@ -33,5 +33,5 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     alignSelf: "flex-start",
   },
-  text: { fontSize: 14, fontWeight: "700" },
+  text: { fontSize: 15, fontWeight: "700" },
 });

@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   title: { fontSize: fontSizes.title, fontWeight: "700", color: colors.text, lineHeight: 32 },
-  subtitle: { fontSize: 15, color: colors.textSecondary, marginTop: spacing.xs },
+  subtitle: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: spacing.xs },
   body: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.md },
   card: {
     width: "100%",
@@ -99,12 +99,12 @@ const styles = StyleSheet.create({
   iconBoxPrimary: { backgroundColor: "rgba(255,255,255,0.2)" },
   cardText: { flex: 1 },
   cardTitle: { fontSize: 18, fontWeight: "700", color: colors.text },
-  cardDesc: { fontSize: 13, color: colors.textSecondary, marginTop: 3 },
+  cardDesc: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 3 },
   badge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radii.pill,
     backgroundColor: "#F3EEFF",
   },
-  badgeText: { fontSize: 11, fontWeight: "600", color: colors.conditionPurple },
+  badgeText: { fontSize: 14, fontWeight: "600", color: colors.conditionPurple },
 });

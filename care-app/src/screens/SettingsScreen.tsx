@@ -70,5 +70,5 @@ const styles = StyleSheet.create({
   iconBox: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   rowTextWrap: { flex: 1 },
   rowLabel: { fontSize: fontSizes.body, fontWeight: "600", color: colors.text },
-  rowSub: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
+  rowSub: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 2 },
 });
