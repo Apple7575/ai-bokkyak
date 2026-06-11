@@ -24,3 +24,6 @@ pnpm-debug.log*
 .vscode/
 .idea/
 *.swp
+
+# transient codex review logs
+harness/reviews/

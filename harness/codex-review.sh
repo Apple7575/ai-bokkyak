@@ -61,12 +61,18 @@ fi
 echo ""
 echo "📝 Saved: $OUT"
 
-# Surface the verdict as the exit code so the loop can branch on it.
+# Codex echoes the reviewed diff first, then prints its analysis after a lone
+# "codex" marker line. The diff can contain finding bullets / CHANGES_REQUESTED
+# strings (e.g. when harness files are in scope), so we must judge the verdict
+# ONLY from the analysis section — everything after the LAST "^codex$" line.
+ANALYSIS="$(awk '/^codex$/{last=NR} {l[NR]=$0} END{for(i=last+1;i<=NR;i++) print l[i]}' "$OUT")"
+[ -z "$ANALYSIS" ] && ANALYSIS="$(cat "$OUT")"   # fallback if no marker found
+
 # Codex lists each finding as a line beginning "- [P0]".."- [P3]". Match only those
-# leading bullets (not severity tags quoted in prose) and treat P0/P1/P2 as actionable
+# leading bullets (not severity tags quoted in prose); treat P0/P1/P2 as actionable
 # (P3 = nit). `|| true` keeps `set -e` from aborting when there are zero findings.
-FINDINGS="$(grep -Ec '^[[:space:]]*-[[:space:]]*\[P[012]\]' "$OUT" || true)"
-if grep -qiE 'VERDICT:[[:space:]]*CHANGES_REQUESTED' "$OUT" || [ "${FINDINGS:-0}" -gt 0 ]; then
+FINDINGS="$(printf '%s\n' "$ANALYSIS" | grep -Ec '^[[:space:]]*-[[:space:]]*\[P[012]\]' || true)"
+if printf '%s\n' "$ANALYSIS" | grep -qiE 'VERDICT:[[:space:]]*CHANGES_REQUESTED' || [ "${FINDINGS:-0}" -gt 0 ]; then
   echo "❌ Codex requested changes (${FINDINGS:-0} actionable finding(s): P0/P1/P2)."
   exit 1
 fi
