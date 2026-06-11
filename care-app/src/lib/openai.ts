@@ -27,7 +27,7 @@ export async function gptParseSchedule(text: string): Promise<ParseResult> {
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content:
-          '복약 문장에서 다음 JSON만 출력: {"medicine_name":string,"time_of_day":"아침|점심|저녁|취침","hour":0-23,"minute":0-59,"repeat_days":"매일" 또는 요일배열}.' },
+          '복약 문장에서 다음 JSON만 출력하세요. repeat_days는 매일이면 문자열 "매일", 특정 요일이면 정수 배열을 사용하고 0=일,1=월,2=화,3=수,4=목,5=금,6=토 규칙을 따르세요 (예: 월수금 → [1,3,5]). 형식: {"medicine_name":string,"time_of_day":"아침|점심|저녁|취침","hour":0-23,"minute":0-59,"repeat_days":"매일" 또는 number[]}.' },
         { role: "user", content: text },
       ],
     }),

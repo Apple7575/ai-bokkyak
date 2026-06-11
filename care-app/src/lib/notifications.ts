@@ -14,13 +14,34 @@ export async function ensurePermission(): Promise<boolean> {
   return req.status === "granted";
 }
 
-export async function scheduleDaily(
-  scheduleId: string, medicineName: string, hour: number, minute: number
-): Promise<string> {
-  return Notifications.scheduleNotificationAsync({
-    content: { title: "복약 시간이에요", body: `${medicineName} 드실 시간입니다.`, data: { scheduleId } },
-    trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute },
-  });
+export async function scheduleReminders(
+  scheduleId: string,
+  medicineName: string,
+  hour: number,
+  minute: number,
+  repeatDays: number[]
+): Promise<string[]> {
+  const content = {
+    title: "복약 시간이에요",
+    body: `${medicineName} 드실 시간입니다.`,
+    data: { scheduleId },
+  };
+  if (repeatDays.length === 0) {
+    const id = await Notifications.scheduleNotificationAsync({
+      content,
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute },
+    });
+    return [id];
+  }
+  const ids: string[] = [];
+  for (const day of repeatDays) {
+    const id = await Notifications.scheduleNotificationAsync({
+      content,
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: day + 1, hour, minute },
+    });
+    ids.push(id);
+  }
+  return ids;
 }
 
 export async function scheduleSnooze(
