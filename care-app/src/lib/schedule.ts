@@ -31,5 +31,10 @@ export function nextNotificationTime(spec: TimeSpec, now: Date): Date {
 export function doseSlot(hour: number, minute: number, now: Date): Date {
   const d = new Date(now);
   d.setHours(hour, minute, 0, 0);
+  // If the computed slot is far in the future relative to now (>12h), the dose
+  // belongs to the previous day (e.g. a 23:45 dose answered at 00:15).
+  if (d.getTime() - now.getTime() > 12 * 60 * 60 * 1000) {
+    d.setDate(d.getDate() - 1);
+  }
   return d;
 }

@@ -18,13 +18,13 @@ export function STTResponseScreen() {
   const [recording, setRecording] = useState(false);
   const [heard, setHeard] = useState<string | null>(null);
 
-  async function commit(status: "복용완료" | "미복용") {
+  async function commit(status: "복용완료" | "미복용", method: "음성" | "버튼") {
     const pid = await getPatientId();
     if (pid && scheduleId) {
       await recordIntake({
         patientId: pid, scheduleId,
         scheduledFor: scheduledFor ? new Date(scheduledFor) : new Date(),
-        status, method: "음성",
+        status, method,
       });
     }
     nav.navigate("StatusCheck", { scheduleId, scheduledFor });
@@ -48,8 +48,8 @@ export function STTResponseScreen() {
     try {
       const text = await stopAndTranscribe(); setHeard(text || "(들리지 않음)");
       const intent = classifyIntent(text);
-      if (intent === "복용완료") return commit("복용완료");
-      if (intent === "미복용") return commit("미복용");
+      if (intent === "복용완료") return commit("복용완료", "음성");
+      if (intent === "미복용") return commit("미복용", "음성");
       if (intent === "재알림") return snooze();
     } catch { setHeard("(인식 실패)"); }
   }
@@ -61,8 +61,8 @@ export function STTResponseScreen() {
       <MicButton recording={recording} onPress={onMic} />
       <View style={{ height: spacing.lg }} />
       <Text style={styles.or}>버튼으로 선택하기</Text>
-      <BigButton label="복용 완료" onPress={() => commit("복용완료")} />
-      <BigButton label="아직 안 먹었어요" variant="secondary" onPress={() => commit("미복용")} />
+      <BigButton label="복용 완료" onPress={() => commit("복용완료", "버튼")} />
+      <BigButton label="아직 안 먹었어요" variant="secondary" onPress={() => commit("미복용", "버튼")} />
     </View>
   );
 }

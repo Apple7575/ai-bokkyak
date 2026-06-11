@@ -38,4 +38,8 @@ describe("doseSlot", () => {
     const b = doseSlot(8, 0, new Date("2026-06-11T08:09:45"));
     expect(a.toISOString()).toBe(b.toISOString());
   });
+  it("attributes a near-midnight dose answered after midnight to the previous day", () => {
+    const now = new Date("2026-06-12T00:15:00");
+    expect(doseSlot(23, 45, now).toISOString()).toBe(new Date("2026-06-11T23:45:00.000").toISOString());
+  });
 });
