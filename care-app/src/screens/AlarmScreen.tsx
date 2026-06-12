@@ -26,14 +26,19 @@ export function AlarmScreen() {
 
   useEffect(() => {
     if (!scheduleId) return;
-    // 이 약(scheduleId)의 울리는 알림만 해제 — 동시에 울리는 다른 약 알림은 보존.
-    // (트리거(다음 예약)는 cancelDisplayedNotification이 건드리지 않음.)
-    const ids = [
-      `alarm-${scheduleId}`,
-      `alarm-${scheduleId}-snooze`,
-      ...Array.from({ length: 7 }, (_, d) => `alarm-${scheduleId}-${d}`),
-    ];
-    ids.forEach((id) => { notifee.cancelDisplayedNotification(id).catch(() => {}); });
+    // 표시 중인 알림 중 이 약(scheduleId)에 해당하는 것만 해제 — 동시에 울리는 다른 약
+    // 알림은 보존. data.scheduleId로 매칭하므로 id 체계(결정적/레거시 랜덤)와 무관하게 동작.
+    // (cancelDisplayedNotification은 표시만 제거, 트리거(다음 예약)는 유지.)
+    (async () => {
+      try {
+        const displayed = await notifee.getDisplayedNotifications();
+        for (const n of displayed) {
+          if (n.notification?.data?.scheduleId === scheduleId && n.id) {
+            await notifee.cancelDisplayedNotification(n.id);
+          }
+        }
+      } catch {}
+    })();
   }, [scheduleId]);
 
   useEffect(() => {
