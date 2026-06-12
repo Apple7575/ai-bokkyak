@@ -5,7 +5,7 @@ import { Pill, Clock, RefreshCw } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { MicButton } from "../components/MicButton";
-import { startRecording, stopAndTranscribe } from "../lib/stt";
+import { useSpeechToText } from "../hooks/useSpeechToText";
 import { gptParseSchedule } from "../lib/openai";
 import { ParsedSchedule } from "../lib/parse";
 import { supabase } from "../lib/supabase";
@@ -16,28 +16,28 @@ import { colors, fontSizes, spacing, radii } from "../theme/tokens";
 
 export function VoiceRegisterScreen() {
   const nav = useNavigation<any>();
-  const [recording, setRecording] = useState(false);
   const [parsed, setParsed] = useState<ParsedSchedule | null>(null);
   const [transcript, setTranscript] = useState("");
 
-  async function onMic() {
-    if (!recording) {
-      try {
-        await startRecording();
-        setRecording(true);
-      } catch {
-        Alert.alert("마이크를 사용할 수 없어요", "마이크 권한을 확인하시거나 버튼으로 선택해 주세요.");
-      }
-      return;
-    }
-    setRecording(false);
+  async function onSpeechFinal(text: string) {
+    setTranscript(text);
     try {
-      const text = await stopAndTranscribe(); setTranscript(text);
       const result = await gptParseSchedule(text);
       if (!result.ok) { Alert.alert("다시 말씀해 주세요", "예: 매일 아침 8시에 고혈압약 먹어요"); return; }
       setParsed(result.value);
-      speak(`${result.value.hour}시, ${result.value.medicine_name}으로 등록할까요?`);
+      await speak(`${result.value.hour}시, ${result.value.medicine_name}으로 등록할까요?`);
     } catch { Alert.alert("인식 실패", "다시 시도해 주세요."); }
+  }
+
+  const speech = useSpeechToText(onSpeechFinal);
+
+  async function onMic() {
+    if (speech.listening) { speech.stop(); return; }
+    try {
+      await speech.start();
+    } catch {
+      Alert.alert("마이크를 사용할 수 없어요", "마이크 권한을 확인하시거나 버튼으로 선택해 주세요.");
+    }
   }
 
   async function confirm() {
@@ -49,7 +49,7 @@ export function VoiceRegisterScreen() {
     }).select().single();
     if (error || !data) { Alert.alert("저장 실패", error?.message ?? ""); return; }
     if (await ensurePermission()) await scheduleReminders(data.id, data.medicine_name, parsed.hour, parsed.minute, parsed.repeat_days);
-    speak("복약 일정을 등록했습니다.");
+    await speak("복약 일정을 등록했습니다.");
     nav.navigate("Tabs");
   }
 
@@ -63,13 +63,13 @@ export function VoiceRegisterScreen() {
         </View>
 
         <View style={styles.micWrap}>
-          <MicButton recording={recording} onPress={onMic} />
+          <MicButton recording={speech.listening} onPress={onMic} />
         </View>
 
-        {transcript ? (
+        {speech.transcript || transcript ? (
           <View style={styles.heardCard}>
             <Text style={styles.heardLabel}>인식된 문장</Text>
-            <Text style={styles.heardText}>{transcript}</Text>
+            <Text style={styles.heardText}>{speech.transcript || transcript}</Text>
           </View>
         ) : null}
 

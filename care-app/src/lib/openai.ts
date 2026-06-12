@@ -8,19 +8,6 @@ const SUPABASE_URL = (extra.supabaseUrl as string) ?? "";
 const ANON = (extra.supabaseAnonKey as string) ?? "";
 const FN = `${SUPABASE_URL}/functions/v1/ai`;
 
-export async function whisperTranscribe(fileUri: string): Promise<string> {
-  const form = new FormData();
-  form.append("file", { uri: fileUri, name: "audio.m4a", type: "audio/m4a" } as any);
-  const res = await fetch(`${FN}?op=transcribe`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${ANON}`, apikey: ANON },
-    body: form,
-  });
-  if (!res.ok) throw new Error(`transcribe ${res.status}`);
-  const json = await res.json();
-  return (json.text as string) ?? "";
-}
-
 export async function gptParseSchedule(text: string): Promise<ParseResult> {
   const res = await fetch(`${FN}?op=parse`, {
     method: "POST",
