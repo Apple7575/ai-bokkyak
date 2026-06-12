@@ -5,7 +5,7 @@
 // OPENAI_API_KEY 로 OpenAI를 대신 호출한다.
 //
 // 엔드포인트(POST):
-//   ?op=transcribe  — multipart(file) 음성 → Whisper 전사 → { text }
+//   ?op=tts         — JSON { text, speed? } → OpenAI TTS → mp3 바이너리(audio/mpeg)
 //   ?op=parse       — JSON { text } → gpt-4o-mini 복약 파싱 → { content }(JSON 문자열)
 //
 // 배포: supabase functions deploy ai --project-ref <ref>
@@ -36,22 +36,17 @@ Deno.serve(async (req: Request) => {
 
   const op = new URL(req.url).searchParams.get("op");
   try {
-    if (op === "transcribe") {
-      const inForm = await req.formData();
-      const file = inForm.get("file");
-      if (!(file instanceof File)) return json({ error: "no file" }, 400);
-      const outForm = new FormData();
-      outForm.append("file", file, file.name || "audio.m4a");
-      outForm.append("model", "whisper-1");
-      outForm.append("language", "ko");
-      const r = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    if (op === "tts") {
+      const { text, speed } = await req.json().catch(() => ({ text: "" }));
+      if (!text) return json({ error: "no text" }, 400);
+      const r = await fetch("https://api.openai.com/v1/audio/speech", {
         method: "POST",
-        headers: { Authorization: `Bearer ${OPENAI_KEY}` },
-        body: outForm,
+        headers: { Authorization: `Bearer ${OPENAI_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "tts-1", voice: "nova", input: text, response_format: "mp3", speed: typeof speed === "number" ? speed : 0.9 }),
       });
-      const j = await r.json();
-      if (!r.ok) return json({ error: "whisper failed", detail: j }, 502);
-      return json({ text: j.text ?? "" });
+      if (!r.ok) { const detail = await r.text(); return json({ error: "tts failed", detail }, 502); }
+      const audio = await r.arrayBuffer();
+      return new Response(audio, { status: 200, headers: { ...CORS, "Content-Type": "audio/mpeg" } });
     }
 
     if (op === "parse") {
@@ -73,7 +68,7 @@ Deno.serve(async (req: Request) => {
       return json({ content: j.choices?.[0]?.message?.content ?? "{}" });
     }
 
-    return json({ error: "unknown op (use ?op=transcribe or ?op=parse)" }, 400);
+    return json({ error: "unknown op (use ?op=tts or ?op=parse)" }, 400);
   } catch (e) {
     return json({ error: String(e) }, 500);
   }
