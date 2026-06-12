@@ -25,9 +25,16 @@ export function AlarmScreen() {
   const ready = !scheduleId || !!schedule;
 
   useEffect(() => {
-    // 알람 화면 진입 = 알람 인지. 울리는 알림(루프 사운드) 즉시 해제(트리거는 유지).
-    notifee.cancelDisplayedNotifications().catch(() => {});
-  }, []);
+    if (!scheduleId) return;
+    // 이 약(scheduleId)의 울리는 알림만 해제 — 동시에 울리는 다른 약 알림은 보존.
+    // (트리거(다음 예약)는 cancelDisplayedNotification이 건드리지 않음.)
+    const ids = [
+      `alarm-${scheduleId}`,
+      `alarm-${scheduleId}-snooze`,
+      ...Array.from({ length: 7 }, (_, d) => `alarm-${scheduleId}-${d}`),
+    ];
+    ids.forEach((id) => { notifee.cancelDisplayedNotification(id).catch(() => {}); });
+  }, [scheduleId]);
 
   useEffect(() => {
     (async () => {

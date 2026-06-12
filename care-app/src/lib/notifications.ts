@@ -46,13 +46,13 @@ export async function scheduleReminders(
   const ids: string[] = [];
   if (repeatDays.length === 0) {
     const t = nextNotificationTime({ hour, minute, repeat_days: [] }, now);
-    ids.push(await notifee.createTriggerNotification(base, {
+    ids.push(await notifee.createTriggerNotification({ id: `alarm-${scheduleId}`, ...base }, {
       type: TriggerType.TIMESTAMP, timestamp: t.getTime(), repeatFrequency: RepeatFrequency.DAILY,
     }));
   } else {
     for (const d of repeatDays) {
       const t = nextNotificationTime({ hour, minute, repeat_days: [d] }, now);
-      ids.push(await notifee.createTriggerNotification(base, {
+      ids.push(await notifee.createTriggerNotification({ id: `alarm-${scheduleId}-${d}`, ...base }, {
         type: TriggerType.TIMESTAMP, timestamp: t.getTime(), repeatFrequency: RepeatFrequency.WEEKLY,
       }));
     }
@@ -66,6 +66,7 @@ export async function scheduleSnooze(
   const ch = await ensureChannel();
   const id = await notifee.createTriggerNotification(
     {
+      id: `alarm-${scheduleId}-snooze`,
       title: "다시 알림",
       body: `${medicineName} 드실 시간입니다.`,
       data: { scheduleId },
