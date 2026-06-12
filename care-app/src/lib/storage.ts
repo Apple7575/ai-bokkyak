@@ -21,3 +21,13 @@ export async function getPatientCode(): Promise<string | null> {
 export async function clearAll(): Promise<void> {
   await AsyncStorage.multiRemove(Object.values(KEYS));
 }
+
+const PENDING = "care.pendingAlarm";
+export async function setPendingAlarm(scheduleId: string): Promise<void> {
+  await AsyncStorage.setItem(PENDING, scheduleId);
+}
+export async function takePendingAlarm(): Promise<string | null> {
+  const v = await AsyncStorage.getItem(PENDING);
+  if (v) await AsyncStorage.removeItem(PENDING);
+  return v;
+}

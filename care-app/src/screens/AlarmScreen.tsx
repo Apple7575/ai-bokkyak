@@ -14,6 +14,7 @@ import { doseSlot } from "../lib/schedule";
 import { useSpeechToText } from "../hooks/useSpeechToText";
 import { classifyIntent } from "../lib/intent";
 import { colors, fontSizes, spacing } from "../theme/tokens";
+import notifee from "@notifee/react-native";
 
 export function AlarmScreen() {
   const nav = useNavigation<any>();
@@ -22,6 +23,11 @@ export function AlarmScreen() {
   const scheduleId: string | undefined = route.params?.scheduleId;
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const ready = !scheduleId || !!schedule;
+
+  useEffect(() => {
+    // 알람 화면 진입 = 알람 인지. 울리는 알림(루프 사운드) 즉시 해제(트리거는 유지).
+    notifee.cancelDisplayedNotifications().catch(() => {});
+  }, []);
 
   useEffect(() => {
     (async () => {
