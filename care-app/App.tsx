@@ -2,7 +2,7 @@ import "react-native-gesture-handler";
 import React, { useEffect } from "react";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import * as Notifications from "expo-notifications";
+import notifee, { EventType } from "@notifee/react-native";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { RootStackParamList } from "./src/navigation/types";
 
@@ -18,22 +18,17 @@ function navigateToAlarm(scheduleId: string | undefined, attempt = 0) {
 
 export default function App() {
   useEffect(() => {
-    let handled = false;
-    const open = async (resp: Notifications.NotificationResponse | null) => {
-      if (!resp || handled) return;
-      handled = true;
-      const scheduleId = resp.notification.request.content.data?.scheduleId as string | undefined;
-      navigateToAlarm(scheduleId);
-      try { await Notifications.clearLastNotificationResponseAsync(); } catch {}
-    };
-    // cold start: app launched by tapping a notification
-    Notifications.getLastNotificationResponseAsync().then(open);
-    // warm/background taps
-    const sub = Notifications.addNotificationResponseReceivedListener((resp) => {
-      handled = false; // allow subsequent taps
-      open(resp);
+    notifee.getInitialNotification().then((initial) => {
+      const sid = initial?.notification?.data?.scheduleId as string | undefined;
+      if (sid) navigateToAlarm(sid);
     });
-    return () => sub.remove();
+    const unsub = notifee.onForegroundEvent(({ type, detail }) => {
+      if (type === EventType.PRESS || type === EventType.DELIVERED) {
+        const sid = detail.notification?.data?.scheduleId as string | undefined;
+        if (sid) navigateToAlarm(sid);
+      }
+    });
+    return () => unsub();
   }, []);
 
   return (
