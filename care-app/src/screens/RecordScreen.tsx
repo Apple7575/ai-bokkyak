@@ -1,132 +1,227 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import Svg, { Circle, Text as SvgText } from "react-native-svg";
-import { CheckCircle2, Clock, AlertCircle } from "lucide-react-native";
+import { Calendar } from "react-native-calendars";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { StatusBadge } from "../components/StatusBadge";
-import { supabase, IntakeRecord, Schedule, IntakeStatus } from "../lib/supabase";
+import { supabase, IntakeRecord, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
+import { dayMark, markColor, monthlyAdherence } from "../lib/adherence";
+import { statusLabel, IntakeStatus } from "../lib/intakeStatus";
 import { colors, fontSizes, radii, spacing } from "../theme/tokens";
 
-type Row = IntakeRecord & { medicine_name: string };
+// 로컬(기기) 기준 YYYY-MM-DD. toISOString은 UTC라 날짜가 밀릴 수 있어 직접 포맷.
+function localKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
-type IconType = React.ComponentType<{ size?: number; color?: string }>;
-const STATUS_VISUAL: Record<IntakeStatus, { fg: string; bg: string; Icon: IconType }> = {
-  completed: { fg: colors.successGreen, bg: "#E6F9F1", Icon: CheckCircle2 },
-  snoozed: { fg: colors.warningOrange, bg: "#FFF8ED", Icon: Clock },
-  skipped: { fg: colors.dangerRed, bg: "#FFF0F0", Icon: AlertCircle },
-};
+// 특정 날짜(요일)에 해당 스케줄이 예정되어 있는지.
+// repeat_days 빈 배열 = 매일, 아니면 getDay()(0=일~6=토) 포함 여부.
+function scheduledOn(s: Schedule, date: Date): boolean {
+  if (!s.active) return false;
+  if (!s.repeat_days || s.repeat_days.length === 0) return true;
+  return s.repeat_days.includes(date.getDay());
+}
+
+type DayDetail = { medicine_name: string; status: IntakeStatus | "missed" };
 
 export function RecordScreen() {
-  const [rows, setRows] = useState<Row[]>([]);
-  useFocusEffect(useCallback(() => {
-    (async () => {
-      const pid = await getPatientId(); if (!pid) return;
-      const { data: recs } = await supabase.from("intake_records").select("*")
-        .eq("patient_id", pid).order("scheduled_for", { ascending: false }).limit(50);
-      const { data: schs } = await supabase.from("schedules").select("*").eq("patient_id", pid);
-      const map = new Map((schs ?? []).map((s: Schedule) => [s.id, s.medicine_name]));
-      setRows((recs ?? []).map((r: IntakeRecord) => ({ ...r, medicine_name: map.get(r.schedule_id) ?? "약" })));
-    })();
-  }, []));
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [records, setRecords] = useState<IntakeRecord[]>([]);
+  const [selected, setSelected] = useState<string>(() => localKey(new Date()));
 
-  // 요약 카드는 이미 받은 rows로만 계산 (새 쿼리 없음)
-  const total = rows.length;
-  const doneCount = rows.filter((r) => r.status === "completed").length;
-  const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
-  const r = 28;
-  const circumference = 2 * Math.PI * r;
-  const dashOffset = circumference * (1 - pct / 100);
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+        const pid = await getPatientId();
+        if (!pid) return;
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0);
+        const { data: schs } = await supabase
+          .from("schedules")
+          .select("*")
+          .eq("patient_id", pid)
+          .eq("active", true);
+        const { data: recs } = await supabase
+          .from("intake_records")
+          .select("*")
+          .eq("patient_id", pid)
+          .gte("scheduled_for", monthStart.toISOString())
+          .lt("scheduled_for", monthEnd.toISOString());
+        setSchedules((schs ?? []) as Schedule[]);
+        setRecords((recs ?? []) as IntakeRecord[]);
+      })();
+    }, [])
+  );
+
+  // 이번 달 날짜별 집계 → 달력 마킹 + 월 이행률.
+  const { markedDates, monthPct } = useMemo(() => {
+    const now = new Date();
+    const todayKey = localKey(now);
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+    // 날짜별 완료 수 집계 (로컬 키 기준)
+    const completedByDay = new Map<string, number>();
+    for (const r of records) {
+      if (r.status !== "completed") continue;
+      const key = localKey(new Date(r.scheduled_for));
+      completedByDay.set(key, (completedByDay.get(key) ?? 0) + 1);
+    }
+
+    const marked: Record<string, { selected: boolean; selectedColor?: string }> = {};
+    let totalScheduled = 0;
+    let totalCompleted = 0;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(now.getFullYear(), now.getMonth(), day, 0, 0, 0, 0);
+      const key = localKey(date);
+      const isPast = date.getTime() < todayMidnight.getTime();
+      const isToday = key === todayKey;
+      const slots = schedules.reduce((n, s) => n + (scheduledOn(s, date) ? 1 : 0), 0);
+      const completed = completedByDay.get(key) ?? 0;
+
+      // 이행률: 과거 + 오늘의 예정 슬롯/완료만 합산 (미래 제외)
+      if (isPast || isToday) {
+        totalScheduled += slots;
+        totalCompleted += completed;
+      }
+
+      const color = markColor(dayMark(slots, completed, isPast));
+      if (color) {
+        marked[key] = { selected: true, selectedColor: color };
+      }
+    }
+
+    // 선택된 날짜는 항상 표시 (색이 없으면 중립 파랑)
+    if (marked[selected]) {
+      marked[selected] = { ...marked[selected], selected: true };
+    } else {
+      marked[selected] = { selected: true, selectedColor: colors.secondaryBlue };
+    }
+
+    return { markedDates: marked, monthPct: monthlyAdherence(totalScheduled, totalCompleted) };
+  }, [schedules, records, selected]);
+
+  // 선택 날짜 상세: 약 이름 + 상태. 완료/스누즈/건너뛰기 기록 + 과거 미응답 슬롯(missed).
+  const dayDetails = useMemo<DayDetail[]>(() => {
+    const [y, m, d] = selected.split("-").map(Number);
+    const date = new Date(y, m - 1, d, 0, 0, 0, 0);
+    const now = new Date();
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const isPast = date.getTime() < todayMidnight.getTime();
+
+    const schMap = new Map(schedules.map((s) => [s.id, s.medicine_name]));
+    const dayRecords = records.filter((r) => localKey(new Date(r.scheduled_for)) === selected);
+
+    const details: DayDetail[] = dayRecords.map((r) => ({
+      medicine_name: schMap.get(r.schedule_id) ?? "약",
+      status: r.status,
+    }));
+
+    // 과거 날짜: 예정 슬롯 수보다 기록이 적으면 나머지는 "미확인(missed)"로 표시
+    if (isPast) {
+      const scheduledMeds = schedules.filter((s) => scheduledOn(s, date));
+      const recordedScheduleIds = new Set(dayRecords.map((r) => r.schedule_id));
+      for (const s of scheduledMeds) {
+        if (!recordedScheduleIds.has(s.id)) {
+          details.push({ medicine_name: s.medicine_name, status: "missed" });
+        }
+      }
+    }
+    return details;
+  }, [schedules, records, selected]);
 
   return (
     <View style={styles.screen}>
       <ScreenHeader title="복약 기록" />
       <ScrollView contentContainerStyle={styles.content}>
-        {/* 요약 카드 */}
-        <View style={styles.summaryCard}>
-          <Svg width={68} height={68} viewBox="0 0 68 68">
-            <Circle cx={34} cy={34} r={r} fill="none" stroke={colors.lightBlueBg} strokeWidth={8} />
-            <Circle
-              cx={34}
-              cy={34}
-              r={r}
-              fill="none"
-              stroke={colors.successGreen}
-              strokeWidth={8}
-              strokeDasharray={`${circumference}`}
-              strokeDashoffset={dashOffset}
-              strokeLinecap="round"
-              transform="rotate(-90 34 34)"
-            />
-            <SvgText x={34} y={40} textAnchor="middle" fill={colors.primaryNavy} fontSize={16} fontWeight="700">
-              {`${pct}%`}
-            </SvgText>
-          </Svg>
-          <View style={styles.summaryTextWrap}>
-            <Text style={styles.summaryTitle}>복약률 {pct}%</Text>
-            <Text style={styles.summarySub}>총 {total}회 중 {doneCount}회 복용 완료</Text>
-          </View>
-          <View style={styles.summaryIconCircle}>
-            <CheckCircle2 size={20} color={colors.primaryBlue} />
-          </View>
+        <View style={styles.adherenceCard}>
+          <Text style={styles.adherenceLabel}>이번 달 복약 이행률</Text>
+          <Text style={styles.adherencePct}>{monthPct}%</Text>
         </View>
 
-        <Text style={styles.sectionTitle}>최근 복약 기록</Text>
-        {rows.length === 0 ? <Text style={styles.empty}>아직 기록이 없어요.</Text> : null}
-        {rows.map((row) => {
-          const d = new Date(row.scheduled_for);
-          const time = `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")} ` +
-            `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-          const visual = STATUS_VISUAL[row.status];
-          const Icon = visual.Icon;
-          return (
-            <View key={row.id} style={styles.row}>
+        <View style={styles.calendarWrap}>
+          <Calendar
+            current={selected}
+            markedDates={markedDates}
+            onDayPress={(d: { dateString: string }) => setSelected(d.dateString)}
+            theme={{
+              todayTextColor: colors.primaryBlue,
+              arrowColor: colors.primaryBlue,
+              textDayFontSize: 16,
+              textMonthFontSize: 18,
+              textDayHeaderFontSize: 14,
+            }}
+          />
+        </View>
+
+        <View style={styles.legend}>
+          <LegendDot color={colors.successGreen} label="완료" />
+          <LegendDot color={colors.warningOrange} label="1회 누락" />
+          <LegendDot color={colors.dangerRed} label="2회+ 누락" />
+          <LegendDot color={colors.border} label="일정 없음" />
+        </View>
+
+        <Text style={styles.sectionTitle}>{formatSelected(selected)} 기록</Text>
+        {dayDetails.length === 0 ? (
+          <Text style={styles.empty}>이 날의 기록이 없어요.</Text>
+        ) : (
+          dayDetails.map((item, i) => (
+            <View key={`${item.medicine_name}-${i}`} style={styles.row}>
               <View style={styles.rowLeft}>
-                <View style={[styles.rowIcon, { backgroundColor: visual.bg }]}>
-                  <Icon size={22} color={visual.fg} />
-                </View>
-                <View>
-                  <Text style={styles.name}>{row.medicine_name}</Text>
-                  <Text style={styles.meta}>{time} · {row.response_method ?? "-"}</Text>
-                </View>
+                <Text style={styles.name}>{item.medicine_name}</Text>
+                <Text style={styles.meta}>{statusLabel(item.status)}</Text>
               </View>
-              <StatusBadge status={row.status} />
+              {item.status === "missed" ? null : <StatusBadge status={item.status} />}
             </View>
-          );
-        })}
+          ))
+        )}
       </ScrollView>
     </View>
   );
 }
 
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <View style={styles.legendItem}>
+      <View style={[styles.legendDot, { backgroundColor: color }]} />
+      <Text style={styles.legendText}>{label}</Text>
+    </View>
+  );
+}
+
+function formatSelected(key: string): string {
+  const [, m, d] = key.split("-");
+  return `${Number(m)}월 ${Number(d)}일`;
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F7FAFF" },
   content: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
-  summaryCard: {
-    flexDirection: "row", alignItems: "center", gap: spacing.md,
+  adherenceCard: {
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
-    borderRadius: radii.card, padding: spacing.md,
+    borderRadius: radii.card, padding: spacing.md, alignItems: "center",
   },
-  summaryTextWrap: { flexShrink: 1 },
-  summaryTitle: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text },
-  summarySub: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 4 },
-  summaryIconCircle: {
-    marginLeft: "auto", width: 40, height: 40, borderRadius: radii.pill,
-    alignItems: "center", justifyContent: "center", backgroundColor: colors.lightBlueBg,
+  adherenceLabel: { fontSize: fontSizes.body, color: colors.textSecondary },
+  adherencePct: { fontSize: fontSizes.hero, fontWeight: "800", color: colors.successGreen, marginTop: 4 },
+  calendarWrap: {
+    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
+    borderRadius: radii.card, padding: spacing.xs, overflow: "hidden",
   },
-  sectionTitle: { fontSize: fontSizes.body, fontWeight: "700", color: colors.text },
-  empty: { fontSize: fontSizes.body, color: colors.textSecondary, textAlign: "center", marginTop: spacing.xl },
+  legend: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md, justifyContent: "center" },
+  legendItem: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  legendDot: { width: 14, height: 14, borderRadius: 7 },
+  legendText: { fontSize: 14, color: colors.textSecondary },
+  sectionTitle: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text, marginTop: spacing.sm },
+  empty: { fontSize: fontSizes.body, color: colors.textSecondary, textAlign: "center", marginTop: spacing.md },
   row: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.md,
   },
-  rowLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexShrink: 1 },
-  rowIcon: {
-    width: 48, height: 48, borderRadius: 12,
-    alignItems: "center", justifyContent: "center",
-  },
+  rowLeft: { flexShrink: 1, gap: 4 },
   name: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text },
-  meta: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 4 },
+  meta: { fontSize: fontSizes.body, color: colors.textSecondary },
 });
