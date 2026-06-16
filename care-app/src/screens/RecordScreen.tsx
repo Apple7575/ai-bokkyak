@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { Calendar } from "react-native-calendars";
+import { Calendar, LocaleConfig } from "react-native-calendars";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { StatusBadge } from "../components/StatusBadge";
 import { supabase, IntakeRecord, Schedule } from "../lib/supabase";
@@ -9,6 +9,15 @@ import { getPatientId } from "../lib/storage";
 import { dayMark, markColor, monthlyAdherence } from "../lib/adherence";
 import { statusLabel, IntakeStatus } from "../lib/intakeStatus";
 import { colors, fontSizes, radii, spacing } from "../theme/tokens";
+
+LocaleConfig.locales["ko"] = {
+  monthNames: ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"],
+  monthNamesShort: ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"],
+  dayNames: ["일요일","월요일","화요일","수요일","목요일","금요일","토요일"],
+  dayNamesShort: ["일","월","화","수","목","금","토"],
+  today: "오늘",
+};
+LocaleConfig.defaultLocale = "ko";
 
 // 로컬(기기) 기준 YYYY-MM-DD. toISOString은 UTC라 날짜가 밀릴 수 있어 직접 포맷.
 function localKey(d: Date): string {
@@ -105,11 +114,13 @@ export function RecordScreen() {
       }
     }
 
-    // 선택된 날짜는 항상 표시 (색이 없으면 중립 파랑)
-    if (marked[selected]) {
-      marked[selected] = { ...marked[selected], selected: true };
-    } else {
-      marked[selected] = { selected: true, selectedColor: colors.secondaryBlue };
+    // 선택된 날짜는 항상 표시 (색이 없으면 중립 파랑). 미선택(빈 값)이면 강조 없음.
+    if (selected) {
+      if (marked[selected]) {
+        marked[selected] = { ...marked[selected], selected: true };
+      } else {
+        marked[selected] = { selected: true, selectedColor: colors.secondaryBlue };
+      }
     }
 
     return { markedDates: marked, monthPct: monthlyAdherence(totalScheduled, totalCompleted) };
@@ -117,6 +128,7 @@ export function RecordScreen() {
 
   // 선택 날짜 상세: 약 이름 + 상태. 완료/스누즈/건너뛰기 기록 + 과거 미응답 슬롯(missed).
   const dayDetails = useMemo<DayDetail[]>(() => {
+    if (!selected) return [];
     const [y, m, d] = selected.split("-").map(Number);
     const date = new Date(y, m - 1, d, 0, 0, 0, 0);
     const now = new Date();
@@ -158,9 +170,10 @@ export function RecordScreen() {
             current={localKey(visibleMonth)}
             markedDates={markedDates}
             onDayPress={(d: { dateString: string }) => setSelected(d.dateString)}
-            onMonthChange={(m: { year: number; month: number }) =>
-              setVisibleMonth(new Date(m.year, m.month - 1, 1))
-            }
+            onMonthChange={(m: { year: number; month: number }) => {
+              setVisibleMonth(new Date(m.year, m.month - 1, 1));
+              setSelected("");
+            }}
             theme={{
               arrowColor: colors.primaryBlue,
               textDayFontSize: fontSizes.body, // 18
@@ -180,19 +193,25 @@ export function RecordScreen() {
           <LegendDot color={colors.border} label="일정 없음" />
         </View>
 
-        <Text style={styles.sectionTitle}>{formatSelected(selected)} 기록</Text>
-        {dayDetails.length === 0 ? (
-          <Text style={styles.empty}>이 날의 기록이 없어요.</Text>
+        {!selected ? (
+          <Text style={styles.empty}>날짜를 선택하세요.</Text>
         ) : (
-          dayDetails.map((item, i) => (
-            <View key={`${item.medicine_name}-${i}`} style={styles.row}>
-              <View style={styles.rowLeft}>
-                <Text style={styles.name}>{item.medicine_name}</Text>
-                <Text style={styles.meta}>{statusLabel(item.status)}</Text>
-              </View>
-              {item.status === "missed" ? null : <StatusBadge status={item.status} />}
-            </View>
-          ))
+          <>
+            <Text style={styles.sectionTitle}>{formatSelected(selected)} 기록</Text>
+            {dayDetails.length === 0 ? (
+              <Text style={styles.empty}>이 날의 기록이 없어요.</Text>
+            ) : (
+              dayDetails.map((item, i) => (
+                <View key={`${item.medicine_name}-${i}`} style={styles.row}>
+                  <View style={styles.rowLeft}>
+                    <Text style={styles.name}>{item.medicine_name}</Text>
+                    <Text style={styles.meta}>{statusLabel(item.status)}</Text>
+                  </View>
+                  {item.status === "missed" ? null : <StatusBadge status={item.status} />}
+                </View>
+              ))
+            )}
+          </>
         )}
       </ScrollView>
     </View>
