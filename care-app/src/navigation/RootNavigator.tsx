@@ -15,12 +15,14 @@ import { VoiceRegisterScreen } from "../screens/VoiceRegisterScreen";
 import { AlarmScreen } from "../screens/AlarmScreen";
 import { GuardianLinkScreen } from "../screens/GuardianLinkScreen";
 import { Home as HomeIcon, ClipboardList, Users } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../theme/tokens";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
 function PatientTabs() {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={{
@@ -31,8 +33,8 @@ function PatientTabs() {
           backgroundColor: colors.cardBg,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: 64,
-          paddingBottom: 8,
+          height: 64 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
           paddingTop: 8,
         },
         tabBarLabelStyle: { fontSize: 12, fontWeight: "700" },
