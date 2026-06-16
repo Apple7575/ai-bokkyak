@@ -17,17 +17,18 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
   }
   if (type === EventType.ACTION_PRESS && scheduleId) {
     const pid = await getPatientId();
+    if (!pid) return;
     const hour = Number(data?.hour ?? 0), minute = Number(data?.minute ?? 0);
     const slot = doseSlot(hour, minute, new Date());
     try {
-      if (detail.pressAction?.id === "complete" && pid) {
+      if (detail.pressAction?.id === "complete") {
         await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "completed", method: "버튼" });
-      } else if (detail.pressAction?.id === "snooze" && pid) {
+      } else if (detail.pressAction?.id === "snooze") {
         await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "snoozed", method: "버튼" });
         await scheduleSnooze(scheduleId, "", 30, hour, minute);
       }
+      if (nid) await notifee.cancelDisplayedNotification(nid);
     } catch {}
-    if (nid) await notifee.cancelDisplayedNotification(nid).catch(() => {});
   }
 });
 

@@ -45,17 +45,19 @@ export default function App() {
       }
       if (type === EventType.ACTION_PRESS && sid) {
         const pid = await getPatientId();
-        const hour = Number(data?.hour ?? 0), minute = Number(data?.minute ?? 0);
-        const slot = doseSlot(hour, minute, new Date());
-        try {
-          if (detail.pressAction?.id === "complete" && pid) {
-            await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "completed", method: "버튼" });
-          } else if (detail.pressAction?.id === "snooze" && pid) {
-            await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "snoozed", method: "버튼" });
-            await scheduleSnooze(sid, "", 30, hour, minute);
-          }
-        } catch {}
-        if (nid) await notifee.cancelDisplayedNotification(nid).catch(() => {});
+        if (pid) {
+          const hour = Number(data?.hour ?? 0), minute = Number(data?.minute ?? 0);
+          const slot = doseSlot(hour, minute, new Date());
+          try {
+            if (detail.pressAction?.id === "complete") {
+              await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "completed", method: "버튼" });
+            } else if (detail.pressAction?.id === "snooze") {
+              await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "snoozed", method: "버튼" });
+              await scheduleSnooze(sid, "", 30, hour, minute);
+            }
+            if (nid) await notifee.cancelDisplayedNotification(nid);
+          } catch {}
+        }
       }
     });
     return () => { appSub.remove(); unsub(); };
