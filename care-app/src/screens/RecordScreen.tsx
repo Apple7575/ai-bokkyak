@@ -29,15 +29,19 @@ export function RecordScreen() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [records, setRecords] = useState<IntakeRecord[]>([]);
   const [selected, setSelected] = useState<string>(() => localKey(new Date()));
+  // 달력에서 보고 있는 달(매월 1일). 이전/다음 달로 이동하면 이 값 기준으로 조회·집계한다.
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
 
   useFocusEffect(
     useCallback(() => {
       (async () => {
         const pid = await getPatientId();
         if (!pid) return;
-        const now = new Date();
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0);
+        const monthStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1, 0, 0, 0, 0);
+        const monthEnd = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1, 0, 0, 0, 0);
         const { data: schs } = await supabase
           .from("schedules")
           .select("*")
@@ -52,15 +56,18 @@ export function RecordScreen() {
         setSchedules((schs ?? []) as Schedule[]);
         setRecords((recs ?? []) as IntakeRecord[]);
       })();
-    }, [])
+    }, [visibleMonth])
   );
 
   // 이번 달 날짜별 집계 → 달력 마킹 + 월 이행률.
   const { markedDates, monthPct } = useMemo(() => {
+    // 보이는 달의 연/월·일수 기준으로 집계. isPast/isToday 판정은 실제 오늘 기준 유지.
     const now = new Date();
     const todayKey = localKey(now);
     const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const year = visibleMonth.getFullYear();
+    const month = visibleMonth.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
 
     // 날짜별 완료 수 집계 (로컬 키 기준)
     const completedByDay = new Map<string, number>();
@@ -75,7 +82,7 @@ export function RecordScreen() {
     let totalCompleted = 0;
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(now.getFullYear(), now.getMonth(), day, 0, 0, 0, 0);
+      const date = new Date(year, month, day, 0, 0, 0, 0);
       const key = localKey(date);
       const isPast = date.getTime() < todayMidnight.getTime();
       const isToday = key === todayKey;
@@ -102,7 +109,7 @@ export function RecordScreen() {
     }
 
     return { markedDates: marked, monthPct: monthlyAdherence(totalScheduled, totalCompleted) };
-  }, [schedules, records, selected]);
+  }, [schedules, records, selected, visibleMonth]);
 
   // 선택 날짜 상세: 약 이름 + 상태. 완료/스누즈/건너뛰기 기록 + 과거 미응답 슬롯(missed).
   const dayDetails = useMemo<DayDetail[]>(() => {
@@ -144,15 +151,20 @@ export function RecordScreen() {
 
         <View style={styles.calendarWrap}>
           <Calendar
-            current={selected}
+            current={localKey(visibleMonth)}
             markedDates={markedDates}
             onDayPress={(d: { dateString: string }) => setSelected(d.dateString)}
+            onMonthChange={(m: { year: number; month: number }) =>
+              setVisibleMonth(new Date(m.year, m.month - 1, 1))
+            }
             theme={{
-              todayTextColor: colors.primaryBlue,
               arrowColor: colors.primaryBlue,
-              textDayFontSize: 16,
-              textMonthFontSize: 18,
-              textDayHeaderFontSize: 14,
+              textDayFontSize: fontSizes.body, // 18
+              textMonthFontSize: fontSizes.emphasis, // 22
+              textDayHeaderFontSize: 16,
+              textSectionTitleColor: colors.textSecondary,
+              monthTextColor: colors.primaryNavy,
+              todayTextColor: colors.primaryBlue,
             }}
           />
         </View>
