@@ -4,7 +4,7 @@ import notifee, { EventType } from '@notifee/react-native';
 import App from './App';
 import { setPendingAlarm, getPatientId } from './src/lib/storage';
 import { recordIntake } from './src/lib/records';
-import { scheduleSnooze, cancel } from './src/lib/notifications';
+import { scheduleSnooze } from './src/lib/notifications';
 import { doseSlot } from './src/lib/schedule';
 
 notifee.onBackgroundEvent(async ({ type, detail }) => {
@@ -24,10 +24,10 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
         await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "completed", method: "버튼" });
       } else if (detail.pressAction?.id === "snooze" && pid) {
         await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "snoozed", method: "버튼" });
-        await scheduleSnooze(scheduleId, "", 30);
+        await scheduleSnooze(scheduleId, "", 30, hour, minute);
       }
     } catch {}
-    if (nid) await cancel(nid).catch(() => {});
+    if (nid) await notifee.cancelDisplayedNotification(nid).catch(() => {});
   }
 });
 

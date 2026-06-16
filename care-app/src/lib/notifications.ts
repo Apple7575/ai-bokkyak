@@ -69,12 +69,12 @@ export async function scheduleReminders(
 }
 
 export async function scheduleSnooze(
-  scheduleId: string, medicineName: string, minutes: number
+  scheduleId: string, medicineName: string, minutes: number, hour: number, minute: number
 ): Promise<string[]> {
   const ch = await ensureChannel("아침"); // 스누즈는 기본 채널 사운드
   const id = await notifee.createTriggerNotification(
     { id: `alarm-${scheduleId}-snooze`, title: "다시 알림", body: "약을 드신 후 복용 완료를 눌러주세요.",
-      data: { scheduleId }, android: androidAlarm(scheduleId, ch, SOUND["아침"]) },
+      data: { scheduleId, hour: String(hour), minute: String(minute) }, android: androidAlarm(scheduleId, ch, SOUND["아침"]) },
     { type: TriggerType.TIMESTAMP, timestamp: new Date().getTime() + minutes * 60 * 1000 });
   return [id];
 }
