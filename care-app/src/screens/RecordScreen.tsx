@@ -82,10 +82,15 @@ export function RecordScreen() {
     const month = visibleMonth.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    // 날짜별 완료 수 집계 (로컬 키 기준)
+    // 분모(due slot)는 활성 일정만, 분자(완료)는 분모⊆ 보장 위해 활성 일정 기록만 카운트.
+    // 중단된 약이 영구 미응답으로 이행률을 깎지 않도록 active 기준으로 한정.
+    const activeIds = new Set(schedules.filter((s) => s.active).map((s) => s.id));
+
+    // 날짜별 완료 수 집계 (로컬 키 기준). 분자 ⊆ 분모 위해 활성 일정 기록만 센다.
     const completedByDay = new Map<string, number>();
     for (const r of records) {
       if (r.status !== "completed") continue;
+      if (!activeIds.has(r.schedule_id)) continue;
       const key = localKey(new Date(r.scheduled_for));
       completedByDay.set(key, (completedByDay.get(key) ?? 0) + 1);
     }
@@ -97,8 +102,8 @@ export function RecordScreen() {
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day, 0, 0, 0, 0);
       const key = localKey(date);
-      // slots = 이미 지나간(due) 슬롯만. created_at 이전·미래 슬롯은 제외됨.
-      const slots = schedules.reduce((n, s) => n + (dueSlot(s, year, month, day, now) ? 1 : 0), 0);
+      // slots = 활성 일정의 이미 지나간(due) 슬롯만. created_at 이전·미래 슬롯은 제외됨.
+      const slots = schedules.reduce((n, s) => n + (s.active && dueSlot(s, year, month, day, now) ? 1 : 0), 0);
       const completed = completedByDay.get(key) ?? 0;
 
       // 이행률 분모/분자: 이번 달 모든 날짜의 due slot 합 / 완료 합.
@@ -139,11 +144,11 @@ export function RecordScreen() {
       status: r.status,
     }));
 
-    // due slot(이미 지난 예정)인데 기록이 없으면 나머지는 "미확인(missed)"로 표시.
-    // 색/분모와 동일한 dueSlot 기준이라 일관적(미래·생성 이전 슬롯은 missed 안 됨).
+    // 활성 due slot(이미 지난 예정)인데 기록이 없으면 "미확인(missed)"로 표시.
+    // 분모(달력 색/이행률)와 동일한 active+dueSlot 기준이라 일관적.
     const recordedScheduleIds = new Set(dayRecords.map((r) => r.schedule_id));
     for (const s of schedules) {
-      if (dueSlot(s, y, m - 1, d, now) && !recordedScheduleIds.has(s.id)) {
+      if (s.active && dueSlot(s, y, m - 1, d, now) && !recordedScheduleIds.has(s.id)) {
         details.push({ medicine_name: s.medicine_name, status: "missed" });
       }
     }
