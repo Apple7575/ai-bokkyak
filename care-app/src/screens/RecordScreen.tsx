@@ -16,9 +16,12 @@ function localKey(d: Date): string {
 }
 
 // 특정 날짜(요일)에 해당 스케줄이 예정되어 있는지.
+// 일정 생성일 이전 날짜는 슬롯 아님(월 중간 등록 시 앞쪽 날짜 미응답으로 안 깎임).
 // repeat_days 빈 배열 = 매일, 아니면 getDay()(0=일~6=토) 포함 여부.
 function scheduledOn(s: Schedule, date: Date): boolean {
-  if (!s.active) return false;
+  const created = new Date(s.created_at); created.setHours(0, 0, 0, 0);
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  if (d.getTime() < created.getTime()) return false;
   if (!s.repeat_days || s.repeat_days.length === 0) return true;
   return s.repeat_days.includes(date.getDay());
 }
@@ -42,11 +45,12 @@ export function RecordScreen() {
         if (!pid) return;
         const monthStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1, 0, 0, 0, 0);
         const monthEnd = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1, 0, 0, 0, 0);
+        // active 필터 제거: 중단된 약도 과거 기록 이름 해석/집계·달력 마킹에 필요.
+        // (active는 미래 알림 예약용 개념이고 과거 기록/달력에는 전체 일정 사용)
         const { data: schs } = await supabase
           .from("schedules")
           .select("*")
-          .eq("patient_id", pid)
-          .eq("active", true);
+          .eq("patient_id", pid);
         const { data: recs } = await supabase
           .from("intake_records")
           .select("*")
