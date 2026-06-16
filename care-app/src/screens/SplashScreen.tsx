@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
-import { Pill } from "lucide-react-native";
 import { colors, fontSizes, spacing } from "../theme/tokens";
+import { Logo } from "../components/Logo";
 
 export function SplashScreen() {
   const dots = [useRef(new Animated.Value(0.4)).current, useRef(new Animated.Value(0.4)).current, useRef(new Animated.Value(0.4)).current];
@@ -22,11 +22,8 @@ export function SplashScreen() {
   return (
     <View style={s.c}>
       <View style={s.center}>
-        <View style={s.logo}>
-          <Pill size={48} color={colors.primaryBlue} strokeWidth={1.8} />
-        </View>
+        <Logo size={88} />
         <View style={s.textWrap}>
-          <Text style={s.title}>케어</Text>
           <Text style={s.sub}>말로 쉽게 기록하는 복약 관리</Text>
         </View>
       </View>
@@ -48,16 +45,7 @@ export function SplashScreen() {
 const s = StyleSheet.create({
   c: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" },
   center: { alignItems: "center", gap: spacing.lg, marginBottom: 64 },
-  logo: {
-    width: 96,
-    height: 96,
-    borderRadius: 28,
-    backgroundColor: colors.lightBlueBg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   textWrap: { alignItems: "center", gap: spacing.sm },
-  title: { fontSize: 32, fontWeight: "800", color: colors.primaryNavy },
   sub: { fontSize: fontSizes.body, color: colors.textSecondary, textAlign: "center" },
   dots: { flexDirection: "row", gap: spacing.sm },
   dot: { width: 9, height: 9, borderRadius: 999 },
