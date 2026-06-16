@@ -27,7 +27,7 @@ export function ButtonRegisterScreen() {
       hour, minute: 0, repeat_days: [], active: true,
     }).select().single();
     if (error || !data) { Alert.alert("저장 실패", error?.message ?? ""); return; }
-    if (await ensurePermission()) await scheduleReminders(data.id, data.medicine_name, hour, 0, data.repeat_days ?? []);
+    if (await ensurePermission()) await scheduleReminders(data.id, data.medicine_name, hour, 0, data.repeat_days ?? [], data.time_of_day);
     Alert.alert("복약 일정을 등록했습니다.");
     nav.navigate("Tabs");
   }
