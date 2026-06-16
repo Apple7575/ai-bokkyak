@@ -77,9 +77,11 @@ export function AlarmScreen() {
           </View>
         </View>
 
-        {/* Title */}
-        <Text style={styles.title}>{`${tod} 약 복용 시간입니다`}</Text>
-        <Text style={styles.subtitle}>약을 드신 후 복용 완료를 눌러주세요.</Text>
+        {/* Title — 약 이름을 크게 보여줘 같은 시간대 여러 약도 구분 */}
+        <Text style={styles.title}>
+          {schedule ? `${schedule.medicine_name} 드실 시간이에요` : `${tod} 약 복용 시간입니다`}
+        </Text>
+        <Text style={styles.subtitle}>{`${tod} 약 · 드신 후 복용 완료를 눌러주세요.`}</Text>
 
         {ready ? (
           <>
