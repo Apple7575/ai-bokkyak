@@ -24,15 +24,17 @@ function localKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// 특정 날짜(요일)에 해당 스케줄이 예정되어 있는지.
-// 일정 생성일 이전 날짜는 슬롯 아님(월 중간 등록 시 앞쪽 날짜 미응답으로 안 깎임).
-// repeat_days 빈 배열 = 매일, 아니면 getDay()(0=일~6=토) 포함 여부.
-function scheduledOn(s: Schedule, date: Date): boolean {
-  const created = new Date(s.created_at); created.setHours(0, 0, 0, 0);
-  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  if (d.getTime() < created.getTime()) return false;
-  if (!s.repeat_days || s.repeat_days.length === 0) return true;
-  return s.repeat_days.includes(date.getDay());
+// 특정 날짜 d(year/monthIdx/day)의 스케줄 s가 "집계 대상(due slot)"인지.
+// 1) 요일 매칭: repeat_days 빈 배열 = 매일, 아니면 getDay()(0=일~6=토) 포함 여부.
+// 2) 슬롯 시각 자격: slotDT(그 날 s.hour:s.minute)가 created_at..now 범위 안.
+//    - created_at 이전 슬롯 = 등록 전이라 제외(월 중간 등록 시 앞 날짜 안 깎임).
+//    - now 이후 슬롯 = 아직 안 온 복약이라 분모에서 제외(미래/오늘 미도래 슬롯).
+function dueSlot(s: Schedule, year: number, monthIdx: number, day: number, now: Date): boolean {
+  const repeat = s.repeat_days ?? [];
+  if (!(repeat.length === 0 || repeat.includes(new Date(year, monthIdx, day).getDay()))) return false;
+  const slotDT = new Date(year, monthIdx, day, s.hour, s.minute, 0, 0);
+  const created = new Date(s.created_at);
+  return slotDT.getTime() >= created.getTime() && slotDT.getTime() <= now.getTime();
 }
 
 type DayDetail = { medicine_name: string; status: IntakeStatus | "missed" };
@@ -74,10 +76,8 @@ export function RecordScreen() {
 
   // 이번 달 날짜별 집계 → 달력 마킹 + 월 이행률.
   const { markedDates, monthPct } = useMemo(() => {
-    // 보이는 달의 연/월·일수 기준으로 집계. isPast/isToday 판정은 실제 오늘 기준 유지.
+    // 보이는 달의 연/월·일수 기준으로 집계. due slot 자격은 now 기준으로 판정.
     const now = new Date();
-    const todayKey = localKey(now);
-    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
     const year = visibleMonth.getFullYear();
     const month = visibleMonth.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -97,18 +97,17 @@ export function RecordScreen() {
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day, 0, 0, 0, 0);
       const key = localKey(date);
-      const isPast = date.getTime() < todayMidnight.getTime();
-      const isToday = key === todayKey;
-      const slots = schedules.reduce((n, s) => n + (scheduledOn(s, date) ? 1 : 0), 0);
+      // slots = 이미 지나간(due) 슬롯만. created_at 이전·미래 슬롯은 제외됨.
+      const slots = schedules.reduce((n, s) => n + (dueSlot(s, year, month, day, now) ? 1 : 0), 0);
       const completed = completedByDay.get(key) ?? 0;
 
-      // 이행률: 과거 + 오늘의 예정 슬롯/완료만 합산 (미래 제외)
-      if (isPast || isToday) {
-        totalScheduled += slots;
-        totalCompleted += completed;
-      }
+      // 이행률 분모/분자: 이번 달 모든 날짜의 due slot 합 / 완료 합.
+      totalScheduled += slots;
+      totalCompleted += completed;
 
-      const color = markColor(dayMark(slots, completed, isPast));
+      // due slot만 세므로 isPast=true로 호출(미래 슬롯은 slots에서 이미 빠짐).
+      // slots===0이면 dayMark가 empty(무색) 반환.
+      const color = markColor(dayMark(slots, completed, true));
       if (color) {
         marked[key] = { selected: true, selectedColor: color };
       }
@@ -130,10 +129,7 @@ export function RecordScreen() {
   const dayDetails = useMemo<DayDetail[]>(() => {
     if (!selected) return [];
     const [y, m, d] = selected.split("-").map(Number);
-    const date = new Date(y, m - 1, d, 0, 0, 0, 0);
     const now = new Date();
-    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    const isPast = date.getTime() < todayMidnight.getTime();
 
     const schMap = new Map(schedules.map((s) => [s.id, s.medicine_name]));
     const dayRecords = records.filter((r) => localKey(new Date(r.scheduled_for)) === selected);
@@ -143,14 +139,12 @@ export function RecordScreen() {
       status: r.status,
     }));
 
-    // 과거 날짜: 예정 슬롯 수보다 기록이 적으면 나머지는 "미확인(missed)"로 표시
-    if (isPast) {
-      const scheduledMeds = schedules.filter((s) => scheduledOn(s, date));
-      const recordedScheduleIds = new Set(dayRecords.map((r) => r.schedule_id));
-      for (const s of scheduledMeds) {
-        if (!recordedScheduleIds.has(s.id)) {
-          details.push({ medicine_name: s.medicine_name, status: "missed" });
-        }
+    // due slot(이미 지난 예정)인데 기록이 없으면 나머지는 "미확인(missed)"로 표시.
+    // 색/분모와 동일한 dueSlot 기준이라 일관적(미래·생성 이전 슬롯은 missed 안 됨).
+    const recordedScheduleIds = new Set(dayRecords.map((r) => r.schedule_id));
+    for (const s of schedules) {
+      if (dueSlot(s, y, m - 1, d, now) && !recordedScheduleIds.has(s.id)) {
+        details.push({ medicine_name: s.medicine_name, status: "missed" });
       }
     }
     return details;
