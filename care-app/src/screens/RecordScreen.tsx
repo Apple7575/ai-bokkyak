@@ -2,7 +2,7 @@ import React, { useCallback, useState } from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import Svg, { Circle, Text as SvgText } from "react-native-svg";
-import { CheckCircle2, Clock, AlertCircle, RotateCcw } from "lucide-react-native";
+import { CheckCircle2, Clock, AlertCircle } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { StatusBadge } from "../components/StatusBadge";
 import { supabase, IntakeRecord, Schedule, IntakeStatus } from "../lib/supabase";
@@ -13,10 +13,9 @@ type Row = IntakeRecord & { medicine_name: string };
 
 type IconType = React.ComponentType<{ size?: number; color?: string }>;
 const STATUS_VISUAL: Record<IntakeStatus, { fg: string; bg: string; Icon: IconType }> = {
-  복용완료: { fg: colors.successGreen, bg: "#E6F9F1", Icon: CheckCircle2 },
-  복용예정: { fg: colors.secondaryBlue, bg: colors.lightBlueBg, Icon: Clock },
-  미복용: { fg: colors.dangerRed, bg: "#FFF0F0", Icon: AlertCircle },
-  재알림: { fg: colors.warningOrange, bg: "#FFF8ED", Icon: RotateCcw },
+  completed: { fg: colors.successGreen, bg: "#E6F9F1", Icon: CheckCircle2 },
+  snoozed: { fg: colors.warningOrange, bg: "#FFF8ED", Icon: Clock },
+  skipped: { fg: colors.dangerRed, bg: "#FFF0F0", Icon: AlertCircle },
 };
 
 export function RecordScreen() {
@@ -34,7 +33,7 @@ export function RecordScreen() {
 
   // 요약 카드는 이미 받은 rows로만 계산 (새 쿼리 없음)
   const total = rows.length;
-  const doneCount = rows.filter((r) => r.status === "복용완료").length;
+  const doneCount = rows.filter((r) => r.status === "completed").length;
   const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
   const r = 28;
   const circumference = 2 * Math.PI * r;

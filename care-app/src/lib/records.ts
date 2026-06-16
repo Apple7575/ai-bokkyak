@@ -9,7 +9,7 @@ export async function recordIntake(args: {
     patient_id: args.patientId, schedule_id: args.scheduleId,
     scheduled_for: args.scheduledFor.toISOString(), status: args.status,
     response_method: args.method,
-    responded_at: args.status === "복용예정" ? null : new Date().toISOString(),
+    responded_at: new Date().toISOString(),
   }, { onConflict: "schedule_id,scheduled_for" });
   if (error) throw error;
 }

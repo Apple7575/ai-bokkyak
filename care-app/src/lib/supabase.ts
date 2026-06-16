@@ -1,6 +1,8 @@
 import "react-native-url-polyfill/auto";
 import { createClient } from "@supabase/supabase-js";
 import Constants from "expo-constants";
+import type { IntakeStatus } from "./intakeStatus";
+export type { IntakeStatus };
 
 const extra = Constants.expoConfig?.extra ?? {};
 const url = (extra.supabaseUrl as string) ?? "";
@@ -26,7 +28,6 @@ export type Schedule = {
   time_of_day: string; hour: number; minute: number;
   repeat_days: number[]; active: boolean; created_at: string;
 };
-export type IntakeStatus = "복용완료" | "미복용" | "복용예정" | "재알림";
 export type IntakeRecord = {
   id: string; patient_id: string; schedule_id: string;
   scheduled_for: string; status: IntakeStatus;

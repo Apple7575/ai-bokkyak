@@ -18,7 +18,7 @@ export function STTResponseScreen() {
   const scheduleId: string | undefined = useRoute<any>().params?.scheduleId;
   const scheduledFor: string | undefined = useRoute<any>().params?.scheduledFor;
 
-  async function commit(status: "복용완료" | "미복용", method: "음성" | "버튼") {
+  async function commit(status: "completed" | "skipped", method: "음성" | "버튼") {
     const pid = await getPatientId();
     if (pid && scheduleId) {
       try {
@@ -42,7 +42,7 @@ export function STTResponseScreen() {
         await recordIntake({
           patientId: pid, scheduleId,
           scheduledFor: scheduledFor ? new Date(scheduledFor) : new Date(),
-          status: "재알림", method: "음성",
+          status: "snoozed", method: "음성",
         });
         if (sch) await scheduleSnooze(scheduleId, sch.medicine_name, 30);
       } catch {
@@ -54,8 +54,8 @@ export function STTResponseScreen() {
   }
   async function onSpeechFinal(text: string) {
     const intent = classifyIntent(text);
-    if (intent === "복용완료") return commit("복용완료", "음성");
-    if (intent === "미복용") return commit("미복용", "음성");
+    if (intent === "복용완료") return commit("completed", "음성");
+    if (intent === "미복용") return commit("skipped", "음성");
     if (intent === "재알림") return snooze();
   }
 
@@ -103,8 +103,8 @@ export function STTResponseScreen() {
         <View style={{ height: spacing.xl }} />
 
         <Text style={styles.or}>버튼으로 선택하기</Text>
-        <BigButton label="복용 완료" onPress={() => commit("복용완료", "버튼")} />
-        <BigButton label="아직 안 먹었어요" variant="secondary" onPress={() => commit("미복용", "버튼")} />
+        <BigButton label="복용 완료" onPress={() => commit("completed", "버튼")} />
+        <BigButton label="아직 안 먹었어요" variant="secondary" onPress={() => commit("skipped", "버튼")} />
       </ScrollView>
     </View>
   );

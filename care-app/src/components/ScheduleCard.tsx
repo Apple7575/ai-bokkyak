@@ -18,7 +18,7 @@ function pickIcon(name: string): IconType {
 type Props = { name: string; time: string; status?: IntakeStatus };
 export function ScheduleCard({ name, time, status }: Props) {
   const Icon = pickIcon(name);
-  const done = status === "복용완료";
+  const done = status === "completed";
   return (
     <View style={styles.card}>
       <View style={styles.left}>

@@ -28,7 +28,7 @@ export function GuardianDashboardScreen() {
     })();
   }, []));
 
-  const done = recent.filter((r) => r.status === "복용완료").length;
+  const done = recent.filter((r) => r.status === "completed").length;
   return (
     <View style={styles.screen}>
       <ScreenHeader title="복약 현황" />
