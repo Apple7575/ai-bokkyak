@@ -7,8 +7,6 @@ export type RootStackParamList = {
   ButtonRegister: undefined;
   VoiceRegister: undefined;
   Alarm: { scheduleId?: string };
-  STTResponse: { scheduleId?: string; scheduledFor?: string };
-  StatusCheck: { scheduleId?: string; scheduledFor?: string };
   GuardianLink: undefined;
 };
 export type TabParamList = {

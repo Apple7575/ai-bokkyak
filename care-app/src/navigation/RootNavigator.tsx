@@ -13,8 +13,6 @@ import { RegisterMethodScreen } from "../screens/RegisterMethodScreen";
 import { ButtonRegisterScreen } from "../screens/ButtonRegisterScreen";
 import { VoiceRegisterScreen } from "../screens/VoiceRegisterScreen";
 import { AlarmScreen } from "../screens/AlarmScreen";
-import { STTResponseScreen } from "../screens/STTResponseScreen";
-import { StatusCheckScreen } from "../screens/StatusCheckScreen";
 import { GuardianLinkScreen } from "../screens/GuardianLinkScreen";
 import { Home as HomeIcon, ClipboardList, Users } from "lucide-react-native";
 import { colors } from "../theme/tokens";
@@ -94,8 +92,6 @@ export function RootNavigator() {
       <Stack.Screen name="ButtonRegister" component={ButtonRegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="VoiceRegister" component={VoiceRegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Alarm" component={AlarmScreen} />
-      <Stack.Screen name="STTResponse" component={STTResponseScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="StatusCheck" component={StatusCheckScreen} options={{ headerShown: false }} />
       <Stack.Screen name="GuardianLink" component={GuardianLinkScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
