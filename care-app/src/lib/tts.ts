@@ -22,7 +22,7 @@ function bufToBase64(buf: ArrayBuffer): string {
 }
 
 export async function speak(text: string, opts?: { speed?: number }): Promise<void> {
-  const speed = opts?.speed ?? 0.9;
+  const speed = opts?.speed ?? 0.85;
   try {
     await stopSpeaking();
     const path = `${FileSystem.cacheDirectory}${ttsCacheKey(text, speed)}`;
