@@ -17,12 +17,21 @@ export function RoleSelectScreen() {
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
+  const [gender, setGender] = useState<"남" | "여" | null>(null);
+  const [birthDate, setBirthDate] = useState("");
+  const [region, setRegion] = useState("");
 
   async function startAsPatient() {
     if (!name.trim()) { Alert.alert("이름을 입력해 주세요"); return; }
     const code = makeCode();
     const { data, error } = await supabase.from("patients")
-      .insert({ name: name.trim(), patient_code: code }).select().single();
+      .insert({
+        name: name.trim(),
+        patient_code: code,
+        gender: gender ?? null,
+        birth_date: birthDate.trim() || null,
+        region: region.trim() || null,
+      }).select().single();
     if (error || !data) { Alert.alert("등록 실패", error?.message ?? ""); return; }
     await setPatient(data.id, data.patient_code);
     await setRole("patient");
@@ -46,10 +55,43 @@ export function RoleSelectScreen() {
         <Text style={styles.sub}>어떻게 사용하시나요?</Text>
       </View>
 
-      {/* Name input card */}
+      {/* Profile input card */}
       <View style={styles.card}>
         <Text style={styles.label}>이름</Text>
         <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="예: 안석찬" />
+
+        <Text style={[styles.label, { marginTop: spacing.lg }]}>성별 (선택)</Text>
+        <View style={styles.genderRow}>
+          <Pressable
+            onPress={() => setGender(gender === "남" ? null : "남")}
+            style={[styles.genderChip, gender === "남" && styles.genderChipOn]}
+          >
+            <Text style={[styles.genderText, gender === "남" && styles.genderTextOn]}>남</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setGender(gender === "여" ? null : "여")}
+            style={[styles.genderChip, gender === "여" && styles.genderChipOn]}
+          >
+            <Text style={[styles.genderText, gender === "여" && styles.genderTextOn]}>여</Text>
+          </Pressable>
+        </View>
+
+        <Text style={[styles.label, { marginTop: spacing.lg }]}>생년월일 (선택)</Text>
+        <TextInput
+          style={styles.input}
+          value={birthDate}
+          onChangeText={setBirthDate}
+          placeholder="예: 1948-03-05"
+          keyboardType="numbers-and-punctuation"
+        />
+
+        <Text style={[styles.label, { marginTop: spacing.lg }]}>거주지역 (선택)</Text>
+        <TextInput
+          style={styles.input}
+          value={region}
+          onChangeText={setRegion}
+          placeholder="예: 전라북도 전주시"
+        />
       </View>
 
       {/* Role choices */}
@@ -95,6 +137,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.lightBlueBg, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.button, fontSize: fontSizes.body, padding: 14,
   },
+  genderRow: { flexDirection: "row", gap: spacing.md },
+  genderChip: {
+    flex: 1, minHeight: minTouch, alignItems: "center", justifyContent: "center",
+    backgroundColor: colors.lightBlueBg, borderColor: colors.border, borderWidth: 1,
+    borderRadius: radii.button,
+  },
+  genderChipOn: { backgroundColor: colors.primaryBlue, borderColor: colors.primaryBlue },
+  genderText: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text },
+  genderTextOn: { color: "#fff" },
   choice: {
     flexDirection: "row", alignItems: "center", gap: spacing.md,
     minHeight: minTouch, borderRadius: radii.button,

@@ -4,6 +4,9 @@ create table patients (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   patient_code text unique not null,
+  gender text,
+  birth_date date,
+  region text,
   created_at timestamptz not null default now()
 );
 

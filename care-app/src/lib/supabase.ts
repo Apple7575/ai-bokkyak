@@ -22,6 +22,7 @@ export const supabase = createClient(
 
 export type Patient = {
   id: string; name: string; patient_code: string; created_at: string;
+  gender?: string | null; birth_date?: string | null; region?: string | null;
 };
 export type Schedule = {
   id: string; patient_id: string; medicine_name: string;
