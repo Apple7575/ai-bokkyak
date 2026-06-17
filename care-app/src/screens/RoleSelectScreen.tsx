@@ -24,10 +24,14 @@ export function RoleSelectScreen() {
   // 잘못된 생년월일이 Postgres date 컬럼 insert를 통째로 실패시키지 않게,
   // 유효한 YYYY-MM-DD만 보내고 그 외/빈값은 null. (선택 필드라 가입을 막지 않음.)
   function normalizeBirthDate(s: string): string | null {
-    const t = s.trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return null;
-    const d = new Date(t);
-    return isNaN(d.getTime()) ? null : t;
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s.trim());
+    if (!m) return null;
+    const [, y, mo, d] = m;
+    const dt = new Date(`${y}-${mo}-${d}T00:00:00`);
+    if (isNaN(dt.getTime())) return null;
+    // 1948-02-31 같은 롤오버(존재하지 않는 날짜) 거부: 구성요소 라운드트립 확인
+    if (dt.getFullYear() !== +y || dt.getMonth() + 1 !== +mo || dt.getDate() !== +d) return null;
+    return `${y}-${mo}-${d}`;
   }
 
   async function startAsPatient() {
