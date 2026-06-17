@@ -21,6 +21,15 @@ export function RoleSelectScreen() {
   const [birthDate, setBirthDate] = useState("");
   const [region, setRegion] = useState("");
 
+  // 잘못된 생년월일이 Postgres date 컬럼 insert를 통째로 실패시키지 않게,
+  // 유효한 YYYY-MM-DD만 보내고 그 외/빈값은 null. (선택 필드라 가입을 막지 않음.)
+  function normalizeBirthDate(s: string): string | null {
+    const t = s.trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return null;
+    const d = new Date(t);
+    return isNaN(d.getTime()) ? null : t;
+  }
+
   async function startAsPatient() {
     if (!name.trim()) { Alert.alert("이름을 입력해 주세요"); return; }
     const code = makeCode();
@@ -29,7 +38,7 @@ export function RoleSelectScreen() {
         name: name.trim(),
         patient_code: code,
         gender: gender ?? null,
-        birth_date: birthDate.trim() || null,
+        birth_date: normalizeBirthDate(birthDate),
         region: region.trim() || null,
       }).select().single();
     if (error || !data) { Alert.alert("등록 실패", error?.message ?? ""); return; }
