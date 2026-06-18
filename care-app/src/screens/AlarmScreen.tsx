@@ -8,7 +8,7 @@ import { supabase, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { recordIntake } from "../lib/records";
 import { scheduleSnooze } from "../lib/notifications";
-import { speak } from "../lib/tts";
+import { speak, stopSpeaking } from "../lib/tts";
 import { doseSlot } from "../lib/schedule";
 import { colors, fontSizes, spacing } from "../theme/tokens";
 import notifee from "@notifee/react-native";
@@ -21,6 +21,9 @@ export function AlarmScreen() {
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const ready = !scheduleId || !!schedule;
   const tod = schedule?.time_of_day || "복약";
+
+  // 화면을 떠나면(응답 후 등) 재생 중인 안내 음성을 멈춘다 — 홈에서 계속 말하지 않게.
+  useEffect(() => () => { stopSpeaking(); }, []);
 
   useEffect(() => {
     if (!scheduleId) return;
