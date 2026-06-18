@@ -8,7 +8,7 @@ import { RootNavigator } from "./src/navigation/RootNavigator";
 import { RootStackParamList } from "./src/navigation/types";
 import { takePendingAlarm, getPatientId } from "./src/lib/storage";
 import { recordIntake } from "./src/lib/records";
-import { scheduleSnooze } from "./src/lib/notifications";
+import { scheduleSnooze, ensureIOSCategory } from "./src/lib/notifications";
 import { doseSlot } from "./src/lib/schedule";
 
 export const navRef = createNavigationContainerRef<RootStackParamList>();
@@ -23,6 +23,7 @@ function navigateToAlarm(scheduleId: string | undefined, attempt = 0) {
 
 export default function App() {
   useEffect(() => {
+    ensureIOSCategory().catch(() => {});
     const consumePending = async () => {
       const sid = await takePendingAlarm();
       if (sid) navigateToAlarm(sid);

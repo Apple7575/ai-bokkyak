@@ -20,6 +20,18 @@ export async function ensurePermission(): Promise<boolean> {
   return settings.authorizationStatus >= 1;
 }
 
+export async function ensureIOSCategory(): Promise<void> {
+  await notifee.setNotificationCategories([
+    {
+      id: "care-alarm",
+      actions: [
+        { id: "complete", title: "복용 완료" },
+        { id: "snooze", title: "30분 후 다시 알림" },
+      ],
+    },
+  ]);
+}
+
 function androidAlarm(scheduleId: string, ch: string, sound: string) {
   return {
     channelId: ch, category: AndroidCategory.ALARM, importance: AndroidImportance.HIGH,
@@ -50,6 +62,7 @@ export async function scheduleReminders(
     body: "약을 드신 후 복용 완료를 눌러주세요.",
     data: { scheduleId, hour: String(hour), minute: String(minute) },
     android: androidAlarm(scheduleId, ch, SOUND[tod]),
+    ios: { categoryId: "care-alarm", sound: `${SOUND[tod]}.mp3` },
   };
   const ids: string[] = [];
   if (repeatDays.length === 0) {
@@ -74,7 +87,8 @@ export async function scheduleSnooze(
   const ch = await ensureChannel("아침"); // 스누즈는 기본 채널 사운드
   const id = await notifee.createTriggerNotification(
     { id: `alarm-${scheduleId}-snooze`, title: "다시 알림", body: "약을 드신 후 복용 완료를 눌러주세요.",
-      data: { scheduleId, hour: String(hour), minute: String(minute) }, android: androidAlarm(scheduleId, ch, SOUND["아침"]) },
+      data: { scheduleId, hour: String(hour), minute: String(minute) }, android: androidAlarm(scheduleId, ch, SOUND["아침"]),
+      ios: { categoryId: "care-alarm", sound: "morning.mp3" } },
     { type: TriggerType.TIMESTAMP, timestamp: new Date().getTime() + minutes * 60 * 1000 });
   return [id];
 }
