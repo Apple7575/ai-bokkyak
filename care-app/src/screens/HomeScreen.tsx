@@ -74,7 +74,7 @@ export function HomeScreen() {
         </Pressable>
       </View>
 
-      <BigButton label="지금 알림 받기 (데모)" onPress={() => nav.navigate("Alarm", { scheduleId: next?.s.id })} />
+      <BigButton label="알림 미리보기" onPress={() => nav.navigate("Alarm", { scheduleId: next?.s.id })} />
       <BigButton label="약 등록 / 복약 관리" variant="secondary" onPress={() => nav.navigate("MedicineList")} />
 
       {/* Today's schedule */}
