@@ -71,7 +71,7 @@ export function RoleSelectScreen() {
       {/* Profile input card */}
       <View style={styles.card}>
         <Text style={styles.label}>이름</Text>
-        <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="예: 홍길동" />
+        <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="예: 김복약" />
 
         <Text style={[styles.label, { marginTop: spacing.lg }]}>성별 (선택)</Text>
         <View style={styles.genderRow}>
