@@ -19,8 +19,10 @@ export function useSpeechToText(onFinal?: (text: string) => void): SpeechControl
   const listeningRef = useRef(false);
   const transcriptRef = useRef("");
   const finalizedRef = useRef(true); // 세션 시작 전엔 true (stray 이벤트 무시)
+  const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const finalize = useCallback(() => {
+    if (stopTimerRef.current) { clearTimeout(stopTimerRef.current); stopTimerRef.current = null; }
     if (finalizedRef.current) return;
     finalizedRef.current = true;
     listeningRef.current = false;
@@ -44,6 +46,7 @@ export function useSpeechToText(onFinal?: (text: string) => void): SpeechControl
   const start = useCallback(async () => {
     const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
     if (!perm.granted) throw new Error("음성 인식 권한 거부");
+    if (stopTimerRef.current) { clearTimeout(stopTimerRef.current); stopTimerRef.current = null; }
     transcriptRef.current = "";
     finalizedRef.current = false;
     setTranscript("");
@@ -54,7 +57,10 @@ export function useSpeechToText(onFinal?: (text: string) => void): SpeechControl
 
   const stop = useCallback(() => {
     try { ExpoSpeechRecognitionModule.stop(); } catch {}
-    finalize(); // 사용자가 멈추면 지금까지 인식한 문장으로 진행
+    // 네이티브 최종 result/end가 finalize를 구동하게 두고(더 정확한 최종 문장 사용),
+    // 그게 안 오는 기기 대비 1.5초 폴백으로만 finalize.
+    if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
+    stopTimerRef.current = setTimeout(() => finalize(), 1500);
   }, [finalize]);
 
   const reset = useCallback(() => { transcriptRef.current = ""; setTranscript(""); }, []);
