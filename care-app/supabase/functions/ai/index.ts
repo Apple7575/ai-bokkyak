@@ -37,12 +37,18 @@ Deno.serve(async (req: Request) => {
   const op = new URL(req.url).searchParams.get("op");
   try {
     if (op === "tts") {
-      const { text, speed } = await req.json().catch(() => ({ text: "" }));
+      const { text, speed, voice, model } = await req.json().catch(() => ({ text: "" }));
       if (!text) return json({ error: "no text" }, 400);
       const r = await fetch("https://api.openai.com/v1/audio/speech", {
         method: "POST",
         headers: { Authorization: `Bearer ${OPENAI_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "tts-1", voice: "shimmer", input: text, response_format: "mp3", speed: typeof speed === "number" ? speed : 0.9 }),
+        body: JSON.stringify({
+          model: typeof model === "string" ? model : "tts-1",
+          voice: typeof voice === "string" ? voice : "shimmer",
+          input: text,
+          response_format: "mp3",
+          speed: typeof speed === "number" ? speed : 0.9,
+        }),
       });
       if (!r.ok) { const detail = await r.text(); return json({ error: "tts failed", detail }, 502); }
       const audio = await r.arrayBuffer();
