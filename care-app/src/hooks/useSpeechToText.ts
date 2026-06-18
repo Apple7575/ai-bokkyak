@@ -19,6 +19,7 @@ export function useSpeechToText(onFinal?: (text: string) => void): SpeechControl
   const listeningRef = useRef(false);
   const transcriptRef = useRef("");
   const finalizedRef = useRef(true); // 세션 시작 전엔 true (stray 이벤트 무시)
+  const noMatchRef = useRef(false);  // 인식기가 nomatch로 거부하면 onFinal 호출 안 함
   const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const finalize = useCallback(() => {
@@ -28,7 +29,8 @@ export function useSpeechToText(onFinal?: (text: string) => void): SpeechControl
     listeningRef.current = false;
     setListening(false);
     const t = transcriptRef.current.trim();
-    if (t) onFinalRef.current?.(t);
+    // nomatch(인식기 거부) 시엔 마지막 중간 텍스트로 등록하지 않음.
+    if (t && !noMatchRef.current) onFinalRef.current?.(t);
   }, []);
 
   useSpeechRecognitionEvent("result", (e: any) => {
@@ -38,6 +40,7 @@ export function useSpeechToText(onFinal?: (text: string) => void): SpeechControl
     setTranscript(text);
     if (e.isFinal) finalize();
   });
+  useSpeechRecognitionEvent("nomatch", () => { noMatchRef.current = true; });
   useSpeechRecognitionEvent("end", () => { finalize(); });
   useSpeechRecognitionEvent("error", () => {
     if (!finalizedRef.current) { finalizedRef.current = true; listeningRef.current = false; setListening(false); }
@@ -49,6 +52,7 @@ export function useSpeechToText(onFinal?: (text: string) => void): SpeechControl
     if (stopTimerRef.current) { clearTimeout(stopTimerRef.current); stopTimerRef.current = null; }
     transcriptRef.current = "";
     finalizedRef.current = false;
+    noMatchRef.current = false;
     setTranscript("");
     listeningRef.current = true;
     setListening(true);
