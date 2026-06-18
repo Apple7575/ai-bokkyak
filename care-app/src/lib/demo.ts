@@ -50,7 +50,7 @@ export async function enterDemo(): Promise<void> {
       });
     });
   }
-  if (records.length) await supabase.from("intake_records").insert(records);
+  if (records.length) await supabase.from("intake_records").upsert(records, { onConflict: "schedule_id,scheduled_for" });
 
   // 4) 로컬 상태 설정 → 앱 진입 (데모 알림 예약 안 함)
   await setPatient(pid, DEMO_CODE);
