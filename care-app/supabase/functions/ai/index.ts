@@ -44,7 +44,7 @@ Deno.serve(async (req: Request) => {
         headers: { Authorization: `Bearer ${OPENAI_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           model: typeof model === "string" ? model : "tts-1",
-          voice: typeof voice === "string" ? voice : "shimmer",
+          voice: typeof voice === "string" ? voice : "nova",
           input: text,
           response_format: "mp3",
           speed: typeof speed === "number" ? speed : 0.9,

@@ -13,7 +13,7 @@ for (const [key, text] of Object.entries(ments)) {
   const res = await fetch(URL, {
     method: "POST",
     headers: { Authorization: `Bearer ${ANON}`, apikey: ANON, "Content-Type": "application/json" },
-    body: JSON.stringify({ text, speed: 0.85 }),
+    body: JSON.stringify({ text, voice: "nova", speed: 0.95 }),
   });
   if (!res.ok) throw new Error(`${key}: ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
