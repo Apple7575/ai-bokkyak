@@ -77,7 +77,7 @@ export function RoleSelectScreen() {
         <View style={styles.logo}>
           <Pill size={40} color={colors.primaryBlue} strokeWidth={1.8} />
         </View>
-        <Text style={styles.title}>케어</Text>
+        <Text style={styles.title}>모두의 복약</Text>
         <Text style={styles.sub}>어떻게 사용하시나요?</Text>
       </View>
 
