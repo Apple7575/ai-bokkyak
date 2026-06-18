@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, Alert, ScrollView, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Pill, User, Users } from "lucide-react-native";
+import { Pill, User, Users, Eye } from "lucide-react-native";
 import { setRole, setPatient } from "../lib/storage";
 import { supabase } from "../lib/supabase";
+import { enterDemo } from "../lib/demo";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 
 function makeCode(): string {
@@ -20,6 +21,7 @@ export function RoleSelectScreen() {
   const [gender, setGender] = useState<"남" | "여" | null>(null);
   const [birthDate, setBirthDate] = useState("");
   const [region, setRegion] = useState("");
+  const [demoLoading, setDemoLoading] = useState(false);
 
   // 잘못된 생년월일이 Postgres date 컬럼 insert를 통째로 실패시키지 않게,
   // 유효한 YYYY-MM-DD만 보내고 그 외/빈값은 null. (선택 필드라 가입을 막지 않음.)
@@ -52,6 +54,17 @@ export function RoleSelectScreen() {
   }
   async function startAsGuardian() {
     nav.navigate("GuardianLink");
+  }
+  async function startDemo() {
+    if (demoLoading) return;
+    setDemoLoading(true);
+    try {
+      await enterDemo();
+      nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
+    } catch {
+      Alert.alert("데모를 불러오지 못했어요", "인터넷 연결을 확인해 주세요.");
+      setDemoLoading(false);
+    }
   }
 
   return (
@@ -126,6 +139,16 @@ export function RoleSelectScreen() {
         </View>
         <Text style={[styles.choiceText, { color: colors.primaryBlue }]}>가족을 확인해요 (보호자)</Text>
       </Pressable>
+
+      {/* Demo entry — 보조적으로, 실사용자가 헷갈리지 않게 */}
+      <Pressable
+        onPress={startDemo}
+        disabled={demoLoading}
+        style={({ pressed }) => [styles.demoBtn, (pressed || demoLoading) && { opacity: 0.6 }]}
+      >
+        <Eye size={18} color={colors.textSecondary} />
+        <Text style={styles.demoText}>{demoLoading ? "데모 불러오는 중…" : "둘러보기 (데모)"}</Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -176,4 +199,9 @@ const styles = StyleSheet.create({
   },
   choiceIcon: { width: 44, height: 44, borderRadius: 999, alignItems: "center", justifyContent: "center" },
   choiceText: { fontSize: fontSizes.emphasis, fontWeight: "700", flexShrink: 1 },
+  demoBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
+    marginTop: spacing.md, paddingVertical: spacing.sm,
+  },
+  demoText: { fontSize: fontSizes.body, color: colors.textSecondary, fontWeight: "600" },
 });
