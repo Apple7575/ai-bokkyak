@@ -10,6 +10,26 @@ const FN = `${SUPABASE_URL}/functions/v1/ai`;
 
 let current: Audio.Sound | null = null;
 
+// 앱에 번들된 시간대 고정 음성(아침/점심/저녁/취침). 네트워크 없이 바로 재생 — iOS에서 가장 안정적.
+const ALARM_SOUNDS: Record<string, number> = {
+  아침: require("../../assets/sounds/morning.mp3"),
+  점심: require("../../assets/sounds/noon.mp3"),
+  저녁: require("../../assets/sounds/evening.mp3"),
+  취침: require("../../assets/sounds/night.mp3"),
+};
+
+// 알람 화면 안내 — 번들 mp3 직접 재생(네트워크/포맷 의존 없음). 무음스위치여도 들리게 오디오모드 설정.
+export async function playAlarmAnnouncement(timeOfDay: string): Promise<void> {
+  const asset = ALARM_SOUNDS[timeOfDay] ?? ALARM_SOUNDS["아침"];
+  try {
+    await stopSpeaking();
+    await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, shouldDuckAndroid: true });
+    const { sound } = await Audio.Sound.createAsync(asset);
+    current = sound;
+    await sound.playAsync();
+  } catch {}
+}
+
 function bufToBase64(buf: ArrayBuffer): string {
   const bytes = new Uint8Array(buf);
   let bin = "";

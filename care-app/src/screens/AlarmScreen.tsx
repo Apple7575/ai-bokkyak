@@ -8,7 +8,7 @@ import { supabase, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { recordIntake } from "../lib/records";
 import { scheduleSnooze } from "../lib/notifications";
-import { speak, stopSpeaking } from "../lib/tts";
+import { playAlarmAnnouncement, stopSpeaking } from "../lib/tts";
 import { doseSlot } from "../lib/schedule";
 import { colors, fontSizes, spacing } from "../theme/tokens";
 import notifee from "@notifee/react-native";
@@ -50,8 +50,8 @@ export function AlarmScreen() {
       // 알람 화면이 열리면 좋은 음성(OpenAI)으로 안내를 읽어준다. 알림 사운드와 별개로
       // 화면에서도 들리게 — iOS 알림음 포맷 제약과 무관하게 동작.
       if (data) {
-        const tod = data.time_of_day || "복약";
-        await speak(`${tod} 약, ${data.medicine_name} 드실 시간이에요. 약을 드신 후 복용 완료를 눌러주세요.`);
+        // 번들된 시간대 음성 직접 재생(네트워크 없이, iOS 안정적). 약 이름은 화면 제목으로 표시.
+        await playAlarmAnnouncement(data.time_of_day || "아침");
       }
     })();
   }, [scheduleId]);
