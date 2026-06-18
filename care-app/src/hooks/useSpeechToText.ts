@@ -16,58 +16,61 @@ export function useSpeechToText(onFinal?: (text: string) => void): SpeechControl
   const onFinalRef = useRef(onFinal);
   onFinalRef.current = onFinal;
 
-  // `useSpeechRecognitionEvent` 구독은 전역이라, 여러 음성 화면이 동시에 마운트되면
-  // 한 발화 결과가 백그라운드 화면의 onFinal까지 실행될 수 있다. 그래서 "지금 이 화면이
-  // 실제로 듣고 있을 때만" 이벤트를 처리한다(listeningRef 게이트). state는 클로저에서
-  // stale하므로 ref로 즉시값을 읽는다.
   const listeningRef = useRef(false);
-  const setListeningBoth = useCallback((v: boolean) => {
-    listeningRef.current = v;
-    setListening(v);
+  const transcriptRef = useRef("");
+  const finalizedRef = useRef(true); // 세션 시작 전엔 true (stray 이벤트 무시)
+
+  const finalize = useCallback(() => {
+    if (finalizedRef.current) return;
+    finalizedRef.current = true;
+    listeningRef.current = false;
+    setListening(false);
+    const t = transcriptRef.current.trim();
+    if (t) onFinalRef.current?.(t);
   }, []);
 
   useSpeechRecognitionEvent("result", (e: any) => {
-    if (!listeningRef.current) return; // 듣고 있지 않은 화면은 무시
+    if (!listeningRef.current) return;
     const text: string = e.results?.[0]?.transcript ?? "";
+    transcriptRef.current = text;
     setTranscript(text);
-    if (e.isFinal) {
-      setListeningBoth(false);
-      if (text.trim()) onFinalRef.current?.(text);
-    }
+    if (e.isFinal) finalize();
   });
-  useSpeechRecognitionEvent("end", () => {
-    if (listeningRef.current) setListeningBoth(false);
-  });
+  useSpeechRecognitionEvent("end", () => { finalize(); });
   useSpeechRecognitionEvent("error", () => {
-    if (listeningRef.current) setListeningBoth(false);
+    if (!finalizedRef.current) { finalizedRef.current = true; listeningRef.current = false; setListening(false); }
   });
 
   const start = useCallback(async () => {
     const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
     if (!perm.granted) throw new Error("음성 인식 권한 거부");
+    transcriptRef.current = "";
+    finalizedRef.current = false;
     setTranscript("");
-    setListeningBoth(true);
+    listeningRef.current = true;
+    setListening(true);
     ExpoSpeechRecognitionModule.start({ lang: "ko-KR", interimResults: true, continuous: false });
-  }, [setListeningBoth]);
+  }, []);
 
   const stop = useCallback(() => {
     try { ExpoSpeechRecognitionModule.stop(); } catch {}
-    setListeningBoth(false);
-  }, [setListeningBoth]);
+    finalize(); // 사용자가 멈추면 지금까지 인식한 문장으로 진행
+  }, [finalize]);
 
-  const reset = useCallback(() => setTranscript(""), []);
+  const reset = useCallback(() => { transcriptRef.current = ""; setTranscript(""); }, []);
 
-  // 화면이 포커스를 잃으면(다른 화면이 위로 푸시되거나 탭 전환) 인식을 멈춰
-  // 백그라운드에서 결과를 가로채지 않도록 한다.
+  // 화면 이탈 시: 등록 트리거 없이 조용히 종료(onFinal 안 부름)
   useFocusEffect(
     useCallback(() => {
       return () => {
         if (listeningRef.current) {
           try { ExpoSpeechRecognitionModule.stop(); } catch {}
-          setListeningBoth(false);
+          finalizedRef.current = true;
+          listeningRef.current = false;
+          setListening(false);
         }
       };
-    }, [setListeningBoth])
+    }, [])
   );
 
   return { transcript, listening, start, stop, reset };

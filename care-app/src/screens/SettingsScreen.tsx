@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Users, Volume2, Mic2, Type, Shield, LogOut, ChevronRight } from "lucide-react-native";
+import notifee from "@notifee/react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { clearAll } from "../lib/storage";
 import { colors, fontSizes, radii, spacing } from "../theme/tokens";
@@ -20,6 +21,7 @@ const menuItems: MenuItem[] = [
 export function SettingsScreen() {
   const nav = useNavigation<any>();
   const onLogout = async () => {
+    await notifee.cancelAllNotifications().catch(() => {});
     await clearAll();
     nav.reset({ index: 0, routes: [{ name: "RoleSelect" }] });
   };
@@ -50,7 +52,7 @@ export function SettingsScreen() {
             <View style={[styles.iconBox, { backgroundColor: colors.dangerRed + "1A" }]}>
               <LogOut size={20} color={colors.dangerRed} />
             </View>
-            <Text style={[styles.rowLabel, { color: colors.dangerRed, flex: 1 }]}>로그아웃 / 역할 다시 선택</Text>
+            <Text style={[styles.rowLabel, { color: colors.dangerRed, flex: 1 }]}>로그아웃 / 처음으로</Text>
           </Pressable>
         </View>
       </ScrollView>

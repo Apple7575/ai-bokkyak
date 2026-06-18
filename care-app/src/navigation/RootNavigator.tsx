@@ -14,7 +14,8 @@ import { ButtonRegisterScreen } from "../screens/ButtonRegisterScreen";
 import { VoiceRegisterScreen } from "../screens/VoiceRegisterScreen";
 import { AlarmScreen } from "../screens/AlarmScreen";
 import { GuardianLinkScreen } from "../screens/GuardianLinkScreen";
-import { Home as HomeIcon, ClipboardList, Users } from "lucide-react-native";
+import { SettingsScreen } from "../screens/SettingsScreen";
+import { Home as HomeIcon, ClipboardList, Users, Menu } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../theme/tokens";
 
@@ -62,6 +63,14 @@ function PatientTabs() {
         options={{
           title: "보호자",
           tabBarIcon: ({ color, size }) => <Users size={size ?? 24} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="More"
+        component={SettingsScreen}
+        options={{
+          title: "더보기",
+          tabBarIcon: ({ color, size }) => <Menu size={size ?? 24} color={color} />,
         }}
       />
     </Tab.Navigator>
