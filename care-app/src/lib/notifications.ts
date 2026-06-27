@@ -205,9 +205,11 @@ export async function rescheduleNext(
 ): Promise<void> {
   const tod = todOf(timeOfDay);
   const ch = await ensureChannel(tod);
-  // 1분 버퍼: 정시 발사 직후 DELIVERED 재예약 시 "방금 울린 오늘 슬롯"을 다시 잡아
-  // 즉시 재발사되는 경계 케이스 방지(도즈 직전 1분 내 등록은 오늘로, 시각 지난 직후는 다음날로).
-  const fireAt = nextDoseAt({ hour, minute, repeat_days: repeatDays }, new Date(Date.now() + 60_000)).getTime();
+  // 버퍼 없이 "지금" 기준 다음 슬롯. 정시 발사 직후 DELIVERED 재예약 때도
+  // "방금 울린 슬롯"은 자연히 제외된다: 알람이 HH:MM:00에 울리고 이 코드는 그보다 수 ms
+  // 뒤에 실행되므로 now가 이미 슬롯(초=0)을 지나 다음날로 잡힌다. (예전엔 60초 버퍼를
+  // 두는 바람에 "지금부터 2분 내" 등록·재동기화 알람이 내일로 밀리던 버그가 있었다.)
+  const fireAt = nextDoseAt({ hour, minute, repeat_days: repeatDays }, new Date()).getTime();
   await notifee.createTriggerNotification(
     { id: `alarm-${scheduleId}`, ...alarmNotification(scheduleId, tod, ch, hour, minute, 0) },
     { type: TriggerType.TIMESTAMP, timestamp: fireAt, ...(await exactAlarmOption()) }); // repeatFrequency 없음
