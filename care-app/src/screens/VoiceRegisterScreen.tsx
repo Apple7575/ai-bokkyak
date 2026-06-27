@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, StyleSheet, Alert } from "react-native";
+import { View, Text, ScrollView, StyleSheet, Alert, TextInput } from "react-native";
+import { spokenTime } from "../lib/spokenTime";
 import { useNavigation } from "@react-navigation/native";
 import { Pill, Clock, RefreshCw } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
@@ -25,7 +26,7 @@ export function VoiceRegisterScreen() {
       const result = await gptParseSchedule(text);
       if (!result.ok) { Alert.alert("다시 말씀해 주세요", "예: 매일 아침 8시에 고혈압약 먹어요"); return; }
       setParsed(result.value);
-      await speak(`${result.value.hour}시, ${result.value.medicine_name}으로 등록할까요?`);
+      await speak(`${spokenTime(result.value.hour, result.value.minute)}, ${result.value.medicine_name}으로 등록할까요?`);
     } catch { Alert.alert("인식 실패", "다시 시도해 주세요."); }
   }
 
@@ -77,12 +78,17 @@ export function VoiceRegisterScreen() {
           <View style={styles.confirm}>
             <Text style={styles.confirmTitle}>자동 분류 결과</Text>
 
+            {/* 약 이름 — 직접 수정 가능 */}
             <View style={styles.resultRow}>
-              <View style={styles.resultIcon}>
-                <Pill size={18} color={colors.primaryBlue} />
-              </View>
+              <View style={styles.resultIcon}><Pill size={18} color={colors.primaryBlue} /></View>
               <Text style={styles.resultLabel}>약 이름</Text>
-              <Text style={styles.resultValue}>{parsed.medicine_name}</Text>
+              <TextInput
+                style={styles.nameInput}
+                value={parsed.medicine_name}
+                onChangeText={(t) => setParsed({ ...parsed, medicine_name: t })}
+                placeholder="약 이름"
+                placeholderTextColor={colors.textSecondary}
+              />
             </View>
 
             <View style={styles.resultRow}>
@@ -161,4 +167,9 @@ const styles = StyleSheet.create({
   },
   resultLabel: { fontSize: fontSizes.body, color: colors.textSecondary },
   resultValue: { fontSize: fontSizes.body, fontWeight: "700", color: colors.text, marginLeft: "auto" },
+  nameInput: {
+    marginLeft: "auto", minWidth: 140, textAlign: "right",
+    fontSize: fontSizes.body, fontWeight: "700", color: colors.text,
+    borderBottomWidth: 1, borderBottomColor: colors.border, paddingVertical: 4,
+  },
 });
