@@ -9,6 +9,7 @@ import { TimeChip } from "../components/TimeChip";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders, cancelSchedule } from "../lib/notifications";
+import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { normalizeRepeatDays } from "../lib/schedule";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
 
@@ -56,6 +57,7 @@ export function ButtonRegisterScreen() {
     if (!pid) { savingRef.current = false; setSaving(false); return; }
     const days = normalizeRepeatDays(repeatDays); // 정렬·중복제거된 int[], 빈배열=매일
     const row = { medicine_name: name.trim(), time_of_day: tod, hour, minute, repeat_days: days, active: true };
+    await ensureStrongAlarmReady();
     try {
       if (editId) {
         // 이력 보존: 시간/요일을 바꾸면 과거 기록의 due-slot 기준이 깨지므로, 기존 행을 직접 고치지 않고
