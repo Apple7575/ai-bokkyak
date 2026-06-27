@@ -42,3 +42,7 @@ yarn-error.*
 
 # supabase local link metadata
 supabase/.temp/
+
+# local build artifacts
+build-*.apk
+sound-samples/
