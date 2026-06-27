@@ -1,9 +1,9 @@
 import { Platform } from "react-native";
 import notifee, {
-  AndroidImportance, AndroidVisibility, AndroidCategory, TriggerType, RepeatFrequency,
+  AndroidImportance, AndroidVisibility, AndroidCategory, TriggerType,
   AndroidNotificationSetting,
 } from "@notifee/react-native";
-import { nextNotificationTime } from "./schedule";
+import { nextDoseAt, dosesWithin } from "./doseTimes";
 import { SnoozeSpec, nextSnoozeFire } from "./snooze";
 import { supabase } from "./supabase";
 
@@ -102,31 +102,69 @@ export async function cancelRepeat(scheduleId: string): Promise<void> {
   try { await notifee.cancelDisplayedNotification(`alarm-${scheduleId}-rep`); } catch {}
 }
 
-// 일정 삭제/수정 시 해당 일정의 모든 예약 알림(매일/요일/스누즈/반복)을 제거한다.
-export async function cancelSchedule(scheduleId: string): Promise<void> {
-  const ids = [`alarm-${scheduleId}`, `alarm-${scheduleId}-snooze`, `alarm-${scheduleId}-rep`];
-  for (let d = 0; d <= 6; d++) ids.push(`alarm-${scheduleId}-${d}`);
-  for (let i = 1; i <= 6; i++) ids.push(`alarm-${scheduleId}-burst-${i}`);
-  for (const id of ids) { try { await notifee.cancelNotification(id); } catch {} }
+// iOS: 앞으로 48시간 내 도즈마다 (기본 1 + 버스트) 예약. 64개 한도를 넘지 않게 버스트 수를 동적 캡.
+const WINDOW_HOURS = 48;
+const BURST_GAP_MS = 30_000;
+
+export async function scheduleIosWindow(
+  scheduleId: string, timeOfDay: string, hour: number, minute: number, repeatDays: number[]
+): Promise<void> {
+  if (Platform.OS !== "ios") return;
+  await cancelIosWindow(scheduleId);
+  const tod = todOf(timeOfDay);
+  const doses = dosesWithin({ hour, minute, repeat_days: repeatDays }, new Date(), WINDOW_HOURS);
+  // 현재 예약 개수 기준 남은 여유로 버스트 수 결정(도즈당 최소 1, 여유 있으면 최대 5 버스트).
+  let pending = 0;
+  try { pending = (await notifee.getTriggerNotificationIds()).length; } catch {}
+  const room = Math.max(0, 60 - pending);            // 64 한도에서 약간 여유
+  const perDose = doses.length > 0 ? Math.max(1, Math.min(6, Math.floor(room / doses.length))) : 0;
+  for (let di = 0; di < doses.length; di++) {
+    const base = doses[di].getTime();
+    for (let b = 0; b < perDose; b++) {
+      await notifee.createTriggerNotification(
+        { id: `alarm-${scheduleId}-win-${di}-${b}`, title: `${tod} 약 복용 시간입니다`,
+          body: "약을 드신 후 '지금 약 먹기'를 눌러주세요.",
+          data: { scheduleId, hour: String(hour), minute: String(minute), tod, seq: String(b) },
+          ios: { categoryId: "care-alarm", sound: `${SOUND[tod]}.mp3` } },
+        { type: TriggerType.TIMESTAMP, timestamp: base + b * BURST_GAP_MS });
+    }
+  }
 }
 
-// 포그라운드 서비스 중지 + 반복/버스트/표시 알림 제거.
+// 이 일정의 윈도우 알림(-win-*) 전부 취소.
+export async function cancelIosWindow(scheduleId: string): Promise<void> {
+  try {
+    const ids = await notifee.getTriggerNotificationIds();
+    for (const id of ids) {
+      if (id.startsWith(`alarm-${scheduleId}-win-`)) { try { await notifee.cancelTriggerNotification(id); } catch {} }
+    }
+  } catch {}
+}
+
+// 일정 삭제/수정 시 해당 일정의 모든 예약 알림(정확 1회/스누즈/반복/iOS 윈도우)을 제거한다.
+export async function cancelSchedule(scheduleId: string): Promise<void> {
+  const ids = [`alarm-${scheduleId}`, `alarm-${scheduleId}-snooze`, `alarm-${scheduleId}-rep`];
+  for (const id of ids) { try { await notifee.cancelNotification(id); } catch {} }
+  await cancelIosWindow(scheduleId);
+}
+
+// 포그라운드 서비스 중지 + 반복/윈도우/표시 알림 제거.
 // 복용완료·건너뛰기·스누즈 등 응답 시 공통 호출.
 export async function stopAlarm(scheduleId: string): Promise<void> {
   try { await notifee.stopForegroundService(); } catch {}
   await cancelRepeat(scheduleId);
   // 예약된 스누즈 트리거 제거 (스누즈 후 복용완료 시 울리지 않도록)
   try { await notifee.cancelNotification(`alarm-${scheduleId}-snooze`); } catch {}
-  // iOS 버스트(-burstN) 알림 제거
-  for (let i = 1; i <= 6; i++) { try { await notifee.cancelNotification(`alarm-${scheduleId}-burst-${i}`); } catch {} }
+  // iOS 윈도우(-win-*) 알림 제거
+  await cancelIosWindow(scheduleId);
   try {
     const displayed = await notifee.getDisplayedNotifications();
     for (const n of displayed) {
       if (n.notification?.data?.scheduleId === scheduleId && n.id) await notifee.cancelDisplayedNotification(n.id);
     }
   } catch {}
-  // iOS: 방금 취소한 버스트를 "다음 발생분"으로 다시 무장 — 응답 후에도 미래 반복 핑 유지.
-  // (Android는 scheduleIosBurst가 즉시 return하므로 영향 없음.)
+  // iOS: 방금 취소한 윈도우를 "다음 발생분"으로 다시 무장 — 응답 후에도 미래 반복 핑 유지.
+  // (Android는 scheduleIosWindow가 즉시 return하므로 영향 없음.)
   if (Platform.OS === "ios") {
     try {
       const { data } = await supabase
@@ -136,7 +174,7 @@ export async function stopAlarm(scheduleId: string): Promise<void> {
         .eq("active", true)
         .maybeSingle();
       if (data) {
-        await scheduleIosBurst(
+        await scheduleIosWindow(
           scheduleId,
           data.time_of_day,
           data.hour,
@@ -148,47 +186,25 @@ export async function stopAlarm(scheduleId: string): Promise<void> {
   }
 }
 
-// iOS는 백그라운드 체인이 안 되므로 다음 발사분의 30초 간격 6개를 미리 예약(Time-Sensitive).
-// 응답 시 stopAlarm이 모두 취소. 매일 재무장은 App의 AppState에서.
-export async function scheduleIosBurst(scheduleId: string, timeOfDay: string, hour: number, minute: number, repeatDays: number[]): Promise<void> {
-  if (Platform.OS !== "ios") return;
+// 다음 1회 정확 알람을 예약(반복 트리거 대신 — 매 회차 setExactAndAllowWhileIdle 유지).
+export async function rescheduleNext(
+  scheduleId: string, hour: number, minute: number, repeatDays: number[], timeOfDay: string
+): Promise<void> {
   const tod = todOf(timeOfDay);
-  const base = nextNotificationTime({ hour, minute, repeat_days: repeatDays }, new Date()).getTime();
-  for (let i = 1; i <= 6; i++) {
-    await notifee.createTriggerNotification(
-      { id: `alarm-${scheduleId}-burst-${i}`, title: `${tod} 약 복용 시간입니다`,
-        body: "약을 드신 후 '지금 약 먹기'를 눌러주세요.",
-        data: { scheduleId, hour: String(hour), minute: String(minute), tod, seq: String(i) },
-        ios: { categoryId: "care-alarm", sound: `${SOUND[tod]}.mp3`, interruptionLevel: "timeSensitive" as const } },
-      { type: TriggerType.TIMESTAMP, timestamp: base + i * 30_000 });
-  }
+  const ch = await ensureChannel(tod);
+  const fireAt = nextDoseAt({ hour, minute, repeat_days: repeatDays }, new Date()).getTime();
+  await notifee.createTriggerNotification(
+    { id: `alarm-${scheduleId}`, ...alarmNotification(scheduleId, tod, ch, hour, minute, 0) },
+    { type: TriggerType.TIMESTAMP, timestamp: fireAt, ...(await exactAlarmOption()) }); // repeatFrequency 없음
 }
 
 export async function scheduleReminders(
   scheduleId: string, medicineName: string, hour: number, minute: number,
   repeatDays: number[], timeOfDay: string
 ): Promise<string[]> {
-  const tod = todOf(timeOfDay);
-  const ch = await ensureChannel(tod);
-  const now = new Date();
-  const base = { id: "", ...alarmNotification(scheduleId, tod, ch, hour, minute, 0) }; // primary = seq 0
-  const exact = await exactAlarmOption(); // 권한 있을 때만 정확 알람
-  const ids: string[] = [];
-  if (repeatDays.length === 0) {
-    const t = nextNotificationTime({ hour, minute, repeat_days: [] }, now);
-    ids.push(await notifee.createTriggerNotification(
-      { ...base, id: `alarm-${scheduleId}` },
-      { type: TriggerType.TIMESTAMP, timestamp: t.getTime(), repeatFrequency: RepeatFrequency.DAILY, ...exact }));
-  } else {
-    for (const d of repeatDays) {
-      const t = nextNotificationTime({ hour, minute, repeat_days: [d] }, now);
-      ids.push(await notifee.createTriggerNotification(
-        { ...base, id: `alarm-${scheduleId}-${d}` },
-        { type: TriggerType.TIMESTAMP, timestamp: t.getTime(), repeatFrequency: RepeatFrequency.WEEKLY, ...exact }));
-    }
-  }
-  await scheduleIosBurst(scheduleId, timeOfDay, hour, minute, repeatDays);
-  return ids;
+  await rescheduleNext(scheduleId, hour, minute, repeatDays, timeOfDay);
+  await scheduleIosWindow(scheduleId, timeOfDay, hour, minute, repeatDays);
+  return [`alarm-${scheduleId}`];
 }
 
 export async function scheduleSnooze(

@@ -9,7 +9,7 @@ import { RootNavigator } from "./src/navigation/RootNavigator";
 import { RootStackParamList } from "./src/navigation/types";
 import { takePendingAlarm, getPatientId } from "./src/lib/storage";
 import { recordIntake } from "./src/lib/records";
-import { ensureIOSCategory, stopAlarm, scheduleIosBurst, scheduleSnooze } from "./src/lib/notifications";
+import { ensureIOSCategory, stopAlarm, scheduleIosWindow, scheduleSnooze } from "./src/lib/notifications";
 import { doseSlot } from "./src/lib/schedule";
 import { supabase } from "./src/lib/supabase";
 
@@ -30,13 +30,13 @@ export default function App() {
       const sid = await takePendingAlarm();
       if (sid) navigateToAlarm(sid);
     };
-    const rearmIosBursts = async () => {
-      // iOS: 앱이 활성화될 때 활성 일정의 다음 버스트를 재무장(매일 1회분 미리 깔기)
+    const rearmIosWindows = async () => {
+      // iOS: 앱이 활성화될 때 활성 일정의 48h 윈도우를 재무장
       if (Platform.OS === "ios") {
         const pid = await getPatientId();
         if (pid) {
           const { data } = await supabase.from("schedules").select("*").eq("patient_id", pid).eq("active", true);
-          for (const s of data ?? []) await scheduleIosBurst(s.id, s.time_of_day, s.hour, s.minute, s.repeat_days ?? []);
+          for (const s of data ?? []) await scheduleIosWindow(s.id, s.time_of_day, s.hour, s.minute, s.repeat_days ?? []);
         }
       }
     };
@@ -45,11 +45,11 @@ export default function App() {
       if (sid) navigateToAlarm(sid);
     });
     consumePending();
-    rearmIosBursts().catch(() => {});
+    rearmIosWindows().catch(() => {});
     const appSub = AppState.addEventListener("change", (s) => {
       if (s === "active") {
         consumePending();
-        rearmIosBursts().catch(() => {});
+        rearmIosWindows().catch(() => {});
       }
     });
     const unsub = notifee.onForegroundEvent(async ({ type, detail }) => {
