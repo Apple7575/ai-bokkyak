@@ -46,7 +46,18 @@ export default function App() {
     const unsub = notifee.onForegroundEvent(async ({ type, detail }) => {
       const data = detail.notification?.data as any;
       const sid = data?.scheduleId as string | undefined;
-      if (type === EventType.PRESS || type === EventType.DELIVERED) {
+      if (type === EventType.DELIVERED) {
+        // 포그라운드에서 DELIVERED → 화면 이동 + 다음 회차 체이닝(백그라운드 DELIVERED와 동일)
+        if (sid) {
+          navigateToAlarm(sid);
+          try {
+            const { data: s } = await supabase.from("schedules").select("*").eq("id", sid).eq("active", true).maybeSingle();
+            if (s) await rescheduleNext(sid, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day);
+          } catch {}
+        }
+        return;
+      }
+      if (type === EventType.PRESS) {
         if (sid) navigateToAlarm(sid);
         return;
       }
