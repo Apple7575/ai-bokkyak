@@ -114,6 +114,8 @@ export async function cancelSchedule(scheduleId: string): Promise<void> {
 export async function stopAlarm(scheduleId: string): Promise<void> {
   try { await notifee.stopForegroundService(); } catch {}
   await cancelRepeat(scheduleId);
+  // 예약된 스누즈 트리거 제거 (스누즈 후 복용완료 시 울리지 않도록)
+  try { await notifee.cancelNotification(`alarm-${scheduleId}-snooze`); } catch {}
   // iOS 버스트(-burstN) 알림 제거
   for (let i = 1; i <= 6; i++) { try { await notifee.cancelNotification(`alarm-${scheduleId}-burst-${i}`); } catch {} }
   try {
@@ -126,10 +128,10 @@ export async function stopAlarm(scheduleId: string): Promise<void> {
 
 // iOS는 백그라운드 체인이 안 되므로 다음 발사분의 30초 간격 6개를 미리 예약(Time-Sensitive).
 // 응답 시 stopAlarm이 모두 취소. 매일 재무장은 App의 AppState에서.
-export async function scheduleIosBurst(scheduleId: string, timeOfDay: string, hour: number, minute: number): Promise<void> {
+export async function scheduleIosBurst(scheduleId: string, timeOfDay: string, hour: number, minute: number, repeatDays: number[]): Promise<void> {
   if (Platform.OS !== "ios") return;
   const tod = todOf(timeOfDay);
-  const base = nextNotificationTime({ hour, minute, repeat_days: [] }, new Date()).getTime();
+  const base = nextNotificationTime({ hour, minute, repeat_days: repeatDays }, new Date()).getTime();
   for (let i = 1; i <= 6; i++) {
     await notifee.createTriggerNotification(
       { id: `alarm-${scheduleId}-burst-${i}`, title: `${tod} 약 복용 시간입니다`,
@@ -163,7 +165,7 @@ export async function scheduleReminders(
         { type: TriggerType.TIMESTAMP, timestamp: t.getTime(), repeatFrequency: RepeatFrequency.WEEKLY, ...exact }));
     }
   }
-  await scheduleIosBurst(scheduleId, timeOfDay, hour, minute);
+  await scheduleIosBurst(scheduleId, timeOfDay, hour, minute, repeatDays);
   return ids;
 }
 

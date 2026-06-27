@@ -36,7 +36,7 @@ export default function App() {
         const pid = await getPatientId();
         if (pid) {
           const { data } = await supabase.from("schedules").select("*").eq("patient_id", pid).eq("active", true);
-          for (const s of data ?? []) await scheduleIosBurst(s.id, s.time_of_day, s.hour, s.minute);
+          for (const s of data ?? []) await scheduleIosBurst(s.id, s.time_of_day, s.hour, s.minute, s.repeat_days ?? []);
         }
       }
     };

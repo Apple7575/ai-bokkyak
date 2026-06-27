@@ -10,6 +10,9 @@ import { scheduleSnooze } from "../lib/notifications";
 import { SnoozeSpec, nextSnoozeFire } from "../lib/snooze";
 import { spokenTime } from "../lib/spokenTime";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
+import { getPatientId } from "../lib/storage";
+import { recordIntake } from "../lib/records";
+import { doseSlot } from "../lib/schedule";
 
 const MIN_VALUES = Array.from({ length: 60 }, (_, i) => i + 1);
 const HOUR_VALUES = Array.from({ length: 24 }, (_, i) => i);
@@ -25,6 +28,12 @@ export function SnoozePickerScreen() {
   async function apply(spec: SnoozeSpec) {
     const { data: sch } = await supabase.from("schedules").select("*").eq("id", scheduleId).single();
     if (!sch) { nav.navigate("Tabs"); return; }
+    // 원래 슬롯에 snoozed 기록 (보호자/이력에서 미복용으로 보이지 않도록)
+    const pid = await getPatientId();
+    if (pid) {
+      const slot = doseSlot(sch.hour, sch.minute, new Date());
+      try { await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "snoozed", method: "버튼" }); } catch {}
+    }
     try {
       await scheduleSnooze(scheduleId, sch.medicine_name, spec, sch.hour, sch.minute, sch.time_of_day);
     } catch {
