@@ -6,6 +6,7 @@ import { Pill } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { TimeChip } from "../components/TimeChip";
+import { WheelPicker } from "../components/WheelPicker";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders, cancelSchedule } from "../lib/notifications";
@@ -14,8 +15,8 @@ import { normalizeRepeatDays } from "../lib/schedule";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
 
 const TODS = ["아침", "점심", "저녁", "취침"];
-const HOURS = [7, 8, 9, 12, 13, 18, 19, 20, 21];
-const MINUTES = [0, 15, 30, 45];
+const HOUR_VALUES = Array.from({ length: 24 }, (_, i) => i);   // 0~23시 전부 스크롤로 선택
+const MINUTE_VALUES = Array.from({ length: 60 }, (_, i) => i); // 0~59분 전부 스크롤로 선택
 const DAYS = ["일", "월", "화", "수", "목", "금", "토"]; // index 0=일 … 6=토
 
 export function ButtonRegisterScreen() {
@@ -117,20 +118,13 @@ export function ButtonRegisterScreen() {
           ))}</View>
         </View>
 
-        {/* 세부 시간 — 시 */}
+        {/* 세부 시간 — 시/분을 스크롤로 선택(아무 시각이나 가능) */}
         <View style={styles.section}>
-          <Text style={styles.label}>몇 시</Text>
-          <View style={styles.row}>{HOURS.map((h) => (
-            <TimeChip key={h} label={`${h}시`} selected={hour === h} onPress={() => setHour(h)} />
-          ))}</View>
-        </View>
-
-        {/* 세부 시간 — 분 */}
-        <View style={styles.section}>
-          <Text style={styles.label}>몇 분</Text>
-          <View style={styles.row}>{MINUTES.map((m) => (
-            <TimeChip key={m} label={`${m}분`} selected={minute === m} onPress={() => setMinute(m)} />
-          ))}</View>
+          <Text style={styles.label}>몇 시 몇 분</Text>
+          <View style={styles.wheelRow}>
+            <WheelPicker values={HOUR_VALUES} value={hour} onChange={setHour} suffix="시" />
+            <WheelPicker values={MINUTE_VALUES} value={minute} onChange={setMinute} suffix="분" />
+          </View>
         </View>
 
         {/* 반복 요일 — 선택 안 하면 매일 */}
@@ -180,6 +174,7 @@ const styles = StyleSheet.create({
   },
   input: { flex: 1, fontSize: fontSizes.body, color: colors.text, paddingVertical: 16 },
   row: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -6 },
+  wheelRow: { flexDirection: "row", justifyContent: "center", gap: spacing.lg, paddingVertical: spacing.sm },
   footer: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,

@@ -52,7 +52,8 @@ export function VoiceRegisterScreen() {
     }).select().single();
     if (error || !data) { Alert.alert("저장 실패", error?.message ?? ""); return; }
     await ensureStrongAlarmReady();
-    if (await ensurePermission()) await scheduleReminders(data.id, data.medicine_name, parsed.hour, parsed.minute, parsed.repeat_days, parsed.time_of_day);
+    // 알림 예약은 베스트에포트 — 실패해도 일정은 이미 저장됐으므로 등록 흐름을 막지 않는다.
+    try { if (await ensurePermission()) await scheduleReminders(data.id, data.medicine_name, parsed.hour, parsed.minute, parsed.repeat_days, parsed.time_of_day); } catch {}
     await speak("복약 일정을 등록했습니다.");
     nav.navigate("Tabs");
   }
