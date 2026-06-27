@@ -12,6 +12,7 @@ import { ParsedSchedule } from "../lib/parse";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders } from "../lib/notifications";
+import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { speak } from "../lib/tts";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
 
@@ -50,6 +51,7 @@ export function VoiceRegisterScreen() {
       hour: parsed.hour, minute: parsed.minute, repeat_days: parsed.repeat_days, active: true,
     }).select().single();
     if (error || !data) { Alert.alert("저장 실패", error?.message ?? ""); return; }
+    await ensureStrongAlarmReady();
     if (await ensurePermission()) await scheduleReminders(data.id, data.medicine_name, parsed.hour, parsed.minute, parsed.repeat_days, parsed.time_of_day);
     await speak("복약 일정을 등록했습니다.");
     nav.navigate("Tabs");

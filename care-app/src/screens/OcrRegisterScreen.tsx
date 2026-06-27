@@ -12,6 +12,7 @@ import { normalizeRepeatDays } from "../lib/schedule";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders } from "../lib/notifications";
+import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { speak } from "../lib/tts";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
 
@@ -84,6 +85,7 @@ export function OcrRegisterScreen() {
     // 항목이 재시도로 중복 등록되지 않게, 성공한 것만 목록에서 빼고 남은 것만 다시 시도한다.
     const remaining = [...items];
     try {
+      await ensureStrongAlarmReady();
       const granted = await ensurePermission();
       while (remaining.length > 0) {
         const it = remaining[0];

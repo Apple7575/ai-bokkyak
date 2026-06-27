@@ -24,6 +24,7 @@ export function WheelPicker({ values, value, onChange, suffix }: Props) {
         contentOffset={{ x: 0, y: idx * ITEM_H }}
         contentContainerStyle={{ paddingVertical: ITEM_H }}
         onMomentumScrollEnd={onEnd}
+        onScrollEndDrag={onEnd}
       >
         {values.map((v) => (
           <View key={v} style={styles.item}>
