@@ -61,20 +61,23 @@ export default function App() {
       }
       if (type === EventType.ACTION_PRESS && sid) {
         const pid = await getPatientId();
-        await stopAlarm(sid); // 먼저 현재 울림/기존 트리거 정리(pid 유무 무관). scheduleSnooze보다 반드시 앞.
-        if (pid) {
-          const hour = Number(data?.hour ?? 0), minute = Number(data?.minute ?? 0);
-          const slot = doseSlot(hour, minute, new Date());
-          try {
-            if (detail.pressAction?.id === "complete") {
-              await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "completed", method: "버튼" });
-            } else if (detail.pressAction?.id === "snooze") {
-              // 알림 액션 스누즈 = 앱 안 열고 기본 10분 빠른 스누즈(stopAlarm 이후 예약해야 살아남음)
-              await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "snoozed", method: "버튼" });
-              await scheduleSnooze(sid, "", { mode: "duration", minutes: 10 }, hour, minute, String(data?.tod ?? "아침"));
-            }
-          } catch {}
-        }
+        if (!pid) { await stopAlarm(sid); return; } // 기록 불가 — 정리만
+        const hour = Number(data?.hour ?? 0), minute = Number(data?.minute ?? 0);
+        const slot = doseSlot(hour, minute, new Date());
+        // 기록을 먼저 — 실패하면 catch로 빠져 stopAlarm 전에 멈추므로 알람이 보존된다(index.ts와 동일 순서).
+        try {
+          if (detail.pressAction?.id === "complete") {
+            await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "completed", method: "버튼" });
+            await stopAlarm(sid);
+          } else if (detail.pressAction?.id === "snooze") {
+            // 알림 액션 스누즈 = 앱 안 열고 기본 10분 빠른 스누즈. stopAlarm(기존 스누즈 취소) 후 예약해야 살아남음.
+            await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "snoozed", method: "버튼" });
+            await stopAlarm(sid);
+            await scheduleSnooze(sid, "", { mode: "duration", minutes: 10 }, hour, minute, String(data?.tod ?? "아침"));
+          } else {
+            await stopAlarm(sid);
+          }
+        } catch {}
         return;
       }
     });
