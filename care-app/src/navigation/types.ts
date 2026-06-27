@@ -10,6 +10,7 @@ export type RootStackParamList = {
   OcrRegister: undefined;
   Alarm: { scheduleId?: string };
   GuardianLink: undefined;
+  SnoozeCountdown: { scheduleId: string; fireAt: string; hour: number; minute: number };
 };
 export type TabParamList = {
   Home: undefined;
