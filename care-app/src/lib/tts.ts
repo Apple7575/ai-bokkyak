@@ -41,18 +41,29 @@ function bufToBase64(buf: ArrayBuffer): string {
   return g.btoa ? g.btoa(bin) : Buffer.from(bin, "binary").toString("base64");
 }
 
-export async function speak(text: string, opts?: { speed?: number }): Promise<void> {
+// 성공 시 true. 호출부에서 실패 시 번들 음성 등으로 폴백할 수 있게 결과를 돌려준다.
+export async function speak(text: string, opts?: { speed?: number }): Promise<boolean> {
   const speed = opts?.speed ?? 0.95;
   try {
     await stopSpeaking();
     const path = `${FileSystem.cacheDirectory}${ttsCacheKey(text, speed)}`;
     const info = await FileSystem.getInfoAsync(path);
     if (!info.exists) {
-      const res = await fetch(`${FN}?op=tts`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${ANON}`, apikey: ANON, "Content-Type": "application/json" },
-        body: JSON.stringify({ text, speed }),
-      });
+      // 네트워크 TTS는 타임아웃을 둔다. 오프라인/지연 시 무한 대기로 알람 안내가
+      // 침묵하지 않게 — 호출부(AlarmScreen)가 false를 받아 번들 음성으로 폴백한다.
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 4000);
+      let res: Response;
+      try {
+        res = await fetch(`${FN}?op=tts`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${ANON}`, apikey: ANON, "Content-Type": "application/json" },
+          body: JSON.stringify({ text, speed }),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timer);
+      }
       if (!res.ok) throw new Error(`tts ${res.status}`);
       const buf = await res.arrayBuffer();
       await FileSystem.writeAsStringAsync(path, bufToBase64(buf), {
@@ -63,8 +74,10 @@ export async function speak(text: string, opts?: { speed?: number }): Promise<vo
     const { sound } = await Audio.Sound.createAsync({ uri: path });
     current = sound;
     await sound.playAsync();
+    return true;
   } catch {
     // TTS 실패는 앱 흐름을 막지 않는다 (화면 텍스트로 진행).
+    return false;
   }
 }
 

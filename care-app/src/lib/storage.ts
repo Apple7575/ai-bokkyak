@@ -1,7 +1,14 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export type Role = "patient" | "guardian";
-const KEYS = { role: "care.role", patientId: "care.patientId", patientCode: "care.patientCode" };
+const KEYS = { role: "care.role", patientId: "care.patientId", patientCode: "care.patientCode", onboarded: "care.onboarded" };
+
+export async function getOnboarded(): Promise<boolean> {
+  return (await AsyncStorage.getItem(KEYS.onboarded)) === "1";
+}
+export async function setOnboarded(): Promise<void> {
+  await AsyncStorage.setItem(KEYS.onboarded, "1");
+}
 
 export async function getRole(): Promise<Role | null> {
   return (await AsyncStorage.getItem(KEYS.role)) as Role | null;

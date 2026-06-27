@@ -47,18 +47,19 @@ export function RegisterMethodScreen() {
         </Pressable>
 
         {/* 사진 - 준비 중 (비활성) */}
-        <View style={[styles.card, styles.cardSecondary, styles.cardDisabled]}>
+        <Pressable
+          onPress={() => nav.navigate("OcrRegister")}
+          style={({ pressed }) => [styles.card, styles.cardSecondary, pressed && { opacity: 0.92 }]}
+        >
           <View style={[styles.iconBox, { backgroundColor: "#F7FAFF" }]}>
-            <Camera size={28} color={colors.textSecondary} />
+            <Camera size={28} color={colors.primaryBlue} />
           </View>
           <View style={styles.cardText}>
             <Text style={styles.cardTitle}>사진으로 등록</Text>
             <Text style={styles.cardDesc}>약 봉투나 약 포장을 촬영해 주세요</Text>
           </View>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>준비 중</Text>
-          </View>
-        </View>
+          <ChevronRight size={20} color={colors.textSecondary} />
+        </Pressable>
       </View>
     </View>
   );

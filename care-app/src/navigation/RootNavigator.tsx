@@ -3,7 +3,8 @@ import { ActivityIndicator, View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { RootStackParamList, TabParamList } from "./types";
-import { getRole, getPatientId, Role } from "../lib/storage";
+import { getRole, getPatientId, getOnboarded, Role } from "../lib/storage";
+import { OnboardingScreen } from "../screens/OnboardingScreen";
 import { RoleSelectScreen } from "../screens/RoleSelectScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { RecordScreen } from "../screens/RecordScreen";
@@ -12,6 +13,7 @@ import { MedicineListScreen } from "../screens/MedicineListScreen";
 import { RegisterMethodScreen } from "../screens/RegisterMethodScreen";
 import { ButtonRegisterScreen } from "../screens/ButtonRegisterScreen";
 import { VoiceRegisterScreen } from "../screens/VoiceRegisterScreen";
+import { OcrRegisterScreen } from "../screens/OcrRegisterScreen";
 import { AlarmScreen } from "../screens/AlarmScreen";
 import { GuardianLinkScreen } from "../screens/GuardianLinkScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
@@ -78,23 +80,27 @@ function PatientTabs() {
 }
 
 export function RootNavigator() {
-  const [init, setInit] = useState<{ role: Role | null; linked: boolean } | "loading">("loading");
+  const [init, setInit] = useState<{ role: Role | null; linked: boolean; onboarded: boolean } | "loading">("loading");
   useEffect(() => {
     (async () => {
       const role = await getRole();
       const pid = await getPatientId();
-      setInit({ role, linked: !!pid });
+      const onboarded = await getOnboarded();
+      setInit({ role, linked: !!pid, onboarded });
     })();
   }, []);
   if (init === "loading") {
     return <View style={{ flex: 1, justifyContent: "center" }}><ActivityIndicator /></View>;
   }
+  // 첫 실행(역할 없음 + 온보딩 미완료)이면 안내 화면부터.
   const initialRouteName: keyof RootStackParamList =
-    !init.role ? "RoleSelect"
-      : init.role === "guardian" ? (init.linked ? "GuardianHome" : "GuardianLink")
-        : "Tabs";
+    !init.role && !init.onboarded ? "Onboarding"
+      : !init.role ? "RoleSelect"
+        : init.role === "guardian" ? (init.linked ? "GuardianHome" : "GuardianLink")
+          : "Tabs";
   return (
     <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
       <Stack.Screen name="Tabs" component={PatientTabs} />
       <Stack.Screen name="GuardianHome" component={GuardianDashboardScreen} options={{ headerShown: false }} />
@@ -102,6 +108,7 @@ export function RootNavigator() {
       <Stack.Screen name="RegisterMethod" component={RegisterMethodScreen} options={{ headerShown: false }} />
       <Stack.Screen name="ButtonRegister" component={ButtonRegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="VoiceRegister" component={VoiceRegisterScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="OcrRegister" component={OcrRegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Alarm" component={AlarmScreen} />
       <Stack.Screen name="GuardianLink" component={GuardianLinkScreen} options={{ headerShown: false }} />
     </Stack.Navigator>

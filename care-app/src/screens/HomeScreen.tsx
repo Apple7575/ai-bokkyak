@@ -35,9 +35,16 @@ export function HomeScreen() {
         .sort((a, b) => a.t.getTime() - b.t.getTime())[0]
     : null;
 
-  // Visual donut driven only by the schedules already in state (no extra query):
-  // shows how full the day's plan is, capped so the ring stays readable.
-  const total = schedules.length;
+  // "오늘 복약 일정"은 오늘 요일에 해당하는 약만(빈 repeat_days=매일, 설계 결정 #1).
+  // 요일 반복이 생기면서 월요일 약이 금요일 목록에 뜨던 문제 방지.
+  const dueToday = schedules.filter((s) => {
+    const days = s.repeat_days ?? [];
+    return days.length === 0 || days.includes(now.getDay());
+  });
+
+  // Visual donut driven only by today's due schedules (no extra query):
+  // shows how full today's plan is, capped so the ring stays readable.
+  const total = dueToday.length;
   const ringPct = total === 0 ? 0 : Math.min(100, Math.round((total / 4) * 100));
   const R = 36;
   const C = 2 * Math.PI * R;
@@ -79,7 +86,7 @@ export function HomeScreen() {
 
       {/* Today's schedule */}
       <Text style={styles.section}>오늘 복약 일정</Text>
-      {schedules.map((s) => (
+      {dueToday.map((s) => (
         <ScheduleCard key={s.id} name={s.medicine_name} time={fmt(nextNotificationTime(s, now))} />
       ))}
 

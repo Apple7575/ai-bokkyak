@@ -8,6 +8,17 @@ export type ParseResult =
   | { ok: true; value: ParsedSchedule }
   | { ok: false; error: string };
 
+// OCR 결과({medicines:[...]} 또는 배열)에서 유효한 일정만 추려 반환. 잘못된 항목은 조용히 버린다.
+export function validateOcrMedicines(input: any): ParsedSchedule[] {
+  const list = Array.isArray(input) ? input : Array.isArray(input?.medicines) ? input.medicines : [];
+  const out: ParsedSchedule[] = [];
+  for (const item of list) {
+    const r = validateParsedSchedule(item);
+    if (r.ok) out.push(r.value);
+  }
+  return out;
+}
+
 export function validateParsedSchedule(input: any): ParseResult {
   if (!input || typeof input !== "object") return { ok: false, error: "not an object" };
   const name = typeof input.medicine_name === "string" ? input.medicine_name.trim() : "";

@@ -32,7 +32,8 @@ export function STTResponseScreen() {
         return;
       }
     }
-    nav.reset({ index: 1, routes: [{ name: "Tabs" }, { name: "StatusCheck", params: { scheduleId, scheduledFor } }] });
+    // 복약 완료 직후 건강상태 질문은 분리(보호자 안심케어 유료기능 후보). 기록만 남기고 바로 종료.
+    nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
   }
   async function snooze() {
     const pid = await getPatientId();
@@ -44,7 +45,7 @@ export function STTResponseScreen() {
           scheduledFor: scheduledFor ? new Date(scheduledFor) : new Date(),
           status: "snoozed", method: "음성",
         });
-        if (sch) await scheduleSnooze(scheduleId, sch.medicine_name, 30, sch.hour, sch.minute);
+        if (sch) await scheduleSnooze(scheduleId, sch.medicine_name, 30, sch.hour, sch.minute, sch.time_of_day);
       } catch {
         Alert.alert("다시 알림 설정에 실패했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
         return;
@@ -104,7 +105,7 @@ export function STTResponseScreen() {
 
         <Text style={styles.or}>버튼으로 선택하기</Text>
         <BigButton label="복용 완료" onPress={() => commit("completed", "버튼")} />
-        <BigButton label="아직 안 먹었어요" variant="secondary" onPress={() => commit("skipped", "버튼")} />
+        <BigButton label="건너뛰기" variant="secondary" onPress={() => commit("skipped", "버튼")} />
       </ScrollView>
     </View>
   );

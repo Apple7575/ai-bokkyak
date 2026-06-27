@@ -7,8 +7,8 @@ import { BigButton } from "../components/BigButton";
 import { supabase, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { recordIntake } from "../lib/records";
-import { scheduleSnooze } from "../lib/notifications";
-import { playAlarmAnnouncement, stopSpeaking } from "../lib/tts";
+import { scheduleSnooze, cancelRepeat } from "../lib/notifications";
+import { speak, playAlarmAnnouncement, stopSpeaking } from "../lib/tts";
 import { doseSlot } from "../lib/schedule";
 import { colors, fontSizes, spacing } from "../theme/tokens";
 import notifee from "@notifee/react-native";
@@ -32,6 +32,7 @@ export function AlarmScreen() {
     // (cancelDisplayedNotification은 표시만 제거, 트리거(다음 예약)는 유지.)
     (async () => {
       try {
+        await cancelRepeat(scheduleId); // 알람 화면을 열면 사용자가 인지한 것 — 반복 알림 중단
         const displayed = await notifee.getDisplayedNotifications();
         for (const n of displayed) {
           if (n.notification?.data?.scheduleId === scheduleId && n.id) {
@@ -43,17 +44,38 @@ export function AlarmScreen() {
   }, [scheduleId]);
 
   useEffect(() => {
+    // 네트워크 TTS는 시간이 걸려, 사용자가 응답/이탈한 뒤에 재생이 시작될 수 있다.
+    // 취소 플래그로 가드 — 이탈 후 시작된 재생은 즉시 멈춰 홈 화면에서 들리지 않게 한다.
+    let cancelled = false;
     (async () => {
       if (!scheduleId) return;
       const { data } = await supabase.from("schedules").select("*").eq("id", scheduleId).single();
+      if (cancelled) return;
       setSchedule(data);
-      // 알람 화면이 열리면 좋은 음성(OpenAI)으로 안내를 읽어준다. 알림 사운드와 별개로
+      // 알람 화면이 열리면 이름을 부르는 개인화 음성으로 안내(OpenAI TTS). 알림 사운드와 별개로
       // 화면에서도 들리게 — iOS 알림음 포맷 제약과 무관하게 동작.
       if (data) {
-        // 번들된 시간대 음성 직접 재생(네트워크 없이, iOS 안정적). 약 이름은 화면 제목으로 표시.
-        await playAlarmAnnouncement(data.time_of_day || "아침");
+        const todStr = data.time_of_day || "아침";
+        let name = "";
+        try {
+          const pid = await getPatientId();
+          if (pid) {
+            const { data: p } = await supabase.from("patients").select("name").eq("id", pid).single();
+            name = p?.name ?? "";
+          }
+        } catch {}
+        if (cancelled) return;
+        const prefix = name ? `${name} 님, ` : "";
+        // 네트워크 개인화 음성 시도 → 실패(오프라인 등) 시 번들 mp3로 폴백.
+        const ok = await speak(`${prefix}${todStr} 약 드실 시간이에요. 약을 드신 후 복용 완료를 눌러주세요.`);
+        if (cancelled) { stopSpeaking(); return; } // 이탈 후 시작된 재생 즉시 중단
+        if (!ok) {
+          await playAlarmAnnouncement(todStr);
+          if (cancelled) stopSpeaking();
+        }
       }
     })();
+    return () => { cancelled = true; stopSpeaking(); };
   }, [scheduleId]);
 
   async function respond(status: "completed" | "snoozed" | "skipped") {
@@ -62,7 +84,7 @@ export function AlarmScreen() {
     const slot = doseSlot(schedule.hour, schedule.minute, new Date());
     try {
       await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status, method: "버튼" });
-      if (status === "snoozed") await scheduleSnooze(scheduleId, schedule.medicine_name, 30, schedule.hour, schedule.minute);
+      if (status === "snoozed") await scheduleSnooze(scheduleId, schedule.medicine_name, 30, schedule.hour, schedule.minute, schedule.time_of_day);
     } catch {
       Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
       return;

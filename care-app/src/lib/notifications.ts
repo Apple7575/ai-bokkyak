@@ -1,7 +1,19 @@
 import notifee, {
   AndroidImportance, AndroidVisibility, AndroidCategory, TriggerType, RepeatFrequency,
+  AndroidNotificationSetting,
 } from "@notifee/react-native";
 import { nextNotificationTime } from "./schedule";
+
+// 정확 알람(SCHEDULE_EXACT_ALARM)이 허용된 경우에만 alarmManager 옵션을 켠다.
+// 권한이 없는 Android(14+ 등)에서 alarmManager를 주면 Notifee가 트리거를 거부해
+// 등록 흐름이 깨질 수 있으므로, 불가하면 일반(부정확) 트리거로 폴백한다.
+async function exactAlarmOption(): Promise<{ alarmManager: { allowWhileIdle: true } } | {}> {
+  try {
+    const settings = await notifee.getNotificationSettings();
+    if (settings.android?.alarm === AndroidNotificationSetting.DISABLED) return {};
+  } catch {}
+  return { alarmManager: { allowWhileIdle: true } };
+}
 
 type TOD = "아침" | "점심" | "저녁" | "취침";
 const SOUND: Record<TOD, string> = { 아침: "morning", 점심: "noon", 저녁: "evening", 취침: "night" };
@@ -50,6 +62,47 @@ function todOf(tod: string): TOD {
   return (["아침", "점심", "저녁", "취침"].includes(tod) ? tod : "아침") as TOD;
 }
 
+// 반복 알람: 30초 간격, 최대 6회(primary seq0 + 후속 seq1~5). 응답하면 후속을 취소한다.
+const REPEAT_INTERVAL_MS = 30_000;
+const MAX_SEQ = 5;
+
+// 알람 알림 본문(primary/후속 공용). data.seq로 반복 단계를 추적한다.
+function alarmNotification(scheduleId: string, tod: TOD, ch: string, hour: number, minute: number, seq: number) {
+  return {
+    title: `${tod} 약 복용 시간입니다`,
+    body: "약을 드신 후 복용 완료를 눌러주세요.",
+    data: { scheduleId, hour: String(hour), minute: String(minute), tod, seq: String(seq) },
+    android: androidAlarm(scheduleId, ch, SOUND[tod]),
+    ios: { categoryId: "care-alarm", sound: `${SOUND[tod]}.mp3` },
+  };
+}
+
+// 알람이 전달됐는데 아직 응답이 없을 때, 다음 반복 알림을 30초 뒤로 예약한다(이벤트 핸들러에서 호출).
+// seq는 "다음" 단계 번호. MAX_SEQ를 넘으면 더 울리지 않는다.
+export async function scheduleRepeatFollowup(
+  scheduleId: string, timeOfDay: string, hour: number, minute: number, seq: number
+): Promise<void> {
+  if (seq > MAX_SEQ) return;
+  const tod = todOf(timeOfDay);
+  const ch = await ensureChannel(tod);
+  await notifee.createTriggerNotification(
+    { id: `alarm-${scheduleId}-rep`, ...alarmNotification(scheduleId, tod, ch, hour, minute, seq) },
+    { type: TriggerType.TIMESTAMP, timestamp: Date.now() + REPEAT_INTERVAL_MS, ...(await exactAlarmOption()) });
+}
+
+// 응답(복용완료/건너뛰기/스누즈/알람화면 진입) 시 대기 중인 반복 알림을 중단한다.
+export async function cancelRepeat(scheduleId: string): Promise<void> {
+  try { await notifee.cancelTriggerNotification(`alarm-${scheduleId}-rep`); } catch {}
+  try { await notifee.cancelDisplayedNotification(`alarm-${scheduleId}-rep`); } catch {}
+}
+
+// 일정 삭제/수정 시 해당 일정의 모든 예약 알림(매일/요일/스누즈/반복)을 제거한다.
+export async function cancelSchedule(scheduleId: string): Promise<void> {
+  const ids = [`alarm-${scheduleId}`, `alarm-${scheduleId}-snooze`, `alarm-${scheduleId}-rep`];
+  for (let d = 0; d <= 6; d++) ids.push(`alarm-${scheduleId}-${d}`);
+  for (const id of ids) { try { await notifee.cancelNotification(id); } catch {} }
+}
+
 export async function scheduleReminders(
   scheduleId: string, medicineName: string, hour: number, minute: number,
   repeatDays: number[], timeOfDay: string
@@ -57,39 +110,38 @@ export async function scheduleReminders(
   const tod = todOf(timeOfDay);
   const ch = await ensureChannel(tod);
   const now = new Date();
-  const base = {
-    title: `${tod} 약 복용 시간입니다`,
-    body: "약을 드신 후 복용 완료를 눌러주세요.",
-    data: { scheduleId, hour: String(hour), minute: String(minute) },
-    android: androidAlarm(scheduleId, ch, SOUND[tod]),
-    ios: { categoryId: "care-alarm", sound: `${SOUND[tod]}.mp3` },
-  };
+  const base = { id: "", ...alarmNotification(scheduleId, tod, ch, hour, minute, 0) }; // primary = seq 0
+  const exact = await exactAlarmOption(); // 권한 있을 때만 정확 알람
   const ids: string[] = [];
   if (repeatDays.length === 0) {
     const t = nextNotificationTime({ hour, minute, repeat_days: [] }, now);
     ids.push(await notifee.createTriggerNotification(
-      { id: `alarm-${scheduleId}`, ...base },
-      { type: TriggerType.TIMESTAMP, timestamp: t.getTime(), repeatFrequency: RepeatFrequency.DAILY }));
+      { ...base, id: `alarm-${scheduleId}` },
+      { type: TriggerType.TIMESTAMP, timestamp: t.getTime(), repeatFrequency: RepeatFrequency.DAILY, ...exact }));
   } else {
     for (const d of repeatDays) {
       const t = nextNotificationTime({ hour, minute, repeat_days: [d] }, now);
       ids.push(await notifee.createTriggerNotification(
-        { id: `alarm-${scheduleId}-${d}`, ...base },
-        { type: TriggerType.TIMESTAMP, timestamp: t.getTime(), repeatFrequency: RepeatFrequency.WEEKLY }));
+        { ...base, id: `alarm-${scheduleId}-${d}` },
+        { type: TriggerType.TIMESTAMP, timestamp: t.getTime(), repeatFrequency: RepeatFrequency.WEEKLY, ...exact }));
     }
   }
   return ids;
 }
 
 export async function scheduleSnooze(
-  scheduleId: string, medicineName: string, minutes: number, hour: number, minute: number
+  scheduleId: string, medicineName: string, minutes: number, hour: number, minute: number,
+  timeOfDay: string = "아침"
 ): Promise<string[]> {
-  const ch = await ensureChannel("아침"); // 스누즈는 기본 채널 사운드
+  const tod = todOf(timeOfDay); // 원래 시간대 사운드/채널/반복 라벨 유지(저녁 약이 아침으로 바뀌지 않게)
+  const ch = await ensureChannel(tod);
   const id = await notifee.createTriggerNotification(
     { id: `alarm-${scheduleId}-snooze`, title: "다시 알림", body: "약을 드신 후 복용 완료를 눌러주세요.",
-      data: { scheduleId, hour: String(hour), minute: String(minute) }, android: androidAlarm(scheduleId, ch, SOUND["아침"]),
-      ios: { categoryId: "care-alarm", sound: "morning.mp3" } },
-    { type: TriggerType.TIMESTAMP, timestamp: new Date().getTime() + minutes * 60 * 1000 });
+      data: { scheduleId, hour: String(hour), minute: String(minute), tod, seq: "0" },
+      android: androidAlarm(scheduleId, ch, SOUND[tod]),
+      ios: { categoryId: "care-alarm", sound: `${SOUND[tod]}.mp3` } },
+    { type: TriggerType.TIMESTAMP, timestamp: new Date().getTime() + minutes * 60 * 1000,
+      ...(await exactAlarmOption()) });
   return [id];
 }
 

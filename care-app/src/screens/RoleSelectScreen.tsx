@@ -21,6 +21,7 @@ export function RoleSelectScreen() {
   const [gender, setGender] = useState<"남" | "여" | null>(null);
   const [birthDate, setBirthDate] = useState("");
   const [region, setRegion] = useState("");
+  const [phone, setPhone] = useState("");
   const [demoLoading, setDemoLoading] = useState(false);
 
   // 잘못된 생년월일이 Postgres date 컬럼 insert를 통째로 실패시키지 않게,
@@ -46,6 +47,7 @@ export function RoleSelectScreen() {
         gender: gender ?? null,
         birth_date: normalizeBirthDate(birthDate),
         region: region.trim() || null,
+        phone: phone.trim() || null,
       }).select().single();
     if (error || !data) { Alert.alert("등록 실패", error?.message ?? ""); return; }
     await setPatient(data.id, data.patient_code);
@@ -117,6 +119,15 @@ export function RoleSelectScreen() {
           value={region}
           onChangeText={setRegion}
           placeholder="예: 전라북도 전주시"
+        />
+
+        <Text style={[styles.label, { marginTop: spacing.lg }]}>전화번호 (선택)</Text>
+        <TextInput
+          style={styles.input}
+          value={phone}
+          onChangeText={setPhone}
+          placeholder="예: 010-1234-5678"
+          keyboardType="phone-pad"
         />
       </View>
 

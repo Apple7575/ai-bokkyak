@@ -1,20 +1,10 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Pill } from "lucide-react-native";
-import { colors, fontSizes } from "../theme/tokens";
+import { Image } from "react-native";
 
-export function Logo({ size = 64, showWordmark = true }: { size?: number; showWordmark?: boolean }) {
-  return (
-    <View style={styles.row}>
-      <View style={[styles.badge, { width: size, height: size, borderRadius: size / 4 }]}>
-        <Pill size={size * 0.5} color="#fff" />
-      </View>
-      {showWordmark ? <Text style={styles.wordmark}>모두의 복약</Text> : null}
-    </View>
-  );
+// 브랜드 로고 이미지(엠블럼 + "모두의 복약" 워드마크 포함). 정사각형.
+const LOGO = require("../../assets/logo.png");
+
+// showWordmark는 호환을 위해 남겨두지만, 로고 이미지에 워드마크가 포함돼 있어 별도 텍스트는 렌더하지 않는다.
+export function Logo({ size = 64 }: { size?: number; showWordmark?: boolean }) {
+  return <Image source={LOGO} style={{ width: size, height: size }} resizeMode="contain" />;
 }
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 12 },
-  badge: { backgroundColor: colors.primaryBlue, alignItems: "center", justifyContent: "center" },
-  wordmark: { fontSize: fontSizes.title, fontWeight: "800", color: colors.primaryNavy },
-});

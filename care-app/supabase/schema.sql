@@ -7,6 +7,7 @@ create table patients (
   gender text,
   birth_date date,
   region text,
+  phone text,
   created_at timestamptz not null default now()
 );
 
