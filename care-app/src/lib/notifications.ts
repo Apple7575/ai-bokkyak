@@ -22,7 +22,10 @@ type TOD = "아침" | "점심" | "저녁" | "취침";
 const SOUND: Record<TOD, string> = { 아침: "morning", 점심: "noon", 저녁: "evening", 취침: "night" };
 const CH: Record<TOD, string> = { 아침: "care-morning", 점심: "care-noon", 저녁: "care-evening", 취침: "care-night" };
 
-const STRONG_VIBRATION = [0, 800, 400, 800, 400, 800];
+// notifee는 vibrationPattern의 모든 값이 양수여야 한다(0 포함 시 createTriggerNotification이
+// JS 검증에서 throw → 알람이 아예 예약 안 됨). RN Vibration의 [지연,진동,...]과 달리
+// notifee는 [진동,멈춤,진동,멈춤...] 형식이라 선행 0이 불필요하다.
+const STRONG_VIBRATION = [800, 400, 800, 400, 800, 400];
 
 async function ensureChannel(tod: TOD): Promise<string> {
   return notifee.createChannel({
