@@ -113,7 +113,11 @@ export function RootNavigator() {
       <Stack.Screen name="OcrRegister" component={OcrRegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Alarm" component={AlarmScreen} />
       <Stack.Screen name="GuardianLink" component={GuardianLinkScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="SnoozePicker" component={SnoozePickerScreen} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="SnoozePicker"
+        component={SnoozePickerScreen}
+        options={{ headerShown: false, presentation: "transparentModal", animation: "slide_from_bottom" }}
+      />
       <Stack.Screen name="SnoozeCountdown" component={SnoozeCountdownScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );

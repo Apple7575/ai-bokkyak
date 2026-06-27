@@ -6,6 +6,8 @@ import { Pill, Clock, RefreshCw } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { MicButton } from "../components/MicButton";
+import { TimeChip } from "../components/TimeChip";
+import { WheelPicker } from "../components/WheelPicker";
 import { useSpeechToText } from "../hooks/useSpeechToText";
 import { gptParseSchedule } from "../lib/openai";
 import { ParsedSchedule } from "../lib/parse";
@@ -13,8 +15,13 @@ import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
+import { normalizeRepeatDays } from "../lib/schedule";
 import { speak } from "../lib/tts";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
+
+const HOUR_VALUES = Array.from({ length: 24 }, (_, i) => i);
+const MINUTE_VALUES = Array.from({ length: 60 }, (_, i) => i);
+const DAYS = ["일", "월", "화", "수", "목", "금", "토"]; // index 0=일 … 6=토
 
 export function VoiceRegisterScreen() {
   const nav = useNavigation<any>();
@@ -46,16 +53,17 @@ export function VoiceRegisterScreen() {
     if (!parsed) return;
     if (!parsed.medicine_name.trim()) { Alert.alert("약 이름을 입력해 주세요"); return; }
     const pid = await getPatientId(); if (!pid) return;
+    const days = normalizeRepeatDays(parsed.repeat_days); // 편집된 요일을 정렬·중복제거(빈배열=매일)
     const { data, error } = await supabase.from("schedules").insert({
-      patient_id: pid, medicine_name: parsed.medicine_name, time_of_day: parsed.time_of_day,
-      hour: parsed.hour, minute: parsed.minute, repeat_days: parsed.repeat_days, active: true,
+      patient_id: pid, medicine_name: parsed.medicine_name.trim(), time_of_day: parsed.time_of_day,
+      hour: parsed.hour, minute: parsed.minute, repeat_days: days, active: true,
     }).select().single();
     if (error || !data) { Alert.alert("저장 실패", error?.message ?? ""); return; }
     await ensureStrongAlarmReady();
     // 알림 예약은 베스트에포트(일정은 이미 저장됨). 단, 실패/권한없음은 사용자에게 알려 알람이 안 울리는 걸 모르고 넘어가지 않게 한다.
     try {
       if (await ensurePermission()) {
-        await scheduleReminders(data.id, data.medicine_name, parsed.hour, parsed.minute, parsed.repeat_days, parsed.time_of_day);
+        await scheduleReminders(data.id, data.medicine_name, parsed.hour, parsed.minute, days, parsed.time_of_day);
       } else {
         Alert.alert("알림 권한 필요", "알림 권한이 꺼져 있어 알람이 울리지 않을 수 있어요. 설정에서 켜주세요. (약은 등록됐어요)");
       }
@@ -103,20 +111,38 @@ export function VoiceRegisterScreen() {
               />
             </View>
 
-            <View style={styles.resultRow}>
-              <View style={styles.resultIcon}>
-                <Clock size={18} color={colors.primaryBlue} />
-              </View>
-              <Text style={styles.resultLabel}>복용 시간</Text>
-              <Text style={styles.resultValue}>{parsed.hour}시 {parsed.minute}분</Text>
+            {/* 복용 시간 — 스크롤로 수정(잘못 인식돼도 고칠 수 있게) */}
+            <View style={styles.editHead}>
+              <Clock size={18} color={colors.primaryBlue} />
+              <Text style={styles.editLabel}>복용 시간</Text>
+            </View>
+            <View style={styles.wheelRow}>
+              <WheelPicker values={HOUR_VALUES} value={parsed.hour} onChange={(h) => setParsed({ ...parsed, hour: h })} suffix="시" />
+              <WheelPicker values={MINUTE_VALUES} value={parsed.minute} onChange={(m) => setParsed({ ...parsed, minute: m })} suffix="분" />
             </View>
 
-            <View style={styles.resultRow}>
-              <View style={styles.resultIcon}>
-                <RefreshCw size={18} color={colors.primaryBlue} />
-              </View>
-              <Text style={styles.resultLabel}>반복</Text>
-              <Text style={styles.resultValue}>{parsed.repeat_days.length === 0 ? "매일" : parsed.repeat_days.join(",")}</Text>
+            {/* 반복 요일 — 수정 가능(없으면 매일) */}
+            <View style={styles.editHead}>
+              <RefreshCw size={18} color={colors.primaryBlue} />
+              <Text style={styles.editLabel}>반복 요일 (없으면 매일)</Text>
+            </View>
+            <View style={styles.chipRow}>
+              <TimeChip label="매일" selected={parsed.repeat_days.length === 0} onPress={() => setParsed({ ...parsed, repeat_days: [] })} />
+              {DAYS.map((d, i) => (
+                <TimeChip
+                  key={d}
+                  label={d}
+                  selected={parsed.repeat_days.includes(i)}
+                  onPress={() =>
+                    setParsed({
+                      ...parsed,
+                      repeat_days: parsed.repeat_days.includes(i)
+                        ? parsed.repeat_days.filter((x) => x !== i)
+                        : [...parsed.repeat_days, i],
+                    })
+                  }
+                />
+              ))}
             </View>
 
             <BigButton label="이대로 등록하기" onPress={confirm} />
@@ -179,6 +205,10 @@ const styles = StyleSheet.create({
   },
   resultLabel: { fontSize: fontSizes.body, color: colors.textSecondary },
   resultValue: { fontSize: fontSizes.body, fontWeight: "700", color: colors.text, marginLeft: "auto" },
+  editHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.md, marginBottom: spacing.sm },
+  editLabel: { fontSize: fontSizes.body, fontWeight: "700", color: colors.text },
+  wheelRow: { flexDirection: "row", justifyContent: "center", gap: spacing.lg },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -6 },
   nameInput: {
     marginLeft: "auto", minWidth: 140, textAlign: "right",
     fontSize: fontSizes.body, fontWeight: "700", color: colors.text,
