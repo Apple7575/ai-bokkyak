@@ -1,9 +1,6 @@
 import { AppRegistry } from "react-native";
 import { registerRootComponent } from 'expo';
 import notifee, { EventType } from '@notifee/react-native';
-import { resyncAllAlarms } from "./src/lib/alarmSync";
-// 네이티브 리시버(BOOT/TIME 변경)가 이 태스크를 호출 → 활성 알람 전체 재예약.
-AppRegistry.registerHeadlessTask("AlarmResync", () => async () => { await resyncAllAlarms(); });
 
 import App from './App';
 import { setPendingAlarm, getPatientId } from './src/lib/storage';
@@ -11,6 +8,10 @@ import { recordIntake } from './src/lib/records';
 import { scheduleRepeatFollowup, stopAlarm, scheduleSnooze, rescheduleNext } from './src/lib/notifications';
 import { supabase } from './src/lib/supabase';
 import { doseSlot } from './src/lib/schedule';
+import { resyncAllAlarms } from "./src/lib/alarmSync";
+
+// 네이티브 리시버(BOOT/TIME 변경)가 이 태스크를 호출 → 활성 알람 전체 재예약.
+AppRegistry.registerHeadlessTask("AlarmResync", () => async () => { await resyncAllAlarms(); });
 
 notifee.onBackgroundEvent(async ({ type, detail }) => {
   const data = detail.notification?.data as any;

@@ -13,9 +13,15 @@ import com.facebook.react.HeadlessJsTaskService
 
 class AlarmBootReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
-    val service = Intent(context, AlarmResyncService::class.java)
-    context.startService(service)
-    HeadlessJsTaskService.acquireWakeLockNow(context)
+    try {
+      val service = Intent(context, AlarmResyncService::class.java)
+      context.startService(service)
+      HeadlessJsTaskService.acquireWakeLockNow(context)
+    } catch (e: Exception) {
+      // Android 8+ 백그라운드 startService 제한 등으로 실패 가능.
+      // 앱 실행 시 resyncAllAlarms 폴백이 있으므로 크래시만 막고 조용히 실패.
+      android.util.Log.w("AlarmBootReceiver", "resync start failed: \${e.message}")
+    }
   }
 }
 `;
@@ -54,24 +60,28 @@ module.exports = function withAlarmReceiver(config) {
       manifest["uses-permission"].push({ $: { "android:name": "android.permission.RECEIVE_BOOT_COMPLETED" } });
     }
 
-    // AlarmResyncService (HeadlessJsTaskService 구현체)
+    // AlarmResyncService (HeadlessJsTaskService 구현체) — 중복 방지
     app.service = app.service || [];
-    app.service.push({ $: { "android:name": ".AlarmResyncService", "android:exported": "false" } });
+    if (!app.service.some((s) => s.$["android:name"] === ".AlarmResyncService")) {
+      app.service.push({ $: { "android:name": ".AlarmResyncService", "android:exported": "false" } });
+    }
 
-    // AlarmBootReceiver (BOOT/TIME/TIMEZONE/DATE intent 수신)
+    // AlarmBootReceiver (BOOT/TIME/TIMEZONE/DATE intent 수신) — 중복 방지
     app.receiver = app.receiver || [];
-    app.receiver.push({
-      $: { "android:name": ".AlarmBootReceiver", "android:exported": "true" },
-      "intent-filter": [{
-        action: [
-          { $: { "android:name": "android.intent.action.BOOT_COMPLETED" } },
-          { $: { "android:name": "android.intent.action.QUICKBOOT_POWERON" } },
-          { $: { "android:name": "android.intent.action.TIME_SET" } },
-          { $: { "android:name": "android.intent.action.TIMEZONE_CHANGED" } },
-          { $: { "android:name": "android.intent.action.DATE_CHANGED" } },
-        ],
-      }],
-    });
+    if (!app.receiver.some((r) => r.$["android:name"] === ".AlarmBootReceiver")) {
+      app.receiver.push({
+        $: { "android:name": ".AlarmBootReceiver", "android:exported": "true" },
+        "intent-filter": [{
+          action: [
+            { $: { "android:name": "android.intent.action.BOOT_COMPLETED" } },
+            { $: { "android:name": "android.intent.action.QUICKBOOT_POWERON" } },
+            { $: { "android:name": "android.intent.action.TIME_SET" } },
+            { $: { "android:name": "android.intent.action.TIMEZONE_CHANGED" } },
+            { $: { "android:name": "android.intent.action.DATE_CHANGED" } },
+          ],
+        }],
+      });
+    }
 
     return cfg;
   });
