@@ -1,13 +1,20 @@
 import notifee, { AndroidNotificationSetting } from "@notifee/react-native";
 import { Platform, Alert } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const PROMPTED_KEY = "care.alarmPermPrompted";
 
 /**
  * 첫 알람 등록 시 1회 호출.
  * Android에서만 동작하며, 정확 알람(SCHEDULE_EXACT_ALARM) 허용 여부를 확인하고
  * 사용자에게 안내한 뒤 배터리 최적화 설정 화면을 연다.
+ * AsyncStorage 플래그로 가드해 약을 추가할 때마다 설정 화면이 뜨지 않도록 한 번만 안내한다.
  */
 export async function ensureStrongAlarmReady(): Promise<void> {
   if (Platform.OS !== "android") return;
+  try {
+    if (await AsyncStorage.getItem(PROMPTED_KEY)) return;
+  } catch {}
   try {
     const s = await notifee.getNotificationSettings();
     if (s.android?.alarm === AndroidNotificationSetting.DISABLED) {
@@ -33,5 +40,8 @@ export async function ensureStrongAlarmReady(): Promise<void> {
     try {
       await notifee.openBatteryOptimizationSettings();
     } catch {}
+  } catch {}
+  try {
+    await AsyncStorage.setItem(PROMPTED_KEY, "1");
   } catch {}
 }
