@@ -33,7 +33,7 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.jstasks.HeadlessJsTaskConfig
 
 class AlarmResyncService : HeadlessJsTaskService() {
-  override fun getTaskConfig(intent: Intent): HeadlessJsTaskConfig? {
+  override fun getTaskConfig(intent: Intent?): HeadlessJsTaskConfig? {
     return HeadlessJsTaskConfig("AlarmResync", Arguments.createMap(), 30000, true)
   }
 }
