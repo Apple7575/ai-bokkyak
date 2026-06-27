@@ -9,7 +9,7 @@ import { RootNavigator } from "./src/navigation/RootNavigator";
 import { RootStackParamList } from "./src/navigation/types";
 import { takePendingAlarm, getPatientId } from "./src/lib/storage";
 import { recordIntake } from "./src/lib/records";
-import { ensureIOSCategory, stopAlarm, scheduleIosWindow, scheduleSnooze } from "./src/lib/notifications";
+import { ensureIOSCategory, stopAlarm, scheduleIosWindow, scheduleSnooze, rescheduleNext } from "./src/lib/notifications";
 import { doseSlot } from "./src/lib/schedule";
 import { supabase } from "./src/lib/supabase";
 
@@ -69,11 +69,21 @@ export default function App() {
           if (detail.pressAction?.id === "complete") {
             await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "completed", method: "버튼" });
             await stopAlarm(sid);
+            // 다음 정시 회차 재예약(멱등 — 이미 예약돼 있으면 덮어씀)
+            try {
+              const { data: s } = await supabase.from("schedules").select("*").eq("id", sid).eq("active", true).maybeSingle();
+              if (s) await rescheduleNext(sid, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day);
+            } catch {}
           } else if (detail.pressAction?.id === "snooze") {
             // 알림 액션 스누즈 = 앱 안 열고 기본 10분 빠른 스누즈. stopAlarm(기존 스누즈 취소) 후 예약해야 살아남음.
             await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "snoozed", method: "버튼" });
             await stopAlarm(sid);
             await scheduleSnooze(sid, "", { mode: "duration", minutes: 10 }, hour, minute, String(data?.tod ?? "아침"));
+            // 다음 정시 회차 재예약(멱등)
+            try {
+              const { data: s } = await supabase.from("schedules").select("*").eq("id", sid).eq("active", true).maybeSingle();
+              if (s) await rescheduleNext(sid, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day);
+            } catch {}
           } else {
             await stopAlarm(sid);
           }
