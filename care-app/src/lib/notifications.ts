@@ -41,8 +41,8 @@ export async function ensureIOSCategory(): Promise<void> {
     {
       id: "care-alarm",
       actions: [
-        { id: "complete", title: "복용 완료" },
-        { id: "snooze", title: "30분 후 다시 알림" },
+        { id: "complete", title: "지금 약 먹기" },
+        { id: "snooze", title: "잠시 미루기" },
       ],
     },
   ]);
