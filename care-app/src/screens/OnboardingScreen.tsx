@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BigButton } from "../components/BigButton";
-import { Logo } from "../components/Logo";
 import { setOnboarded } from "../lib/storage";
 import { speak, stopSpeaking } from "../lib/tts";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
@@ -35,10 +34,6 @@ export function OnboardingScreen() {
       <ScrollView
         contentContainerStyle={[s.content, { paddingTop: insets.top + spacing.xl, paddingBottom: spacing.xl }]}
       >
-        <View style={s.logoWrap}>
-          <Logo size={84} showWordmark={false} />
-        </View>
-
         {/* 말풍선 느낌의 인사 카드 */}
         <View style={s.bubble}>
           <Text style={s.hi}>만나서 반갑습니다~</Text>
@@ -62,7 +57,6 @@ export function OnboardingScreen() {
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.lightBlueBg },
   content: { paddingHorizontal: spacing.lg, flexGrow: 1, justifyContent: "center", alignItems: "center" },
-  logoWrap: { marginBottom: spacing.xl },
   bubble: {
     backgroundColor: colors.cardBg, borderRadius: radii.card, padding: spacing.xl,
     width: "100%", alignItems: "center",

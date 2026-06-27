@@ -86,7 +86,7 @@ export function RoleSelectScreen() {
       {/* Profile input card */}
       <View style={styles.card}>
         <Text style={styles.label}>이름</Text>
-        <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="예: 김복약" />
+        <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="예: 김복약" placeholderTextColor={colors.textSecondary} />
 
         <Text style={[styles.label, { marginTop: spacing.lg }]}>성별 (선택)</Text>
         <View style={styles.genderRow}>
@@ -111,6 +111,7 @@ export function RoleSelectScreen() {
           onChangeText={setBirthDate}
           placeholder="예: 1948-03-05"
           keyboardType="numbers-and-punctuation"
+          placeholderTextColor={colors.textSecondary}
         />
 
         <Text style={[styles.label, { marginTop: spacing.lg }]}>거주지역 (선택)</Text>
@@ -119,6 +120,7 @@ export function RoleSelectScreen() {
           value={region}
           onChangeText={setRegion}
           placeholder="예: 전라북도 전주시"
+          placeholderTextColor={colors.textSecondary}
         />
 
         <Text style={[styles.label, { marginTop: spacing.lg }]}>전화번호 (선택)</Text>
@@ -128,6 +130,7 @@ export function RoleSelectScreen() {
           onChangeText={setPhone}
           placeholder="예: 010-1234-5678"
           keyboardType="phone-pad"
+          placeholderTextColor={colors.textSecondary}
         />
       </View>
 
