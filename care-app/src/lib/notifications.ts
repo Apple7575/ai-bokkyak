@@ -121,22 +121,32 @@ export async function scheduleIosWindow(
   for (let di = 0; di < doses.length; di++) {
     const base = doses[di].getTime();
     for (let b = 0; b < perDose; b++) {
-      await notifee.createTriggerNotification(
-        { id: `alarm-${scheduleId}-win-${di}-${b}`, title: `${tod} 약 복용 시간입니다`,
-          body: "약을 드신 후 '지금 약 먹기'를 눌러주세요.",
-          data: { scheduleId, hour: String(hour), minute: String(minute), tod, seq: String(b) },
-          ios: { categoryId: "care-alarm", sound: `${SOUND[tod]}.mp3` } },
-        { type: TriggerType.TIMESTAMP, timestamp: base + b * BURST_GAP_MS });
+      // 64한도 초과 시 createTriggerNotification이 throw할 수 있으므로 graceful — 크래시 방지.
+      // (도즈별 b=0부터 예약하므로 한도에 닿아도 기본 알람이 우선 등록된다.)
+      try {
+        await notifee.createTriggerNotification(
+          { id: `alarm-${scheduleId}-win-${di}-${b}`, title: `${tod} 약 복용 시간입니다`,
+            body: "약을 드신 후 '지금 약 먹기'를 눌러주세요.",
+            data: { scheduleId, hour: String(hour), minute: String(minute), tod, seq: String(b) },
+            ios: { categoryId: "care-alarm", sound: `${SOUND[tod]}.mp3`, interruptionLevel: "timeSensitive" as const } },
+          { type: TriggerType.TIMESTAMP, timestamp: base + b * BURST_GAP_MS });
+      } catch {}
     }
   }
 }
 
-// 이 일정의 윈도우 알림(-win-*) 전부 취소.
+// 이 일정의 윈도우 알림(-win-*)을 예약분 + 표시 중인 것까지 전부 취소.
 export async function cancelIosWindow(scheduleId: string): Promise<void> {
   try {
     const ids = await notifee.getTriggerNotificationIds();
     for (const id of ids) {
       if (id.startsWith(`alarm-${scheduleId}-win-`)) { try { await notifee.cancelTriggerNotification(id); } catch {} }
+    }
+  } catch {}
+  try {
+    const disp = await notifee.getDisplayedNotifications();
+    for (const n of disp) {
+      if (n.id && n.id.startsWith(`alarm-${scheduleId}-win-`)) { try { await notifee.cancelDisplayedNotification(n.id); } catch {} }
     }
   } catch {}
 }
