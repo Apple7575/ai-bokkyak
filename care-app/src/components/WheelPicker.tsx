@@ -18,6 +18,7 @@ export function WheelPicker({ values, value, onChange, suffix }: Props) {
       <View style={styles.selBar} pointerEvents="none" />
       <ScrollView
         ref={ref}
+        nestedScrollEnabled
         showsVerticalScrollIndicator={false}
         snapToInterval={ITEM_H}
         decelerationRate="fast"

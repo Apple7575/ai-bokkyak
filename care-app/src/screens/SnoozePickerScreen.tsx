@@ -48,15 +48,18 @@ export function SnoozePickerScreen() {
       setBusy(false);
       return;
     }
-    // 기록(snoozed)은 베스트에포트 — DB 저장이 잠깐 실패해도 미루기 알림은 이미 예약됨(실패로 막지 않음).
+    // 예약 직후 카운트다운 목표시각 계산(이후 기록 지연과 무관하게 실제 트리거와 일치).
+    const fireAt = nextSnoozeFire(spec, new Date()).toISOString();
+    // 기록(snoozed)은 베스트에포트 — DB 저장이 실패해도 미루기 알림은 이미 예약됨(막지 않음). 단 실패는 안내.
     try {
       const pid = await getPatientId();
       if (pid) {
         const slot = doseSlot(sch.hour, sch.minute, new Date());
         await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "snoozed", method: "버튼" });
       }
-    } catch {}
-    const fireAt = nextSnoozeFire(spec, new Date()).toISOString();
+    } catch {
+      Alert.alert("기록 저장 실패", "미루기 알림은 설정됐지만 복약 기록 저장에 실패했어요. (알림은 정상 동작)");
+    }
     nav.reset({ index: 0, routes: [{ name: "SnoozeCountdown", params: { scheduleId, fireAt, hour: sch.hour, minute: sch.minute } }] });
   }
 
