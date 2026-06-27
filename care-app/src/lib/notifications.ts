@@ -202,7 +202,9 @@ export async function rescheduleNext(
 ): Promise<void> {
   const tod = todOf(timeOfDay);
   const ch = await ensureChannel(tod);
-  const fireAt = nextDoseAt({ hour, minute, repeat_days: repeatDays }, new Date()).getTime();
+  // 1분 버퍼: 정시 발사 직후 DELIVERED 재예약 시 "방금 울린 오늘 슬롯"을 다시 잡아
+  // 즉시 재발사되는 경계 케이스 방지(도즈 직전 1분 내 등록은 오늘로, 시각 지난 직후는 다음날로).
+  const fireAt = nextDoseAt({ hour, minute, repeat_days: repeatDays }, new Date(Date.now() + 60_000)).getTime();
   await notifee.createTriggerNotification(
     { id: `alarm-${scheduleId}`, ...alarmNotification(scheduleId, tod, ch, hour, minute, 0) },
     { type: TriggerType.TIMESTAMP, timestamp: fireAt, ...(await exactAlarmOption()) }); // repeatFrequency 없음
