@@ -28,13 +28,13 @@ class AlarmBootReceiver : BroadcastReceiver() {
 
 const SERVICE_KT = `package com.shawn777.careapp
 import android.content.Intent
-import android.os.Bundle
 import com.facebook.react.HeadlessJsTaskService
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.jstasks.HeadlessJsTaskConfig
 
 class AlarmResyncService : HeadlessJsTaskService() {
-  override fun getTaskConfig(intent: Intent): HeadlessJsTaskConfig {
-    return HeadlessJsTaskConfig("AlarmResync", Bundle(), 30000, true)
+  override fun getTaskConfig(intent: Intent): HeadlessJsTaskConfig? {
+    return HeadlessJsTaskConfig("AlarmResync", Arguments.createMap(), 30000, true)
   }
 }
 `;
