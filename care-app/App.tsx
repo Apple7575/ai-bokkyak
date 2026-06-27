@@ -67,14 +67,14 @@ export default function App() {
           try {
             if (detail.pressAction?.id === "complete") {
               await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "completed", method: "버튼" });
-              await stopAlarm(sid);
             } else if (detail.pressAction?.id === "snooze") {
               // 알람 화면으로 진입해 거기서 잠시 미루기 처리
               navigateToAlarm(sid);
-              await stopAlarm(sid);
             }
           } catch {}
         }
+        await stopAlarm(sid); // pid 유무와 무관하게 서비스/표시 알림 정리
+        return;
       }
     });
     return () => { appSub.remove(); unsub(); };
