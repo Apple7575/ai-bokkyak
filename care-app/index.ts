@@ -1,5 +1,9 @@
+import { AppRegistry } from "react-native";
 import { registerRootComponent } from 'expo';
 import notifee, { EventType } from '@notifee/react-native';
+import { resyncAllAlarms } from "./src/lib/alarmSync";
+// 네이티브 리시버(BOOT/TIME 변경)가 이 태스크를 호출 → 활성 알람 전체 재예약.
+AppRegistry.registerHeadlessTask("AlarmResync", () => async () => { await resyncAllAlarms(); });
 
 import App from './App';
 import { setPendingAlarm, getPatientId } from './src/lib/storage';
