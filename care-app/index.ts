@@ -4,7 +4,7 @@ import notifee, { EventType } from '@notifee/react-native';
 import App from './App';
 import { setPendingAlarm, getPatientId } from './src/lib/storage';
 import { recordIntake } from './src/lib/records';
-import { scheduleRepeatFollowup, stopAlarm } from './src/lib/notifications';
+import { scheduleRepeatFollowup, stopAlarm, scheduleSnooze } from './src/lib/notifications';
 import { doseSlot } from './src/lib/schedule';
 
 notifee.onBackgroundEvent(async ({ type, detail }) => {
@@ -30,9 +30,10 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
         await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "completed", method: "버튼" });
         await stopAlarm(scheduleId);
       } else if (detail.pressAction?.id === "snooze") {
-        // 미루기 화면에서 시각 선택하도록 앱 진입 예약
-        await setPendingAlarm(scheduleId);
-        await stopAlarm(scheduleId);
+        // 알림 액션 스누즈 = 앱 안 열고 기본 10분 빠른 스누즈
+        await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "snoozed", method: "버튼" });
+        await stopAlarm(scheduleId); // 현재 울림/기존 스누즈 트리거 정리 (반드시 scheduleSnooze 전에)
+        await scheduleSnooze(scheduleId, "", { mode: "duration", minutes: 10 }, hour, minute, String(data?.tod ?? "아침"));
       }
     } catch {}
   }

@@ -9,7 +9,7 @@ import { RootNavigator } from "./src/navigation/RootNavigator";
 import { RootStackParamList } from "./src/navigation/types";
 import { takePendingAlarm, getPatientId } from "./src/lib/storage";
 import { recordIntake } from "./src/lib/records";
-import { ensureIOSCategory, stopAlarm, scheduleIosBurst } from "./src/lib/notifications";
+import { ensureIOSCategory, stopAlarm, scheduleIosBurst, scheduleSnooze } from "./src/lib/notifications";
 import { doseSlot } from "./src/lib/schedule";
 import { supabase } from "./src/lib/supabase";
 
@@ -68,8 +68,10 @@ export default function App() {
             if (detail.pressAction?.id === "complete") {
               await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "completed", method: "버튼" });
             } else if (detail.pressAction?.id === "snooze") {
-              // 알람 화면으로 진입해 거기서 잠시 미루기 처리
-              navigateToAlarm(sid);
+              // 알림 액션 스누즈 = 앱 안 열고 기본 10분 빠른 스누즈
+              await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "snoozed", method: "버튼" });
+              await stopAlarm(sid); // 현재 울림/기존 스누즈 트리거 정리 (반드시 scheduleSnooze 전에)
+              await scheduleSnooze(sid, "", { mode: "duration", minutes: 10 }, hour, minute, String(data?.tod ?? "아침"));
             }
           } catch {}
         }

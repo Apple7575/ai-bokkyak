@@ -52,8 +52,8 @@ export function SnoozeCountdownScreen() {
         .select("*")
         .eq("patient_id", pid)
         .eq("active", true);
-      const ids = dueAtSlot(data ?? [], p.hour, p.minute, new Date());
       const slot = doseSlot(p.hour, p.minute, new Date());
+      const ids = dueAtSlot(data ?? [], p.hour, p.minute, slot);
       for (const id of ids) {
         try {
           await recordIntake({
