@@ -83,6 +83,15 @@ module.exports = function withAlarmReceiver(config) {
       });
     }
 
+    // 풀스크린 알람이 잠금/꺼진 화면에서도 화면을 켜고 잠금화면 위에 뜨도록
+    // MainActivity에 showWhenLocked + turnScreenOn 속성 부여(API 27+).
+    app.activity = app.activity || [];
+    const mainAct = app.activity.find((a) => a.$["android:name"] === ".MainActivity");
+    if (mainAct) {
+      mainAct.$["android:showWhenLocked"] = "true";
+      mainAct.$["android:turnScreenOn"] = "true";
+    }
+
     return cfg;
   });
 
