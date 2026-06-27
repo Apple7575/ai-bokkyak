@@ -43,6 +43,7 @@ export function VoiceRegisterScreen() {
 
   async function confirm() {
     if (!parsed) return;
+    if (!parsed.medicine_name.trim()) { Alert.alert("약 이름을 입력해 주세요"); return; }
     const pid = await getPatientId(); if (!pid) return;
     const { data, error } = await supabase.from("schedules").insert({
       patient_id: pid, medicine_name: parsed.medicine_name, time_of_day: parsed.time_of_day,
