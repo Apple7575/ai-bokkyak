@@ -55,7 +55,7 @@ export default function App() {
               await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "completed", method: "버튼" });
             } else if (detail.pressAction?.id === "snooze") {
               await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "snoozed", method: "버튼" });
-              await scheduleSnooze(sid, "", 30, hour, minute, String(data?.tod ?? "아침"));
+              await scheduleSnooze(sid, "", { mode: "duration", minutes: 30 }, hour, minute, String(data?.tod ?? "아침"));
             }
             await cancelRepeat(sid); // 반복 알람 중단
             // 이 일정의 표시 중인 알림 전부 제거(primary가 ongoing이라 반복 알림에서 응답해도 남을 수 있음)

@@ -84,7 +84,7 @@ export function AlarmScreen() {
     const slot = doseSlot(schedule.hour, schedule.minute, new Date());
     try {
       await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status, method: "버튼" });
-      if (status === "snoozed") await scheduleSnooze(scheduleId, schedule.medicine_name, 30, schedule.hour, schedule.minute, schedule.time_of_day);
+      if (status === "snoozed") await scheduleSnooze(scheduleId, schedule.medicine_name, { mode: "duration", minutes: 30 }, schedule.hour, schedule.minute, schedule.time_of_day);
     } catch {
       Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
       return;
