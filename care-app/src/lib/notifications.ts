@@ -105,6 +105,7 @@ export async function cancelRepeat(scheduleId: string): Promise<void> {
 export async function cancelSchedule(scheduleId: string): Promise<void> {
   const ids = [`alarm-${scheduleId}`, `alarm-${scheduleId}-snooze`, `alarm-${scheduleId}-rep`];
   for (let d = 0; d <= 6; d++) ids.push(`alarm-${scheduleId}-${d}`);
+  for (let i = 1; i <= 6; i++) ids.push(`alarm-${scheduleId}-burst-${i}`);
   for (const id of ids) { try { await notifee.cancelNotification(id); } catch {} }
 }
 
@@ -114,7 +115,7 @@ export async function stopAlarm(scheduleId: string): Promise<void> {
   try { await notifee.stopForegroundService(); } catch {}
   await cancelRepeat(scheduleId);
   // iOS 버스트(-burstN) 알림 제거
-  for (let i = 0; i < 8; i++) { try { await notifee.cancelNotification(`alarm-${scheduleId}-burst-${i}`); } catch {} }
+  for (let i = 1; i <= 6; i++) { try { await notifee.cancelNotification(`alarm-${scheduleId}-burst-${i}`); } catch {} }
   try {
     const displayed = await notifee.getDisplayedNotifications();
     for (const n of displayed) {
