@@ -24,7 +24,8 @@ export async function startRinging(timeOfDay: string, onAutoStop?: () => void): 
     sound = created.sound;
     timer = setTimeout(() => { stopRinging().finally(() => onAutoStop?.()); }, MAX_MS);
   } catch {
-    // 실패해도 화면 흐름은 막지 않는다.
+    // 오디오 설정/로드 실패 시 이미 시작된 진동·타이머를 정리(무한 진동 방지). 화면 흐름은 막지 않는다.
+    await stopRinging();
   }
 }
 
