@@ -1,13 +1,15 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, Pressable } from "react-native";
+import notifee from "@notifee/react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { Bell, UserCheck, ChevronRight, Clock } from "lucide-react-native";
+import { Bell, UserCheck, ChevronRight, Clock, AlertTriangle } from "lucide-react-native";
 import Svg, { Circle } from "react-native-svg";
 import { BigButton } from "../components/BigButton";
 import { ScheduleCard } from "../components/ScheduleCard";
 import { supabase, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { nextNotificationTime } from "../lib/schedule";
+import { hasExactAlarm } from "../lib/alarmPermissions";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
 
 function fmt(d: Date): string {
@@ -19,6 +21,7 @@ function fmt(d: Date): string {
 export function HomeScreen() {
   const nav = useNavigation<any>();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [alarmOk, setAlarmOk] = useState(true);
 
   useFocusEffect(useCallback(() => {
     (async () => {
@@ -27,6 +30,7 @@ export function HomeScreen() {
         .eq("patient_id", pid).eq("active", true).order("hour");
       setSchedules(data ?? []);
     })();
+    hasExactAlarm().then(setAlarmOk);
   }, []));
 
   const now = new Date();
@@ -66,6 +70,16 @@ export function HomeScreen() {
           </View>
         </View>
       </View>
+
+      {/* 정확알람 권한 꺼짐 경고 배너 */}
+      {!alarmOk ? (
+        <Pressable style={styles.warn} onPress={() => notifee.openAlarmPermissionSettings()}>
+          <AlertTriangle size={20} color={colors.dangerRed} />
+          <Text style={styles.warnText}>
+            정확한 복약 알람을 위해 '알람 및 리마인더' 권한이 필요해요. 이 권한이 꺼져 있으면 알람이 늦게 울릴 수 있습니다. 눌러서 설정 열기
+          </Text>
+        </Pressable>
+      ) : null}
 
       {/* Next medicine hero card */}
       <View style={styles.hero}>
@@ -167,6 +181,18 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
+  warn: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    alignItems: "center",
+    backgroundColor: "#FFF0F0",
+    borderColor: colors.dangerRed,
+    borderWidth: 1,
+    borderRadius: radii.card,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  warnText: { flex: 1, fontSize: fontSizes.body, color: colors.dangerRed, fontWeight: "700" },
   statusCard: {
     backgroundColor: colors.cardBg,
     borderColor: colors.border,

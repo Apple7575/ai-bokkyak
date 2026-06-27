@@ -1,8 +1,23 @@
-import notifee from "@notifee/react-native";
+import notifee, { AndroidNotificationSetting } from "@notifee/react-native";
 import { Platform, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const PROMPTED_KEY = "care.alarmPermPrompted";
+
+/**
+ * Android에서 '알람 및 리마인더' 권한이 활성화돼 있는지 확인한다.
+ * iOS는 항상 true(정확알람 개념 없음).
+ * 오류 발생 시 true를 반환해 불필요한 경고를 막는다.
+ */
+export async function hasExactAlarm(): Promise<boolean> {
+  if (Platform.OS !== "android") return true;
+  try {
+    const s = await notifee.getNotificationSettings();
+    return s.android?.alarm !== AndroidNotificationSetting.DISABLED;
+  } catch {
+    return true;
+  }
+}
 
 /**
  * 첫 알람 등록 시 1회 호출. Android에서만 동작.
