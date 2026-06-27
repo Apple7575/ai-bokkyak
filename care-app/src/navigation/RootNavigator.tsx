@@ -16,6 +16,7 @@ import { VoiceRegisterScreen } from "../screens/VoiceRegisterScreen";
 import { OcrRegisterScreen } from "../screens/OcrRegisterScreen";
 import { AlarmScreen } from "../screens/AlarmScreen";
 import { GuardianLinkScreen } from "../screens/GuardianLinkScreen";
+import { SnoozePickerScreen } from "../screens/SnoozePickerScreen";
 import { SnoozeCountdownScreen } from "../screens/SnoozeCountdownScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { Home as HomeIcon, ClipboardList, Users, Menu } from "lucide-react-native";
@@ -112,6 +113,7 @@ export function RootNavigator() {
       <Stack.Screen name="OcrRegister" component={OcrRegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Alarm" component={AlarmScreen} />
       <Stack.Screen name="GuardianLink" component={GuardianLinkScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="SnoozePicker" component={SnoozePickerScreen} options={{ headerShown: false }} />
       <Stack.Screen name="SnoozeCountdown" component={SnoozeCountdownScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
