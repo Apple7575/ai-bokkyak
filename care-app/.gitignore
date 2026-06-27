@@ -46,3 +46,5 @@ supabase/.temp/
 # local build artifacts
 build-*.apk
 sound-samples/
+
+*.apk
