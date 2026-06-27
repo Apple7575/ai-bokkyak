@@ -9,6 +9,10 @@ const ANON = (extra.supabaseAnonKey as string) ?? "";
 const FN = `${SUPABASE_URL}/functions/v1/ai`;
 
 let current: Audio.Sound | null = null;
+// 최신 재생 요청 식별 토큰. TTS는 네트워크로 음성을 받아오는 지연이 있어, 앞 요청이
+// 아직 재생 전(current 미등록)일 때 다음 요청이 들어오면 둘 다 늦게 재생돼 겹친다.
+// speak는 시작 시 토큰을 claim하고, 받아온 뒤 자기 토큰이 여전히 최신일 때만 재생한다.
+let playToken = 0;
 
 // 앱에 번들된 시간대 고정 음성(아침/점심/저녁/취침). 네트워크 없이 바로 재생 — iOS에서 가장 안정적.
 const ALARM_SOUNDS: Record<string, number> = {
@@ -44,8 +48,9 @@ function bufToBase64(buf: ArrayBuffer): string {
 // 성공 시 true. 호출부에서 실패 시 번들 음성 등으로 폴백할 수 있게 결과를 돌려준다.
 export async function speak(text: string, opts?: { speed?: number }): Promise<boolean> {
   const speed = opts?.speed ?? 0.95;
+  await stopSpeaking();          // 진행 중인 음성 정지 + in-flight 요청 무효화
+  const myToken = ++playToken;   // 이 요청을 최신으로 등록
   try {
-    await stopSpeaking();
     const path = `${FileSystem.cacheDirectory}${ttsCacheKey(text, speed)}`;
     const info = await FileSystem.getInfoAsync(path);
     if (!info.exists) {
@@ -70,8 +75,10 @@ export async function speak(text: string, opts?: { speed?: number }): Promise<bo
         encoding: FileSystem.EncodingType.Base64,
       });
     }
+    if (myToken !== playToken) return false; // 받아오는 사이 더 새로운 speak/stop가 끼어듦
     await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
     const { sound } = await Audio.Sound.createAsync({ uri: path });
+    if (myToken !== playToken) { try { await sound.unloadAsync(); } catch {} return false; }
     current = sound;
     await sound.playAsync();
     return true;
@@ -82,6 +89,7 @@ export async function speak(text: string, opts?: { speed?: number }): Promise<bo
 }
 
 export async function stopSpeaking(): Promise<void> {
+  playToken++; // 아직 재생 전인 in-flight speak를 무효화(늦게 도착해도 재생 안 됨)
   if (current) {
     try { await current.stopAsync(); await current.unloadAsync(); } catch {}
     current = null;
