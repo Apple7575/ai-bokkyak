@@ -27,17 +27,16 @@ export function SnoozePickerScreen() {
 
   async function apply(spec: SnoozeSpec) {
     const { data: sch } = await supabase.from("schedules").select("*").eq("id", scheduleId).single();
-    if (!sch) { nav.navigate("Tabs"); return; }
-    // 원래 슬롯에 snoozed 기록 (보호자/이력에서 미복용으로 보이지 않도록)
-    const pid = await getPatientId();
-    if (pid) {
-      const slot = doseSlot(sch.hour, sch.minute, new Date());
-      try { await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "snoozed", method: "버튼" }); } catch {}
-    }
+    if (!sch) { Alert.alert("오류", "복약 일정을 불러올 수 없습니다."); return; }
     try {
+      const pid = await getPatientId();
+      if (pid) {
+        const slot = doseSlot(sch.hour, sch.minute, new Date());
+        await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "snoozed", method: "버튼" });
+      }
       await scheduleSnooze(scheduleId, sch.medicine_name, spec, sch.hour, sch.minute, sch.time_of_day);
     } catch {
-      Alert.alert("다시 알림 설정 실패", "인터넷 연결을 확인해 주세요.");
+      Alert.alert("다시 알림 설정에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
       return;
     }
     const fireAt = nextSnoozeFire(spec, new Date()).toISOString();

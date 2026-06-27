@@ -1,6 +1,6 @@
 // care-app/src/screens/SnoozeCountdownScreen.tsx
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Alert } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { BigButton } from "../components/BigButton";
 import { supabase } from "../lib/supabase";
@@ -54,6 +54,7 @@ export function SnoozeCountdownScreen() {
         .eq("active", true);
       const slot = doseSlot(p.hour, p.minute, new Date());
       const ids = dueAtSlot(data ?? [], p.hour, p.minute, slot);
+      let failed = false;
       for (const id of ids) {
         try {
           await recordIntake({
@@ -64,7 +65,11 @@ export function SnoozeCountdownScreen() {
             method: "버튼",
           });
           await stopAlarm(id);
-        } catch {}
+        } catch { failed = true; }
+      }
+      if (failed) {
+        Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
+        return;
       }
     }
     nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
