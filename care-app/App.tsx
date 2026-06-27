@@ -1,6 +1,6 @@
 import "react-native-gesture-handler";
 import React, { useEffect } from "react";
-import { AppState, Platform } from "react-native";
+import { AppState } from "react-native";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -9,9 +9,10 @@ import { RootNavigator } from "./src/navigation/RootNavigator";
 import { RootStackParamList } from "./src/navigation/types";
 import { takePendingAlarm, getPatientId } from "./src/lib/storage";
 import { recordIntake } from "./src/lib/records";
-import { ensureIOSCategory, stopAlarm, scheduleIosWindow, scheduleSnooze, rescheduleNext } from "./src/lib/notifications";
+import { ensureIOSCategory, stopAlarm, scheduleSnooze, rescheduleNext } from "./src/lib/notifications";
 import { doseSlot } from "./src/lib/schedule";
 import { supabase } from "./src/lib/supabase";
+import { resyncAllAlarms } from "./src/lib/alarmSync";
 
 export const navRef = createNavigationContainerRef<RootStackParamList>();
 
@@ -30,26 +31,16 @@ export default function App() {
       const sid = await takePendingAlarm();
       if (sid) navigateToAlarm(sid);
     };
-    const rearmIosWindows = async () => {
-      // iOS: 앱이 활성화될 때 활성 일정의 48h 윈도우를 재무장
-      if (Platform.OS === "ios") {
-        const pid = await getPatientId();
-        if (pid) {
-          const { data } = await supabase.from("schedules").select("*").eq("patient_id", pid).eq("active", true);
-          for (const s of data ?? []) await scheduleIosWindow(s.id, s.time_of_day, s.hour, s.minute, s.repeat_days ?? []);
-        }
-      }
-    };
     notifee.getInitialNotification().then((initial) => {
       const sid = initial?.notification?.data?.scheduleId as string | undefined;
       if (sid) navigateToAlarm(sid);
     });
     consumePending();
-    rearmIosWindows().catch(() => {});
+    resyncAllAlarms().catch(() => {});
     const appSub = AppState.addEventListener("change", (s) => {
       if (s === "active") {
         consumePending();
-        rearmIosWindows().catch(() => {});
+        resyncAllAlarms().catch(() => {});
       }
     });
     const unsub = notifee.onForegroundEvent(async ({ type, detail }) => {
