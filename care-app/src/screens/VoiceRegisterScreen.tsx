@@ -52,8 +52,16 @@ export function VoiceRegisterScreen() {
     }).select().single();
     if (error || !data) { Alert.alert("저장 실패", error?.message ?? ""); return; }
     await ensureStrongAlarmReady();
-    // 알림 예약은 베스트에포트 — 실패해도 일정은 이미 저장됐으므로 등록 흐름을 막지 않는다.
-    try { if (await ensurePermission()) await scheduleReminders(data.id, data.medicine_name, parsed.hour, parsed.minute, parsed.repeat_days, parsed.time_of_day); } catch {}
+    // 알림 예약은 베스트에포트(일정은 이미 저장됨). 단, 실패/권한없음은 사용자에게 알려 알람이 안 울리는 걸 모르고 넘어가지 않게 한다.
+    try {
+      if (await ensurePermission()) {
+        await scheduleReminders(data.id, data.medicine_name, parsed.hour, parsed.minute, parsed.repeat_days, parsed.time_of_day);
+      } else {
+        Alert.alert("알림 권한 필요", "알림 권한이 꺼져 있어 알람이 울리지 않을 수 있어요. 설정에서 켜주세요. (약은 등록됐어요)");
+      }
+    } catch {
+      Alert.alert("알람 설정 실패", "약은 등록됐지만 알림 예약에 실패했어요. 설정에서 알림 권한을 확인하고 다시 등록해 주세요.");
+    }
     await speak("복약 일정을 등록했습니다.");
     nav.navigate("Tabs");
   }

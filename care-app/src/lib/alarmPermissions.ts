@@ -33,7 +33,7 @@ export async function ensureStrongAlarmReady(): Promise<void> {
           },
         },
       ],
-      { cancelable: true, onDismiss: () => {} },
+      { cancelable: true, onDismiss: () => res() }, // 뒤로가기로 닫아도 반드시 resolve(등록 흐름 멈춤 방지)
     ),
   );
   try {
