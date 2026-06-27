@@ -5,6 +5,7 @@ import notifee, {
 } from "@notifee/react-native";
 import { nextNotificationTime } from "./schedule";
 import { SnoozeSpec, nextSnoozeFire } from "./snooze";
+import { supabase } from "./supabase";
 
 // 정확 알람(SCHEDULE_EXACT_ALARM)이 허용된 경우에만 alarmManager 옵션을 켠다.
 // 권한이 없는 Android(14+ 등)에서 alarmManager를 주면 Notifee가 트리거를 거부해
@@ -124,6 +125,27 @@ export async function stopAlarm(scheduleId: string): Promise<void> {
       if (n.notification?.data?.scheduleId === scheduleId && n.id) await notifee.cancelDisplayedNotification(n.id);
     }
   } catch {}
+  // iOS: 방금 취소한 버스트를 "다음 발생분"으로 다시 무장 — 응답 후에도 미래 반복 핑 유지.
+  // (Android는 scheduleIosBurst가 즉시 return하므로 영향 없음.)
+  if (Platform.OS === "ios") {
+    try {
+      const { data } = await supabase
+        .from("schedules")
+        .select("*")
+        .eq("id", scheduleId)
+        .eq("active", true)
+        .maybeSingle();
+      if (data) {
+        await scheduleIosBurst(
+          scheduleId,
+          data.time_of_day,
+          data.hour,
+          data.minute,
+          data.repeat_days ?? []
+        );
+      }
+    } catch {}
+  }
 }
 
 // iOS는 백그라운드 체인이 안 되므로 다음 발사분의 30초 간격 6개를 미리 예약(Time-Sensitive).
