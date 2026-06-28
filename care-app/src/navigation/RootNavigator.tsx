@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
+import notifee from "@notifee/react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { RootStackParamList, TabParamList } from "./types";
@@ -83,11 +84,18 @@ function PatientTabs() {
 
 export function RootNavigator() {
   const [init, setInit] = useState<{ role: Role | null; linked: boolean; onboarded: boolean } | "loading">("loading");
+  const [alarmSid, setAlarmSid] = useState<string | null>(null);
   useEffect(() => {
     (async () => {
       const role = await getRole();
       const pid = await getPatientId();
       const onboarded = await getOnboarded();
+      // 알람(풀스크린/알림 탭)으로 앱이 켜졌으면 홈을 먼저 그리지 않고 처음부터 알람 화면을 띄운다.
+      try {
+        const initial = await notifee.getInitialNotification();
+        const sid = initial?.notification?.data?.scheduleId as string | undefined;
+        if (sid) setAlarmSid(sid);
+      } catch {}
       setInit({ role, linked: !!pid, onboarded });
     })();
   }, []);
@@ -96,10 +104,11 @@ export function RootNavigator() {
   }
   // 첫 실행(역할 없음 + 온보딩 미완료)이면 안내 화면부터.
   const initialRouteName: keyof RootStackParamList =
-    !init.role && !init.onboarded ? "Onboarding"
-      : !init.role ? "RoleSelect"
-        : init.role === "guardian" ? (init.linked ? "GuardianHome" : "GuardianLink")
-          : "Tabs";
+    alarmSid ? "Alarm"
+      : !init.role && !init.onboarded ? "Onboarding"
+        : !init.role ? "RoleSelect"
+          : init.role === "guardian" ? (init.linked ? "GuardianHome" : "GuardianLink")
+            : "Tabs";
   return (
     <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
@@ -111,7 +120,7 @@ export function RootNavigator() {
       <Stack.Screen name="ButtonRegister" component={ButtonRegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="VoiceRegister" component={VoiceRegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="OcrRegister" component={OcrRegisterScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Alarm" component={AlarmScreen} />
+      <Stack.Screen name="Alarm" component={AlarmScreen} initialParams={alarmSid ? { scheduleId: alarmSid } : undefined} />
       <Stack.Screen name="GuardianLink" component={GuardianLinkScreen} options={{ headerShown: false }} />
       <Stack.Screen
         name="SnoozePicker"

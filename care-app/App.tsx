@@ -31,10 +31,8 @@ export default function App() {
       const sid = await takePendingAlarm();
       if (sid) navigateToAlarm(sid);
     };
-    notifee.getInitialNotification().then((initial) => {
-      const sid = initial?.notification?.data?.scheduleId as string | undefined;
-      if (sid) navigateToAlarm(sid);
-    });
+    // 콜드스타트(알람 풀스크린/탭으로 앱이 켜진 경우)의 알람 라우팅은 RootNavigator가
+    // 초기 화면을 Alarm으로 잡아 처리한다(홈 깜빡임 방지). 여기선 중복 호출하지 않는다.
     consumePending();
     resyncAllAlarms().catch(() => {});
     const appSub = AppState.addEventListener("change", (s) => {
