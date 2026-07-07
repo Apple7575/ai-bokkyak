@@ -12,6 +12,7 @@ export type RootStackParamList = {
   GuardianLink: undefined;
   SnoozePicker: { scheduleId: string };
   SnoozeCountdown: { scheduleId: string; fireAt: string; hour: number; minute: number };
+  Call: undefined;
 };
 export type TabParamList = {
   Home: undefined;

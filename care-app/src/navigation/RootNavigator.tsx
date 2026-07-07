@@ -19,6 +19,7 @@ import { AlarmScreen } from "../screens/AlarmScreen";
 import { GuardianLinkScreen } from "../screens/GuardianLinkScreen";
 import { SnoozePickerScreen } from "../screens/SnoozePickerScreen";
 import { SnoozeCountdownScreen } from "../screens/SnoozeCountdownScreen";
+import { CallScreen } from "../screens/CallScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { Home as HomeIcon, ClipboardList, Users, Menu } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -128,6 +129,7 @@ export function RootNavigator() {
         options={{ headerShown: false, presentation: "transparentModal", animation: "slide_from_bottom" }}
       />
       <Stack.Screen name="SnoozeCountdown" component={SnoozeCountdownScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Call" component={CallScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
