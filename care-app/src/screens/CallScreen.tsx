@@ -4,7 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Phone } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
-import { supabase, Patient, Schedule, IntakeStatus } from "../lib/supabase";
+import { supabase, Patient, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { recordIntake } from "../lib/records";
 import { todaySlot } from "../lib/schedule";
@@ -107,10 +107,7 @@ export function CallScreen() {
       handle.sendToolResult(e.callId, '{"ok":false,"reason":"저장 실패"}');
       return;
     }
-    // toolStatusToIntake의 "missed"는 저장 상태(IntakeStatus)에 없는 표시용 값이라
-    // "skipped"로 저장한다 — 알람 화면의 "안 먹고 건너뛰기"와 같은 의미·같은 표시 문구.
-    const status: IntakeStatus =
-      toolStatusToIntake(args.status) === "completed" ? "completed" : "skipped";
+    const status = toolStatusToIntake(args.status);
     try {
       await recordIntake({
         patientId: pid,

@@ -55,8 +55,8 @@ describe("toolStatusToIntake", () => {
   it("복용함 → completed", () => {
     expect(toolStatusToIntake("복용함")).toBe("completed");
   });
-  it("안먹음 → missed", () => {
-    expect(toolStatusToIntake("안먹음")).toBe("missed");
+  it("안먹음 → skipped (DB IntakeStatus 값 — missed는 표시 전용)", () => {
+    expect(toolStatusToIntake("안먹음")).toBe("skipped");
   });
 });
 

@@ -1,3 +1,5 @@
+import type { IntakeStatus } from "./intakeStatus";
+
 // AI 건강전화 도구 호출 처리 — 순수 로직 (RN/네트워크 의존 없음, jest 단위 테스트 대상).
 //
 // Realtime 세션이 record_medication 도구를 호출하면 모델이 만든 인자 JSON이
@@ -43,9 +45,13 @@ export function parseRecordMedicationArgs(json: string): RecordMedicationArgs | 
   };
 }
 
-// 도구 status(한국어) → intake_records status 값 매핑.
-export function toolStatusToIntake(s: "복용함" | "안먹음"): "completed" | "missed" {
-  return s === "복용함" ? "completed" : "missed";
+// 도구 status(한국어) → intake_records에 저장하는 IntakeStatus 값 매핑.
+// "안먹음"은 skipped — "missed"는 기록 없음에서 파생되는 표시 전용 값이고,
+// 미복용 저장은 알람 화면·STT와 마찬가지로 skipped를 쓴다.
+export function toolStatusToIntake(
+  s: "복용함" | "안먹음"
+): Extract<IntakeStatus, "completed" | "skipped"> {
+  return s === "복용함" ? "completed" : "skipped";
 }
 
 // 비교용 정규화: 공백 전부 제거 + 소문자화. "혈압 약"과 "혈압약"을 같게 본다.
