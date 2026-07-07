@@ -7,7 +7,7 @@ import { BigButton } from "../components/BigButton";
 import { supabase, Patient, Schedule, IntakeStatus } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { recordIntake } from "../lib/records";
-import { doseSlot } from "../lib/schedule";
+import { todaySlot } from "../lib/schedule";
 import { stopSpeaking } from "../lib/tts";
 import { startCall, CallEvent, CallState } from "../lib/realtimeCall";
 import {
@@ -58,6 +58,7 @@ export function CallScreen() {
   }
 
   function startTimers(session: number): void {
+    clearTimers(); // 방어: 중복 호출로 기존 interval/timeout이 누수되지 않게
     const startedAt = Date.now();
     tickRef.current = setInterval(() => {
       setElapsed(Math.floor((Date.now() - startedAt) / 1000));
@@ -114,7 +115,10 @@ export function CallScreen() {
       await recordIntake({
         patientId: pid,
         scheduleId: sched.id,
-        scheduledFor: doseSlot(sched.hour, sched.minute, new Date()),
+        // doseSlot이 아니라 todaySlot: 통화는 오늘의 모든 스케줄(아직 안 울린 미래
+        // 시간 포함)을 확인하므로, 미래 시각을 어제로 되돌리는 doseSlot을 쓰면
+        // 어제 슬롯의 실제 복용 기록을 upsert로 덮어쓴다.
+        scheduledFor: todaySlot(sched.hour, sched.minute, new Date()),
         status,
         method: "음성",
       });
@@ -185,14 +189,17 @@ export function CallScreen() {
     try {
       await stopSpeaking(); // 다른 화면의 TTS가 통화 오디오와 겹치지 않게
       const pid = await getPatientId();
+      if (sessionRef.current !== session) return; // 이탈/재시도 시 여기서 중단
       if (!pid) throw new Error("환자 정보가 없어요. 앱을 다시 설정해 주세요.");
 
       const { data: patient, error: pErr } = await supabase
         .from("patients").select("*").eq("id", pid).single();
+      if (sessionRef.current !== session) return;
       if (pErr) throw new Error("환자 정보를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.");
 
       const { data: schs, error: sErr } = await supabase
         .from("schedules").select("*").eq("patient_id", pid).eq("active", true).order("hour");
+      if (sessionRef.current !== session) return;
       if (sErr) throw new Error("복약 일정을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.");
 
       // 오늘 요일에 해당하는 약만 (빈 repeat_days=매일, 설계 결정 #1) — HomeScreen과 동일.
@@ -209,6 +216,9 @@ export function CallScreen() {
         .from("intake_records").select("*").eq("patient_id", pid)
         .gte("scheduled_for", dayStart.toISOString())
         .lt("scheduled_for", dayEnd.toISOString());
+      // startCall 전 마지막 가드 — 이탈한 사용자의 기기에서 토큰 발급→마이크
+      // 획득→WebRTC 연결이 진행되지 않게 한다.
+      if (sessionRef.current !== session) return;
       if (rErr) throw new Error("오늘 복약 기록을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.");
       const taken = new Set(
         (recs ?? []).filter((r) => r.status === "completed").map((r) => r.schedule_id as string)
