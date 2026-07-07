@@ -23,6 +23,7 @@
     },
     "plugins": [
       "expo-notifications",
+      "@config-plugins/react-native-webrtc",
       [
         "expo-av",
         {
