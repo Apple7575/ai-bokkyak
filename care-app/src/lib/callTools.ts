@@ -25,7 +25,8 @@ export function parseRecordMedicationArgs(json: string): RecordMedicationArgs | 
   if (!raw || typeof raw !== "object") return null;
   const obj = raw as Record<string, unknown>;
   const { medicine_name, time_of_day, status } = obj;
-  if (typeof medicine_name !== "string" || medicine_name === "") return null;
+  // 공백뿐인 약명도 거부 — looseMatch에서 빈 문자열이 되어 엉뚱한 스케줄에 매칭될 수 있다.
+  if (typeof medicine_name !== "string" || medicine_name.trim() === "") return null;
   if (
     typeof time_of_day !== "string" ||
     !(TIME_OF_DAY_VALUES as readonly string[]).includes(time_of_day)
@@ -56,6 +57,8 @@ function norm(s: string): string {
 function looseMatch(a: string, b: string): boolean {
   const na = norm(a);
   const nb = norm(b);
+  // 빈 문자열은 "anything".includes("") === true 라서 아무 스케줄에나 매칭되므로 거부.
+  if (na === "" || nb === "") return false;
   return na.includes(nb) || nb.includes(na);
 }
 

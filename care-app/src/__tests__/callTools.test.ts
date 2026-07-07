@@ -35,6 +35,13 @@ describe("parseRecordMedicationArgs", () => {
       )
     ).toBeNull();
   });
+  it("공백뿐인 약명 → null", () => {
+    expect(
+      parseRecordMedicationArgs(
+        JSON.stringify({ medicine_name: "   ", time_of_day: "아침", status: "복용함" })
+      )
+    ).toBeNull();
+  });
   it("enum 밖 time_of_day → null", () => {
     expect(
       parseRecordMedicationArgs(
@@ -80,6 +87,10 @@ describe("matchSchedule", () => {
   });
   it("매칭 없으면 null", () => {
     expect(matchSchedule(schedules, { medicine_name: "감기약", time_of_day: "아침" })).toBeNull();
+  });
+  it("빈/공백 약명은 어떤 스케줄에도 매칭되지 않음", () => {
+    expect(matchSchedule(schedules, { medicine_name: "", time_of_day: "아침" })).toBeNull();
+    expect(matchSchedule(schedules, { medicine_name: "  ", time_of_day: "아침" })).toBeNull();
   });
   it("동순위 여러 개면 배열 앞쪽 우선", () => {
     // 둘 다 2순위(약명만 일치) → 앞쪽 "a"
