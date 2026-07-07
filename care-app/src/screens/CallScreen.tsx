@@ -45,6 +45,9 @@ export function CallScreen() {
   const handleRef = useRef<Awaited<ReturnType<typeof startCall>> | null>(null);
   const patientIdRef = useRef<string | null>(null);
   const schedulesRef = useRef<Schedule[]>([]);
+  // 이 통화 세션의 기준 날짜. begin()에서 스케줄 목록·taken 컨텍스트를 만든 시점에
+  // 캡처하고(재시도 시 새로 캡처), 이 세션의 모든 todaySlot 계산에 사용한다.
+  const callDateRef = useRef<Date>(new Date());
   // 같은 callId의 tool-call이 중복 도착해도 한 번만 처리 (중복 기록/중복 회신 방지).
   const handledCallIdsRef = useRef<Set<string>>(new Set());
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -115,7 +118,9 @@ export function CallScreen() {
         // doseSlot이 아니라 todaySlot: 통화는 오늘의 모든 스케줄(아직 안 울린 미래
         // 시간 포함)을 확인하므로, 미래 시각을 어제로 되돌리는 doseSlot을 쓰면
         // 어제 슬롯의 실제 복용 기록을 upsert로 덮어쓴다.
-        scheduledFor: todaySlot(sched.hour, sched.minute, new Date()),
+        // 호출 시점 new Date()가 아니라 캡처한 기준 날짜: 자정 직전에 시작한 통화에
+        // 자정 넘어 답해도, 다음날 슬롯이 아닌 컨텍스트를 만든 날의 슬롯에 기록한다.
+        scheduledFor: todaySlot(sched.hour, sched.minute, callDateRef.current),
         status,
         method: "음성",
       });
@@ -200,7 +205,10 @@ export function CallScreen() {
       if (sErr) throw new Error("복약 일정을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.");
 
       // 오늘 요일에 해당하는 약만 (빈 repeat_days=매일, 설계 결정 #1) — HomeScreen과 동일.
+      // 이 `now`가 이 세션의 기준 날짜: 요일 필터·taken 조회·복약 기록 슬롯이 전부
+      // 같은 날짜를 보게 캡처해 둔다 (자정을 넘겨도 통화 중에는 날짜가 안 바뀐다).
       const now = new Date();
+      callDateRef.current = now;
       const dueToday = ((schs ?? []) as Schedule[]).filter((s) => {
         const days = s.repeat_days ?? [];
         return days.length === 0 || days.includes(now.getDay());
