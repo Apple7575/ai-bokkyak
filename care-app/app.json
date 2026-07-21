@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "care-app",
+    "name": "모두의 복약",
     "slug": "care-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,6 +10,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.care.bokyak",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -32,9 +33,9 @@
       ]
     ],
     "extra": {
-      "supabaseUrl": "REPLACE_WITH_SUPABASE_URL",
-      "supabaseAnonKey": "REPLACE_WITH_SUPABASE_ANON_KEY",
-      "openaiApiKey": "REPLACE_WITH_OPENAI_API_KEY"
+      "supabaseUrl": "https://atzosfqrzsfrveympcfj.supabase.co",
+      "supabaseAnonKey": "sb_publishable_IxiFvJXOgllELr1E69-u-Q_34H6Oz8a",
+      "openaiApiKey": ""
     }
   }
 }

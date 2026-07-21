@@ -93,6 +93,10 @@ export async function startCall(opts: {
   patientName?: string;
   meds: CallMed[];
   onEvent: (e: CallEvent) => void;
+  // 앱 쪽 대기 인사말("안녕하세요, 모두의 복약입니다") 재생이 끝나는 시점.
+  // 연결이 되고 이 promise가 resolve되면 AI 첫 발화(response.create)를 요청해,
+  // 인사말이 끝나자마자 AI 목소리가 곧바로 이어지게 한다. 없으면 연결 즉시 요청.
+  greetingDone?: Promise<void>;
 }): Promise<CallHandle> {
   const { onEvent } = opts;
 
@@ -193,6 +197,10 @@ export async function startCall(opts: {
     dc = pc.createDataChannel("oai-events");
     const dcEvents = dc as unknown as DcEventTarget; // 위 DcEventTarget 주석 참고
 
+    // 모델이 응답을 시작했는지 — 인사말 종료 후 첫 발화 요청(response.create)의
+    // 중복 방지에 쓴다 (사용자 발화로 VAD가 먼저 응답을 트리거했을 수 있다).
+    let responseStarted = false;
+
     dcEvents.addEventListener("open", () => {
       if (finished) return;
       // 통화용 오디오 라우팅: 이어피스가 아닌 스피커폰으로 — 고령층이 폰을 귀에
@@ -200,6 +208,15 @@ export async function startCall(opts: {
       InCallManager.start({ media: "audio" });
       InCallManager.setSpeakerphoneOn(true);
       safeEmit({ type: "state", state: "active" });
+      // 인사말 재생이 끝난 뒤 AI 첫 발화를 요청한다. 그 사이 사용자가 말을 걸어
+      // 모델이 이미 응답을 시작했으면(responseStarted) 중복 요청하지 않는다.
+      void (opts.greetingDone ?? Promise.resolve()).then(() => {
+        if (finished || responseStarted) return;
+        if (!dc || dc.readyState !== "open") return;
+        try {
+          dc.send(JSON.stringify({ type: "response.create" }));
+        } catch {}
+      });
     });
 
     // 원격(서버)이 데이터 채널을 닫으면 정상 종결로 처리한다. 우리 쪽 cleanup이
@@ -225,6 +242,9 @@ export async function startCall(opts: {
         return; // 파싱 실패는 조용히 무시 (모르는 바이너리/깨진 프레임)
       }
       switch (event.type) {
+        case "response.created":
+          responseStarted = true;
+          break;
         case "response.output_audio_transcript.delta": {
           const rid = typeof event.response_id === "string" ? event.response_id : null;
           if (rid !== aiResponseId) {

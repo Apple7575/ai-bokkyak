@@ -22,6 +22,34 @@ const ALARM_SOUNDS: Record<string, number> = {
   취침: require("../../assets/sounds/night.mp3"),
 };
 
+// 통화 연결 대기 인사말 — 통화(Realtime) 목소리와 같은 marin 보이스로 미리 생성해
+// 번들한 mp3. scripts/generate-call-greeting.mjs 로 재생성한다.
+const CALL_GREETING = require("../../assets/sounds/call-greeting.mp3");
+
+// 통화 연결 중 인사말을 재생하고, 재생이 끝나면 resolve한다.
+// 실패·중단 시에도 반드시 resolve해서 호출부(AI 첫 발화 대기)가 막히지 않게 한다.
+export async function playCallGreeting(): Promise<void> {
+  try {
+    await stopSpeaking();
+    await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, shouldDuckAndroid: true });
+    const { sound } = await Audio.Sound.createAsync(CALL_GREETING);
+    current = sound;
+    await new Promise<void>((resolve) => {
+      // 안전장치: 상태 콜백이 안 오는 기기에서도 최대 8초 뒤에는 진행한다.
+      const safety = setTimeout(resolve, 8000);
+      const done = () => { clearTimeout(safety); resolve(); };
+      sound.setOnPlaybackStatusUpdate((st) => {
+        if (!st.isLoaded || st.didJustFinish) done(); // 언로드(중단)도 종료로 취급
+      });
+      sound.playAsync().catch(done);
+    });
+    if (current === sound) current = null;
+    try { await sound.unloadAsync(); } catch {}
+  } catch {
+    // 인사말 실패는 통화 흐름을 막지 않는다.
+  }
+}
+
 // 알람 화면 안내 — 번들 mp3 직접 재생(네트워크/포맷 의존 없음). 무음스위치여도 들리게 오디오모드 설정.
 export async function playAlarmAnnouncement(timeOfDay: string): Promise<void> {
   const asset = ALARM_SOUNDS[timeOfDay] ?? ALARM_SOUNDS["아침"];

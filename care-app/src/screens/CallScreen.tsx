@@ -8,7 +8,7 @@ import { supabase, Patient, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { recordIntake } from "../lib/records";
 import { todaySlot } from "../lib/schedule";
-import { stopSpeaking } from "../lib/tts";
+import { playCallGreeting, stopSpeaking } from "../lib/tts";
 import { startCall, CallEvent, CallState } from "../lib/realtimeCall";
 import {
   parseRecordMedicationArgs,
@@ -189,7 +189,10 @@ export function CallScreen() {
     setUserText("");
     setNotice(null);
     try {
-      await stopSpeaking(); // 다른 화면의 TTS가 통화 오디오와 겹치지 않게
+      // 연결되는 동안(호출 시간) 대기 인사말을 즉시 재생한다. 내부에서 stopSpeaking을
+      // 먼저 수행해 다른 화면의 TTS와 겹치지 않는다. 재생이 끝나는 시점(promise)은
+      // startCall에 넘겨, 인사말 직후 AI 첫 발화가 바로 이어지게 한다.
+      const greetingDone = playCallGreeting();
       const pid = await getPatientId();
       if (sessionRef.current !== session) return; // 이탈/재시도 시 여기서 중단
       if (!pid) throw new Error("환자 정보가 없어요. 앱을 다시 설정해 주세요.");
@@ -236,6 +239,7 @@ export function CallScreen() {
         patientName: (patient as Patient | null)?.name,
         meds: buildMedsContext(dueToday, taken),
         onEvent: (e) => handleEvent(session, e),
+        greetingDone,
       });
       // 연결되는 사이 화면을 떠났거나 재시도가 시작됐으면 즉시 끊는다
       // (startCall은 연결 중 취소 수단이 없어 여기서 정리하는 수밖에 없다).
@@ -262,6 +266,7 @@ export function CallScreen() {
     return () => {
       sessionRef.current++; // 이후 도착하는 이벤트 전부 무시
       clearTimers();
+      void stopSpeaking(); // 연결 중 이탈 시 대기 인사말도 멈춘다
       handleRef.current?.end().catch(() => {});
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -271,6 +276,7 @@ export function CallScreen() {
   useEffect(() => {
     const unsub = nav.addListener("blur", () => {
       clearTimers();
+      void stopSpeaking(); // 연결 중 이탈 시 대기 인사말도 멈춘다
       handleRef.current?.end().catch(() => {});
     });
     return unsub;
