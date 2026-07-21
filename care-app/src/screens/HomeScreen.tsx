@@ -95,6 +95,7 @@ export function HomeScreen() {
         </Pressable>
       </View>
 
+      <BigButton label="AI 건강전화" onPress={() => nav.navigate("Call")} />
       <BigButton label="알림 미리보기" onPress={() => nav.navigate("Alarm", { scheduleId: next?.s.id })} />
       <BigButton label="약 등록 / 복약 관리" variant="secondary" onPress={() => nav.navigate("MedicineList")} />
 

@@ -39,3 +39,14 @@ export function doseSlot(hour: number, minute: number, now: Date): Date {
   }
   return d;
 }
+
+// Today's slot for hour:minute (seconds/ms zeroed) — unlike doseSlot, it stays on
+// today's date even when the time is still in the future. For "today's checklist"
+// contexts like the AI call, which reviews all of today's schedules including ones
+// that haven't fired yet: rolling a future slot back (doseSlot behavior) would
+// upsert over yesterday's real intake record.
+export function todaySlot(hour: number, minute: number, now: Date): Date {
+  const d = new Date(now);
+  d.setHours(hour, minute, 0, 0);
+  return d;
+}

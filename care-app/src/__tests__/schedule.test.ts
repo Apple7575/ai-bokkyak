@@ -1,4 +1,4 @@
-import { normalizeRepeatDays, nextNotificationTime, doseSlot } from "../lib/schedule";
+import { normalizeRepeatDays, nextNotificationTime, doseSlot, todaySlot } from "../lib/schedule";
 
 describe("normalizeRepeatDays", () => {
   it("매일 → []", () => {
@@ -45,5 +45,24 @@ describe("doseSlot", () => {
   it("assigns a late next-day response to the prior day's occurrence (not a future slot)", () => {
     const now = new Date("2026-06-12T00:15:00");
     expect(doseSlot(8, 0, now).toISOString()).toBe(new Date("2026-06-11T08:00:00.000").toISOString());
+  });
+});
+
+describe("todaySlot", () => {
+  it("keeps a future time on today (unlike doseSlot, never rolls back to yesterday)", () => {
+    // 오전 통화에서 저녁 약(미래 슬롯)을 기록해도 어제 슬롯을 덮어쓰면 안 된다.
+    const now = new Date("2026-06-11T09:00:00");
+    expect(todaySlot(19, 0, now).toISOString()).toBe(new Date("2026-06-11T19:00:00.000").toISOString());
+  });
+  it("keeps a past time on today", () => {
+    const now = new Date("2026-06-11T20:05:00");
+    expect(todaySlot(8, 30, now).toISOString()).toBe(new Date("2026-06-11T08:30:00.000").toISOString());
+  });
+  it("zeroes seconds and milliseconds", () => {
+    const now = new Date("2026-06-11T12:34:56.789");
+    const slot = todaySlot(12, 0, now);
+    expect(slot.getSeconds()).toBe(0);
+    expect(slot.getMilliseconds()).toBe(0);
+    expect(slot.toISOString()).toBe(new Date("2026-06-11T12:00:00.000").toISOString());
   });
 });
