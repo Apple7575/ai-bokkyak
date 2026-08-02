@@ -7,6 +7,7 @@ import { BigButton } from "../components/BigButton";
 import { supabase, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { recordIntake } from "../lib/records";
+import { logAlarmEvent } from "../lib/analytics";
 import { stopAlarm } from "../lib/notifications";
 import { startRinging, stopRinging } from "../lib/alarmRinger";
 import { doseSlot } from "../lib/schedule";
@@ -32,6 +33,16 @@ export function AlarmScreen() {
       if (cancelled) return;
       setSchedule(data);
       if (data) {
+        // 알파 지표: 알람이 실제 발생(화면 진입)한 시각을 예정 슬롯과 함께 남긴다.
+        // 베스트에포트 — 실패해도 알람 흐름을 막지 않는다.
+        getPatientId().then((pid) => {
+          if (pid) {
+            logAlarmEvent({
+              patientId: pid, scheduleId,
+              scheduledFor: doseSlot(data.hour, data.minute, new Date()), type: "fired",
+            });
+          }
+        });
         const todStr = data.time_of_day || "아침";
         // 인앱 연속 울림(소리 루프+진동). ~2.5분 자동정지.
         await startRinging(todStr, () => {});

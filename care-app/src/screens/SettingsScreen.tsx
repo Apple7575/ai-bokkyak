@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Users, Volume2, Mic2, Type, Shield, LogOut, ChevronRight } from "lucide-react-native";
+import { Volume2, Mic2, Type, Shield, LogOut, ChevronRight } from "lucide-react-native";
 import notifee from "@notifee/react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { clearAll } from "../lib/storage";
@@ -11,7 +11,6 @@ type IconType = React.ComponentType<{ size?: number; color?: string }>;
 type MenuItem = { Icon: IconType; label: string; color: string; sub?: string };
 
 const menuItems: MenuItem[] = [
-  { Icon: Users, label: "보호자 연결 관리", color: colors.conditionPurple },
   { Icon: Volume2, label: "알림 소리 설정", color: colors.primaryBlue },
   { Icon: Mic2, label: "음성 안내 속도", color: colors.primaryBlue, sub: "기본값: 느리게" },
   { Icon: Type, label: "큰 글씨 모드", color: colors.primaryBlue },

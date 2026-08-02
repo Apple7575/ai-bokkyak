@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export type Role = "patient" | "guardian";
+// 보호자 기능 제거 후 역할은 환자(본인)만 남는다. 값은 "가입 완료" 플래그로 쓰인다.
+export type Role = "patient";
 const KEYS = { role: "care.role", patientId: "care.patientId", patientCode: "care.patientCode", onboarded: "care.onboarded" };
 
 export async function getOnboarded(): Promise<boolean> {

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, Alert, ScrollView, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Pill, User, Users, Eye } from "lucide-react-native";
+import { Pill, User, Eye } from "lucide-react-native";
 import { setRole, setPatient } from "../lib/storage";
 import { supabase } from "../lib/supabase";
 import { enterDemo } from "../lib/demo";
@@ -14,48 +14,37 @@ function makeCode(): string {
   return c;
 }
 
+// 가입 화면 — 이름·성별만 받는다. 생년월일·복약 정보 등 나머지는 가입 직후
+// AI 건강전화(음성)로 여쭤보고 받는다(어르신이 직접 입력하기 어렵기 때문).
 export function RoleSelectScreen() {
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
   const [gender, setGender] = useState<"남" | "여" | null>(null);
-  const [birthDate, setBirthDate] = useState("");
-  const [region, setRegion] = useState("");
-  const [phone, setPhone] = useState("");
+  const [saving, setSaving] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
 
-  // 잘못된 생년월일이 Postgres date 컬럼 insert를 통째로 실패시키지 않게,
-  // 유효한 YYYY-MM-DD만 보내고 그 외/빈값은 null. (선택 필드라 가입을 막지 않음.)
-  function normalizeBirthDate(s: string): string | null {
-    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s.trim());
-    if (!m) return null;
-    const [, y, mo, d] = m;
-    const dt = new Date(`${y}-${mo}-${d}T00:00:00`);
-    if (isNaN(dt.getTime())) return null;
-    // 1948-02-31 같은 롤오버(존재하지 않는 날짜) 거부: 구성요소 라운드트립 확인
-    if (dt.getFullYear() !== +y || dt.getMonth() + 1 !== +mo || dt.getDate() !== +d) return null;
-    return `${y}-${mo}-${d}`;
-  }
-
   async function startAsPatient() {
+    if (saving) return;
     if (!name.trim()) { Alert.alert("이름을 입력해 주세요"); return; }
-    const code = makeCode();
-    const { data, error } = await supabase.from("patients")
-      .insert({
-        name: name.trim(),
-        patient_code: code,
-        gender: gender ?? null,
-        birth_date: normalizeBirthDate(birthDate),
-        region: region.trim() || null,
-        phone: phone.trim() || null,
-      }).select().single();
-    if (error || !data) { Alert.alert("등록 실패", error?.message ?? ""); return; }
-    await setPatient(data.id, data.patient_code);
-    await setRole("patient");
-    nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
-  }
-  async function startAsGuardian() {
-    nav.navigate("GuardianLink");
+    setSaving(true);
+    try {
+      const code = makeCode();
+      const { data, error } = await supabase.from("patients")
+        .insert({
+          name: name.trim(),
+          patient_code: code,
+          gender: gender ?? null,
+        }).select().single();
+      if (error || !data) { Alert.alert("등록 실패", error?.message ?? ""); setSaving(false); return; }
+      await setPatient(data.id, data.patient_code);
+      await setRole("patient");
+      // 가입 직후 AI 건강전화로 생년월일·복약 정보를 음성으로 받는다(setup 모드).
+      nav.reset({ index: 0, routes: [{ name: "Tabs" }, { name: "Call", params: { setup: true } }] });
+    } catch {
+      Alert.alert("등록 실패", "인터넷 연결을 확인해 주세요.");
+      setSaving(false);
+    }
   }
   async function startDemo() {
     if (demoLoading) return;
@@ -80,7 +69,7 @@ export function RoleSelectScreen() {
           <Pill size={40} color={colors.primaryBlue} strokeWidth={1.8} />
         </View>
         <Text style={styles.title}>모두의 복약</Text>
-        <Text style={styles.sub}>어떻게 사용하시나요?</Text>
+        <Text style={styles.sub}>이름과 성별만 알려주세요</Text>
       </View>
 
       {/* Profile input card */}
@@ -104,54 +93,21 @@ export function RoleSelectScreen() {
           </Pressable>
         </View>
 
-        <Text style={[styles.label, { marginTop: spacing.lg }]}>생년월일 (선택)</Text>
-        <TextInput
-          style={styles.input}
-          value={birthDate}
-          onChangeText={setBirthDate}
-          placeholder="예: 1948-03-05"
-          keyboardType="numbers-and-punctuation"
-          placeholderTextColor={colors.textSecondary}
-        />
-
-        <Text style={[styles.label, { marginTop: spacing.lg }]}>거주지역 (선택)</Text>
-        <TextInput
-          style={styles.input}
-          value={region}
-          onChangeText={setRegion}
-          placeholder="예: 전라북도 전주시"
-          placeholderTextColor={colors.textSecondary}
-        />
-
-        <Text style={[styles.label, { marginTop: spacing.lg }]}>전화번호 (선택)</Text>
-        <TextInput
-          style={styles.input}
-          value={phone}
-          onChangeText={setPhone}
-          placeholder="예: 010-1234-5678"
-          keyboardType="phone-pad"
-          placeholderTextColor={colors.textSecondary}
-        />
+        <Text style={styles.hint}>
+          생년월일과 드시는 약은 가입 후 AI 건강전화로 편하게 말씀해 주시면 돼요.
+        </Text>
       </View>
 
-      {/* Role choices */}
+      {/* Sign up */}
       <Pressable
         onPress={startAsPatient}
-        style={({ pressed }) => [styles.choice, styles.choicePrimary, pressed && { opacity: 0.9 }]}
+        disabled={saving}
+        style={({ pressed }) => [styles.choice, styles.choicePrimary, (pressed || saving) && { opacity: 0.9 }]}
       >
         <View style={[styles.choiceIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
           <User size={24} color="#fff" />
         </View>
-        <Text style={[styles.choiceText, { color: "#fff" }]}>본인이 복약해요</Text>
-      </Pressable>
-      <Pressable
-        onPress={startAsGuardian}
-        style={({ pressed }) => [styles.choice, styles.choiceSecondary, pressed && { opacity: 0.9 }]}
-      >
-        <View style={[styles.choiceIcon, { backgroundColor: colors.lightBlueBg }]}>
-          <Users size={24} color={colors.primaryBlue} />
-        </View>
-        <Text style={[styles.choiceText, { color: colors.primaryBlue }]}>가족을 확인해요 (보호자)</Text>
+        <Text style={[styles.choiceText, { color: "#fff" }]}>{saving ? "가입 중…" : "가입하고 시작하기"}</Text>
       </Pressable>
 
       {/* Demo entry — 보조적으로, 실사용자가 헷갈리지 않게 */}
@@ -196,6 +152,10 @@ const styles = StyleSheet.create({
   genderChipOn: { backgroundColor: colors.primaryBlue, borderColor: colors.primaryBlue },
   genderText: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text },
   genderTextOn: { color: "#fff" },
+  hint: {
+    fontSize: fontSizes.body, color: colors.textSecondary, lineHeight: 24,
+    marginTop: spacing.lg,
+  },
   choice: {
     flexDirection: "row", alignItems: "center", gap: spacing.md,
     minHeight: minTouch, borderRadius: radii.button,
@@ -205,11 +165,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryBlue,
     shadowColor: colors.primaryBlue, shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3, shadowRadius: 14, elevation: 4,
-  },
-  choiceSecondary: {
-    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
-    shadowColor: colors.primaryNavy, shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06, shadowRadius: 6, elevation: 1,
   },
   choiceIcon: { width: 44, height: 44, borderRadius: 999, alignItems: "center", justifyContent: "center" },
   choiceText: { fontSize: fontSizes.emphasis, fontWeight: "700", flexShrink: 1 },

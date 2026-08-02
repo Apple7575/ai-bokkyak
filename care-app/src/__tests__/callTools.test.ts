@@ -2,8 +2,56 @@ import {
   buildMedsContext,
   matchSchedule,
   parseRecordMedicationArgs,
+  parseBirthDateArgs,
+  parseAddMedicationArgs,
   toolStatusToIntake,
 } from "../lib/callTools";
+
+describe("parseBirthDateArgs", () => {
+  it("정상 → YYYY-MM-DD", () => {
+    expect(parseBirthDateArgs(JSON.stringify({ year: 1948, month: 3, day: 5 }))).toBe("1948-03-05");
+  });
+  it("한 자리 월/일 zero-pad", () => {
+    expect(parseBirthDateArgs(JSON.stringify({ year: 2000, month: 12, day: 9 }))).toBe("2000-12-09");
+  });
+  it("존재하지 않는 날짜(2월 30일) → null", () => {
+    expect(parseBirthDateArgs(JSON.stringify({ year: 1990, month: 2, day: 30 }))).toBeNull();
+  });
+  it("범위 밖(월 13) → null", () => {
+    expect(parseBirthDateArgs(JSON.stringify({ year: 1990, month: 13, day: 1 }))).toBeNull();
+  });
+  it("정수 아님 → null", () => {
+    expect(parseBirthDateArgs(JSON.stringify({ year: 1990.5, month: 1, day: 1 }))).toBeNull();
+  });
+  it("깨진 JSON → null", () => {
+    expect(parseBirthDateArgs("{year:")).toBeNull();
+  });
+});
+
+describe("parseAddMedicationArgs", () => {
+  it("정상 파싱 + 공백 트림", () => {
+    expect(
+      parseAddMedicationArgs(JSON.stringify({ medicine_name: " 혈압약 ", time_of_day: "저녁", hour: 20, minute: 30 }))
+    ).toEqual({ medicine_name: "혈압약", time_of_day: "저녁", hour: 20, minute: 30 });
+  });
+  it("minute 없으면 0", () => {
+    expect(
+      parseAddMedicationArgs(JSON.stringify({ medicine_name: "비타민", time_of_day: "아침", hour: 8 }))
+    ).toEqual({ medicine_name: "비타민", time_of_day: "아침", hour: 8, minute: 0 });
+  });
+  it("빈 약명 → null", () => {
+    expect(parseAddMedicationArgs(JSON.stringify({ medicine_name: "  ", time_of_day: "아침", hour: 8 }))).toBeNull();
+  });
+  it("시간대 enum 밖 → null", () => {
+    expect(parseAddMedicationArgs(JSON.stringify({ medicine_name: "약", time_of_day: "새벽", hour: 3 }))).toBeNull();
+  });
+  it("hour 범위 밖 → null", () => {
+    expect(parseAddMedicationArgs(JSON.stringify({ medicine_name: "약", time_of_day: "아침", hour: 24 }))).toBeNull();
+  });
+  it("hour 정수 아님 → null", () => {
+    expect(parseAddMedicationArgs(JSON.stringify({ medicine_name: "약", time_of_day: "아침", hour: 8.5 }))).toBeNull();
+  });
+});
 
 describe("parseRecordMedicationArgs", () => {
   it("정상 JSON 파싱", () => {

@@ -45,6 +45,68 @@ export function parseRecordMedicationArgs(json: string): RecordMedicationArgs | 
   };
 }
 
+// ── 가입 직후 setup 통화 도구 파싱 (순수 로직) ─────────────────────────────
+
+// set_birth_date 인자(year/month/day) 검증 → "YYYY-MM-DD" 또는 null.
+// 정수 아님 / 범위 밖 / 존재하지 않는 날짜(2월 30일 등)는 null.
+export function parseBirthDateArgs(json: string): string | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(json);
+  } catch {
+    return null;
+  }
+  if (!raw || typeof raw !== "object") return null;
+  const { year, month, day } = raw as Record<string, unknown>;
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
+  const y = year as number, mo = month as number, d = day as number;
+  if (y < 1900 || y > 2100 || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  const mm = String(mo).padStart(2, "0");
+  const dd = String(d).padStart(2, "0");
+  // 롤오버(존재하지 않는 날짜) 거부: 구성요소 라운드트립 확인.
+  const dt = new Date(`${y}-${mm}-${dd}T00:00:00`);
+  if (isNaN(dt.getTime()) || dt.getFullYear() !== y || dt.getMonth() + 1 !== mo || dt.getDate() !== d) {
+    return null;
+  }
+  return `${y}-${mm}-${dd}`;
+}
+
+export type AddMedicationArgs = {
+  medicine_name: string;
+  time_of_day: "아침" | "점심" | "저녁" | "취침";
+  hour: number;
+  minute: number;
+};
+
+// add_medication 인자 검증 → 정규화된 값 또는 null.
+// minute은 선택(도구 required 아님) — 없으면 0. hour는 0-23 정수 필수.
+export function parseAddMedicationArgs(json: string): AddMedicationArgs | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(json);
+  } catch {
+    return null;
+  }
+  if (!raw || typeof raw !== "object") return null;
+  const { medicine_name, time_of_day, hour, minute } = raw as Record<string, unknown>;
+  if (typeof medicine_name !== "string" || medicine_name.trim() === "") return null;
+  if (
+    typeof time_of_day !== "string" ||
+    !(TIME_OF_DAY_VALUES as readonly string[]).includes(time_of_day)
+  ) {
+    return null;
+  }
+  if (!Number.isInteger(hour) || (hour as number) < 0 || (hour as number) > 23) return null;
+  const min = Number.isInteger(minute) ? (minute as number) : 0;
+  if (min < 0 || min > 59) return null;
+  return {
+    medicine_name: medicine_name.trim(),
+    time_of_day: time_of_day as AddMedicationArgs["time_of_day"],
+    hour: hour as number,
+    minute: min,
+  };
+}
+
 // 도구 status(한국어) → intake_records에 저장하는 IntakeStatus 값 매핑.
 // "안먹음"은 skipped — "missed"는 기록 없음에서 파생되는 표시 전용 값이고,
 // 미복용 저장은 알람 화면·STT와 마찬가지로 skipped를 쓴다.

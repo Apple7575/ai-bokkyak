@@ -64,6 +64,71 @@ const CALL_TOOLS = [
   },
 ];
 
+// 가입 직후 setup 통화 도구 — 생년월일과 복약 정보를 음성으로 받아 저장한다.
+const SETUP_TOOLS = [
+  {
+    type: "function",
+    name: "set_birth_date",
+    description: "어르신이 태어난 연도·월·일을 답하면 즉시 호출한다. 연도는 네 자리(예: 1948).",
+    parameters: {
+      type: "object",
+      properties: {
+        year: { type: "integer" },
+        month: { type: "integer" },
+        day: { type: "integer" },
+      },
+      required: ["year", "month", "day"],
+    },
+  },
+  {
+    type: "function",
+    name: "add_medication",
+    description:
+      "어르신이 드시는 약과 복용 시간을 말하면 약 하나마다 한 번씩 호출한다. hour는 24시간제(예: 저녁 8시 → 20).",
+    parameters: {
+      type: "object",
+      properties: {
+        medicine_name: { type: "string" },
+        time_of_day: { type: "string", enum: ["아침", "점심", "저녁", "취침"] },
+        hour: { type: "integer" },
+        minute: { type: "integer" },
+      },
+      required: ["medicine_name", "time_of_day", "hour"],
+    },
+  },
+  {
+    type: "function",
+    name: "end_call",
+    description: "마무리 인사를 마친 뒤 통화를 끝낼 때 호출한다.",
+    parameters: { type: "object", properties: {} },
+  },
+];
+
+// 가입 직후 setup 통화 시스템 프롬프트 (순수 함수).
+function buildSetupInstructions(patientName: string, gender: string): string {
+  const 호칭 = patientName ? `${patientName}님` : "어르신";
+  const 성별 = gender ? `(성별: ${gender})` : "";
+  return [
+    "당신은 고령 어르신의 복약 관리를 처음 도와드리는 다정한 AI 상담원입니다.",
+    `방금 가입한 ${호칭}${성별}께 첫 안내 전화를 드립니다.`,
+    "항상 존댓말을 쓰고, 짧은 문장으로, 천천히 또박또박, 쉬운 단어로 말합니다.",
+    "모든 발화는 한국어로 합니다.",
+    "",
+    "통화 흐름:",
+    `1. 인사 — "${호칭}" 하고 다정하게 인사하고, 몇 가지만 여쭙겠다고 안내합니다.`,
+    "2. 생년월일을 여쭙습니다. 답을 들으면 반드시 set_birth_date 도구를 호출합니다.",
+    "3. 어떤 약을 드시는지, 그리고 각각 언제(아침/점심/저녁/취침, 몇 시) 드시는지 하나씩 여쭙습니다.",
+    "   약을 하나 확인할 때마다 반드시 add_medication 도구를 호출합니다.",
+    "   시간이 애매하면 아침 8시, 점심 1시(13시), 저녁 7시(19시), 취침 9시(21시)를 기본으로 제안해 확인받습니다.",
+    "4. 더 등록할 약이 없는지 확인하고, 다 되면 마무리 인사를 한 뒤 end_call 도구를 호출합니다.",
+    "",
+    "반드시 지킬 것:",
+    "- 어르신이 숫자를 또박또박 못 말해도 되도록 예/아니오나 쉬운 되물음으로 확인합니다.",
+    "- 생년월일·약 답을 들으면 미루지 말고 즉시 해당 도구를 호출합니다.",
+    "- 전체 통화는 4분 이내로 마무리합니다.",
+  ].join("\n");
+}
+
 type CallMed = { medicine_name: string; time_of_day: string; taken?: boolean };
 
 // AI 건강전화 시스템 프롬프트 빌더 (순수 함수).
@@ -176,6 +241,9 @@ Deno.serve(async (req: Request) => {
     if (op === "realtime-token") {
       const body = await req.json().catch(() => ({}));
       const patientName = typeof body.patientName === "string" ? body.patientName : "";
+      const gender = typeof body.gender === "string" ? body.gender : "";
+      // setup=true 이면 가입 직후 프로필/복약 수집 통화, 아니면 평소 복약 확인 통화.
+      const setup = body.setup === true;
       // meds는 방어적으로 정제: 배열이 아니면 [], 문자열 필드만 채택, 최대 20개.
       const rawMeds = Array.isArray(body.meds) ? body.meds : [];
       const meds: CallMed[] = rawMeds
@@ -187,8 +255,14 @@ Deno.serve(async (req: Request) => {
         }))
         .filter((m: CallMed) => m.medicine_name !== "" && m.time_of_day !== "")
         .slice(0, 20);
-      const model = typeof body.model === "string" ? body.model : "gpt-realtime-2.1";
+      // 모델명은 client_secrets(세션 생성)와 클라이언트의 SDP 요청(?model=)이 반드시
+      // 같아야 한다. 여기서 정한 값을 그대로 반환해 클라이언트가 동일 모델로 통화한다.
+      const model = typeof body.model === "string" && body.model ? body.model : "gpt-realtime";
       const voice = typeof body.voice === "string" ? body.voice : "marin";
+      const instructions = setup
+        ? buildSetupInstructions(patientName, gender)
+        : buildCallInstructions(patientName, meds);
+      const tools = setup ? SETUP_TOOLS : CALL_TOOLS;
       const r = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
         method: "POST",
         headers: { Authorization: `Bearer ${OPENAI_KEY}`, "Content-Type": "application/json" },
@@ -196,9 +270,9 @@ Deno.serve(async (req: Request) => {
           session: {
             type: "realtime",
             model,
-            instructions: buildCallInstructions(patientName, meds),
+            instructions,
             audio: { output: { voice } },
-            tools: CALL_TOOLS,
+            tools,
           },
         }),
       });

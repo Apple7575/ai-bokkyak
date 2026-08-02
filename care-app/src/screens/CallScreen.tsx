@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Alert, Pressable, ScrollView } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Phone } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
@@ -8,10 +8,14 @@ import { supabase, Patient, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { recordIntake } from "../lib/records";
 import { todaySlot } from "../lib/schedule";
+import { ensurePermission, scheduleReminders } from "../lib/notifications";
+import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { playCallGreeting, stopSpeaking } from "../lib/tts";
 import { startCall, CallEvent, CallState } from "../lib/realtimeCall";
 import {
   parseRecordMedicationArgs,
+  parseBirthDateArgs,
+  parseAddMedicationArgs,
   toolStatusToIntake,
   matchSchedule,
   buildMedsContext,
@@ -29,7 +33,11 @@ type Notice = { text: string; kind: "error" | "success" };
 
 export function CallScreen() {
   const nav = useNavigation<any>();
+  const route = useRoute<any>();
   const insets = useSafeAreaInsets();
+
+  // 가입 직후 프로필/복약 수집 통화. 이 모드에선 생년월일·약 등록 도구를 처리한다.
+  const isSetup = route.params?.setup === true;
 
   const [callState, setCallState] = useState<CallState>("connecting");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -44,6 +52,7 @@ export function CallScreen() {
   const sessionRef = useRef(0);
   const handleRef = useRef<Awaited<ReturnType<typeof startCall>> | null>(null);
   const patientIdRef = useRef<string | null>(null);
+  const genderRef = useRef<string | undefined>(undefined);
   const schedulesRef = useRef<Schedule[]>([]);
   // 이 통화 세션의 기준 날짜. begin()에서 스케줄 목록·taken 컨텍스트를 만든 시점에
   // 캡처하고(재시도 시 새로 캡처), 이 세션의 모든 todaySlot 계산에 사용한다.
@@ -90,6 +99,58 @@ export function CallScreen() {
       }, 2000);
       return;
     }
+
+    // ── 가입 직후 setup 통화 도구 ──────────────────────────────
+    if (e.name === "set_birth_date") {
+      const birth = parseBirthDateArgs(e.argsJson);
+      const pid = patientIdRef.current;
+      if (!birth || !pid) {
+        handle.sendToolResult(e.callId, '{"ok":false,"reason":"생년월일 형식 오류"}');
+        return;
+      }
+      const { error } = await supabase.from("patients").update({ birth_date: birth }).eq("id", pid);
+      if (error) {
+        handle.sendToolResult(e.callId, '{"ok":false,"reason":"저장 실패"}');
+      } else {
+        handle.sendToolResult(e.callId, '{"ok":true}');
+        if (sessionRef.current === session) setNotice({ text: "생년월일을 저장했어요.", kind: "success" });
+      }
+      return;
+    }
+    if (e.name === "add_medication") {
+      const med = parseAddMedicationArgs(e.argsJson);
+      const pid = patientIdRef.current;
+      if (!med || !pid) {
+        handle.sendToolResult(e.callId, '{"ok":false,"reason":"약 정보 형식 오류"}');
+        return;
+      }
+      const { data, error } = await supabase.from("schedules").insert({
+        patient_id: pid, medicine_name: med.medicine_name, time_of_day: med.time_of_day,
+        hour: med.hour, minute: med.minute, repeat_days: [] as number[], active: true, // 빈 배열=매일(설계 결정 #1)
+      }).select().single();
+      if (error || !data) {
+        handle.sendToolResult(e.callId, '{"ok":false,"reason":"저장 실패"}');
+        if (sessionRef.current === session) {
+          setNotice({ text: "약 등록에 실패했어요. 통화 후 약 등록 화면에서 확인해 주세요.", kind: "error" });
+        }
+        return;
+      }
+      // 이후 record 등에서 최신 목록을 보게 반영.
+      schedulesRef.current = [...schedulesRef.current, data as Schedule];
+      handle.sendToolResult(e.callId, '{"ok":true}');
+      if (sessionRef.current === session) {
+        setNotice({ text: `${med.medicine_name}을(를) 등록했어요.`, kind: "success" });
+      }
+      // 알림 예약은 베스트에포트(일정은 이미 저장됨). 실패해도 통화를 막지 않는다.
+      try {
+        await ensureStrongAlarmReady();
+        if (await ensurePermission()) {
+          await scheduleReminders(data.id, data.medicine_name, med.hour, med.minute, [], med.time_of_day);
+        }
+      } catch {}
+      return;
+    }
+
     if (e.name !== "record_medication") {
       handle.sendToolResult(e.callId, JSON.stringify({ ok: false, reason: "지원하지 않는 요청" }));
       return;
@@ -202,6 +263,27 @@ export function CallScreen() {
       if (sessionRef.current !== session) return;
       if (pErr) throw new Error("환자 정보를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.");
 
+      callDateRef.current = new Date();
+      patientIdRef.current = pid;
+      genderRef.current = (patient as Patient | null)?.gender ?? undefined;
+
+      // setup 통화(가입 직후): 아직 등록된 약이 없으므로 스케줄/기록 조회를 건너뛴다.
+      // 생년월일·복약 정보를 음성으로 받아 저장하는 setup 세션으로 시작한다.
+      if (isSetup) {
+        schedulesRef.current = [];
+        const handle = await startCall({
+          patientName: (patient as Patient | null)?.name,
+          gender: genderRef.current,
+          meds: [],
+          setup: true,
+          onEvent: (e) => handleEvent(session, e),
+          greetingDone,
+        });
+        if (sessionRef.current !== session) { handle.end().catch(() => {}); return; }
+        handleRef.current = handle;
+        return;
+      }
+
       const { data: schs, error: sErr } = await supabase
         .from("schedules").select("*").eq("patient_id", pid).eq("active", true).order("hour");
       if (sessionRef.current !== session) return;
@@ -210,8 +292,7 @@ export function CallScreen() {
       // 오늘 요일에 해당하는 약만 (빈 repeat_days=매일, 설계 결정 #1) — HomeScreen과 동일.
       // 이 `now`가 이 세션의 기준 날짜: 요일 필터·taken 조회·복약 기록 슬롯이 전부
       // 같은 날짜를 보게 캡처해 둔다 (자정을 넘겨도 통화 중에는 날짜가 안 바뀐다).
-      const now = new Date();
-      callDateRef.current = now;
+      const now = callDateRef.current;
       const dueToday = ((schs ?? []) as Schedule[]).filter((s) => {
         const days = s.repeat_days ?? [];
         return days.length === 0 || days.includes(now.getDay());
@@ -232,11 +313,11 @@ export function CallScreen() {
         (recs ?? []).filter((r) => r.status === "completed").map((r) => r.schedule_id as string)
       );
 
-      patientIdRef.current = pid;
       schedulesRef.current = dueToday;
 
       const handle = await startCall({
         patientName: (patient as Patient | null)?.name,
+        gender: genderRef.current,
         meds: buildMedsContext(dueToday, taken),
         onEvent: (e) => handleEvent(session, e),
         greetingDone,

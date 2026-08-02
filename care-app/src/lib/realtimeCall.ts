@@ -59,10 +59,16 @@ function koreanError(message: string): Error {
 
 // Edge Function에서 Realtime 임시 클라이언트 시크릿을 발급받는다.
 // 실패는 한국어 메시지로 throw — 호출부(화면)가 Alert로 노출한다.
-async function fetchRealtimeToken(
-  patientName: string | undefined,
-  meds: CallMed[]
-): Promise<{ value: string; model: string }> {
+// 서버가 model을 못 돌려주는 옛 배포본을 만나도 빈 model을 그대로 쓰지 않도록 하는 기본값.
+// (빈 문자열을 ?model= 에 넣으면 OpenAI가 400을 반환한다.)
+const DEFAULT_REALTIME_MODEL = "gpt-realtime";
+
+async function fetchRealtimeToken(payload: {
+  patientName?: string;
+  gender?: string;
+  meds: CallMed[];
+  setup?: boolean;
+}): Promise<{ value: string; model: string }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10000);
   let res: Response;
@@ -70,7 +76,7 @@ async function fetchRealtimeToken(
     res = await fetch(`${FN}?op=realtime-token`, {
       method: "POST",
       headers: { Authorization: `Bearer ${ANON}`, apikey: ANON, "Content-Type": "application/json" },
-      body: JSON.stringify({ patientName, meds }),
+      body: JSON.stringify(payload),
       signal: controller.signal,
     });
   } catch {
@@ -86,12 +92,17 @@ async function fetchRealtimeToken(
   if (!j || typeof j.value !== "string" || j.value === "") {
     throw new Error("통화 준비에 실패했어요. (임시 키 발급 안 됨)");
   }
-  return { value: j.value, model: typeof j.model === "string" ? j.model : "gpt-realtime-2.1" };
+  // 빈 문자열도 typeof는 "string"이므로 명시적으로 non-empty 검사 — 이게 400의 원인이었다.
+  const model = typeof j.model === "string" && j.model ? j.model : DEFAULT_REALTIME_MODEL;
+  return { value: j.value, model };
 }
 
 export async function startCall(opts: {
   patientName?: string;
+  gender?: string;
   meds: CallMed[];
+  // 가입 직후 프로필/복약 수집 통화면 true. 서버가 다른 도구·안내로 세션을 만든다.
+  setup?: boolean;
   onEvent: (e: CallEvent) => void;
   // 앱 쪽 대기 인사말("안녕하세요, 모두의 복약입니다") 재생이 끝나는 시점.
   // 연결이 되고 이 promise가 resolve되면 AI 첫 발화(response.create)를 요청해,
@@ -113,7 +124,12 @@ export async function startCall(opts: {
 
   // 토큰 발급은 마이크를 잡기 전에 한다 — 여기서 실패하면 정리할 자원이 없고,
   // 스펙대로 throw해서 호출부가 Alert로 처리한다.
-  const token = await fetchRealtimeToken(opts.patientName, opts.meds);
+  const token = await fetchRealtimeToken({
+    patientName: opts.patientName,
+    gender: opts.gender,
+    meds: opts.meds,
+    setup: opts.setup,
+  });
 
   let pc: RTCPeerConnection | null = null;
   let localStream: MediaStream | null = null;

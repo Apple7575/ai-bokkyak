@@ -2,21 +2,18 @@ export type RootStackParamList = {
   Onboarding: undefined;
   RoleSelect: undefined;
   Tabs: undefined;
-  GuardianHome: undefined;
   MedicineList: undefined;
   RegisterMethod: undefined;
   ButtonRegister: { editId?: string } | undefined;
   VoiceRegister: undefined;
   OcrRegister: undefined;
   Alarm: { scheduleId?: string };
-  GuardianLink: undefined;
   SnoozePicker: { scheduleId: string };
   SnoozeCountdown: { scheduleId: string; fireAt: string; hour: number; minute: number };
-  Call: undefined;
+  Call: { setup?: boolean } | undefined;
 };
 export type TabParamList = {
   Home: undefined;
   Record: undefined;
-  Guardian: undefined;
   More: undefined;
 };
