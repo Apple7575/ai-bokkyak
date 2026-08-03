@@ -8,7 +8,7 @@ import { supabase, Patient, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { recordIntake } from "../lib/records";
 import { todaySlot } from "../lib/schedule";
-import { ensurePermission, scheduleReminders } from "../lib/notifications";
+import { ensurePermission, scheduleReminders, cancelSchedule } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { playCallGreeting, stopSpeaking } from "../lib/tts";
 import { startCall, CallEvent, CallState } from "../lib/realtimeCall";
@@ -16,6 +16,9 @@ import {
   parseRecordMedicationArgs,
   parseBirthDateArgs,
   parseAddMedicationArgs,
+  parseUpdateMedicationArgs,
+  parseRemoveMedicationArgs,
+  summarizeMedList,
   toolStatusToIntake,
   matchSchedule,
   buildMedsContext,
@@ -135,9 +138,18 @@ export function CallScreen() {
         }
         return;
       }
-      // 이후 record 등에서 최신 목록을 보게 반영.
+      // 이후 record/update/remove가 최신 목록을 보게 반영.
       schedulesRef.current = [...schedulesRef.current, data as Schedule];
-      handle.sendToolResult(e.callId, '{"ok":true}');
+      // 방금 등록한 약의 번호와 전체 목록을 함께 돌려줘, 모델이 update/remove에 쓸
+      // index를 자기 기억이 아니라 실제 목록 기준으로 갖게 한다.
+      handle.sendToolResult(
+        e.callId,
+        JSON.stringify({
+          ok: true,
+          index: schedulesRef.current.length - 1,
+          meds: summarizeMedList(schedulesRef.current),
+        })
+      );
       if (sessionRef.current === session) {
         setNotice({ text: `${med.medicine_name}을(를) 등록했어요.`, kind: "success" });
       }
@@ -148,6 +160,91 @@ export function CallScreen() {
           await scheduleReminders(data.id, data.medicine_name, med.hour, med.minute, [], med.time_of_day);
         }
       } catch {}
+      return;
+    }
+
+    if (e.name === "update_medication") {
+      const upd = parseUpdateMedicationArgs(e.argsJson);
+      if (!upd) {
+        handle.sendToolResult(e.callId, '{"ok":false,"reason":"수정 정보 형식 오류"}');
+        return;
+      }
+      const target = schedulesRef.current[upd.index];
+      if (!target) {
+        handle.sendToolResult(
+          e.callId,
+          JSON.stringify({ ok: false, reason: "해당 번호의 약 없음", meds: summarizeMedList(schedulesRef.current) })
+        );
+        return;
+      }
+      // 바꿀 필드만 patch — 나머지는 기존 값 유지.
+      const patch: Partial<Schedule> = {};
+      if (upd.medicine_name !== undefined) patch.medicine_name = upd.medicine_name;
+      if (upd.time_of_day !== undefined) patch.time_of_day = upd.time_of_day;
+      if (upd.hour !== undefined) patch.hour = upd.hour;
+      if (upd.minute !== undefined) patch.minute = upd.minute;
+      const { data, error } = await supabase
+        .from("schedules").update(patch).eq("id", target.id).select().single();
+      if (error || !data) {
+        handle.sendToolResult(e.callId, '{"ok":false,"reason":"저장 실패"}');
+        if (sessionRef.current === session) {
+          setNotice({ text: "약 수정에 실패했어요. 통화 후 복약 관리에서 확인해 주세요.", kind: "error" });
+        }
+        return;
+      }
+      const next = [...schedulesRef.current];
+      next[upd.index] = data as Schedule;
+      schedulesRef.current = next;
+      handle.sendToolResult(
+        e.callId,
+        JSON.stringify({ ok: true, meds: summarizeMedList(schedulesRef.current) })
+      );
+      if (sessionRef.current === session) {
+        setNotice({ text: `${data.medicine_name} 정보를 수정했어요.`, kind: "success" });
+      }
+      // 시간·시간대가 바뀌었을 수 있으니 알림을 다시 예약(베스트에포트).
+      try {
+        await cancelSchedule(data.id);
+        if (await ensurePermission()) {
+          await scheduleReminders(
+            data.id, data.medicine_name, data.hour, data.minute, data.repeat_days ?? [], data.time_of_day
+          );
+        }
+      } catch {}
+      return;
+    }
+    if (e.name === "remove_medication") {
+      const idx = parseRemoveMedicationArgs(e.argsJson);
+      if (idx === null) {
+        handle.sendToolResult(e.callId, '{"ok":false,"reason":"인자 형식 오류"}');
+        return;
+      }
+      const target = schedulesRef.current[idx];
+      if (!target) {
+        handle.sendToolResult(
+          e.callId,
+          JSON.stringify({ ok: false, reason: "해당 번호의 약 없음", meds: summarizeMedList(schedulesRef.current) })
+        );
+        return;
+      }
+      const { error } = await supabase.from("schedules").delete().eq("id", target.id);
+      if (error) {
+        handle.sendToolResult(e.callId, '{"ok":false,"reason":"삭제 실패"}');
+        if (sessionRef.current === session) {
+          setNotice({ text: `'${target.medicine_name}' 삭제에 실패했어요.`, kind: "error" });
+        }
+        return;
+      }
+      // 삭제 후 번호가 앞으로 당겨진다 — 갱신된 목록을 결과에 실어 모델 index를 재동기화.
+      schedulesRef.current = schedulesRef.current.filter((_, i) => i !== idx);
+      handle.sendToolResult(
+        e.callId,
+        JSON.stringify({ ok: true, meds: summarizeMedList(schedulesRef.current) })
+      );
+      if (sessionRef.current === session) {
+        setNotice({ text: `${target.medicine_name}을(를) 목록에서 뺐어요.`, kind: "success" });
+      }
+      try { await cancelSchedule(target.id); } catch {}
       return;
     }
 

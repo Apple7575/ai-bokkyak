@@ -6,6 +6,8 @@ import notifee, {
 import { nextDoseAt, dosesWithin } from "./doseTimes";
 import { SnoozeSpec, nextSnoozeFire } from "./snooze";
 import { supabase } from "./supabase";
+import { alarmChannelId } from "./alarmSound";
+import { getAlarmSoundSettings } from "./alarmSettings";
 
 // 정확 알람(SCHEDULE_EXACT_ALARM)이 허용된 경우에만 alarmManager 옵션을 켠다.
 // 권한이 없는 Android(14+ 등)에서 alarmManager를 주면 Notifee가 트리거를 거부해
@@ -27,7 +29,16 @@ const CH: Record<TOD, string> = { 아침: "care-morning", 점심: "care-noon", �
 // notifee는 [진동,멈춤,진동,멈춤...] 형식이라 선행 0이 불필요하다.
 const STRONG_VIBRATION = [800, 400, 800, 400, 800, 400];
 
-async function ensureChannel(tod: TOD): Promise<string> {
+// 무음(진동만) 설정이면 소리 없는 별도 채널을 쓴다. notifee 채널은 sound를 주지
+// 않으면 소리를 재생하지 않으며, 채널 소리는 생성 후 변경할 수 없어 id를 분리한다.
+async function ensureChannel(tod: TOD, silent: boolean): Promise<string> {
+  if (silent) {
+    return notifee.createChannel({
+      id: alarmChannelId(SOUND[tod], true), name: `복약 알람(${tod}, 진동만)`,
+      importance: AndroidImportance.HIGH, vibration: true, vibrationPattern: STRONG_VIBRATION,
+      visibility: AndroidVisibility.PUBLIC,
+    });
+  }
   return notifee.createChannel({
     id: CH[tod], name: `복약 알람(${tod})`,
     importance: AndroidImportance.HIGH, sound: SOUND[tod], vibration: true,
@@ -52,10 +63,12 @@ export async function ensureIOSCategory(): Promise<void> {
   ]);
 }
 
-function androidAlarm(scheduleId: string, ch: string, sound: string) {
+function androidAlarm(scheduleId: string, ch: string, sound: string, silent: boolean) {
   return {
     channelId: ch, category: AndroidCategory.ALARM, importance: AndroidImportance.HIGH,
-    sound, loopSound: true, vibrationPattern: STRONG_VIBRATION,
+    // 무음이면 알림 자체의 소리·루프도 끈다(채널만 무음이면 알림 sound가 이긴다).
+    ...(silent ? { loopSound: false } : { sound, loopSound: true }),
+    vibrationPattern: STRONG_VIBRATION,
     asForegroundService: true,
     fullScreenAction: { id: "alarm", launchActivity: "default" },
     pressAction: { id: "alarm", launchActivity: "default" },
@@ -76,13 +89,19 @@ const REPEAT_INTERVAL_MS = 30_000;
 const MAX_SEQ = 5;
 
 // 알람 알림 본문(primary/후속 공용). data.seq로 반복 단계를 추적한다.
-function alarmNotification(scheduleId: string, tod: TOD, ch: string, hour: number, minute: number, seq: number) {
+function alarmNotification(
+  scheduleId: string, tod: TOD, ch: string, hour: number, minute: number, seq: number, silent: boolean
+) {
   return {
     title: `${tod} 약 복용 시간입니다`,
     body: "약을 드신 후 복용 완료를 눌러주세요.",
     data: { scheduleId, hour: String(hour), minute: String(minute), tod, seq: String(seq) },
-    android: androidAlarm(scheduleId, ch, SOUND[tod]),
-    ios: { categoryId: "care-alarm", sound: `${SOUND[tod]}.mp3`, interruptionLevel: "timeSensitive" as const },
+    android: androidAlarm(scheduleId, ch, SOUND[tod], silent),
+    ios: {
+      categoryId: "care-alarm",
+      ...(silent ? {} : { sound: `${SOUND[tod]}.mp3` }),
+      interruptionLevel: "timeSensitive" as const,
+    },
   };
 }
 
@@ -93,9 +112,10 @@ export async function scheduleRepeatFollowup(
 ): Promise<void> {
   if (seq > MAX_SEQ) return;
   const tod = todOf(timeOfDay);
-  const ch = await ensureChannel(tod);
+  const { silent } = await getAlarmSoundSettings();
+  const ch = await ensureChannel(tod, silent);
   await notifee.createTriggerNotification(
-    { id: `alarm-${scheduleId}-rep`, ...alarmNotification(scheduleId, tod, ch, hour, minute, seq) },
+    { id: `alarm-${scheduleId}-rep`, ...alarmNotification(scheduleId, tod, ch, hour, minute, seq, silent) },
     { type: TriggerType.TIMESTAMP, timestamp: Date.now() + REPEAT_INTERVAL_MS, ...(await exactAlarmOption()) });
 }
 
@@ -115,6 +135,7 @@ export async function scheduleIosWindow(
   if (Platform.OS !== "ios") return;
   await cancelIosWindow(scheduleId);
   const tod = todOf(timeOfDay);
+  const { silent } = await getAlarmSoundSettings();
   const doses = dosesWithin({ hour, minute, repeat_days: repeatDays }, new Date(), WINDOW_HOURS);
   // 현재 예약 개수 기준 남은 여유로 버스트 수 결정(도즈당 최소 1, 여유 있으면 최대 5 버스트).
   let pending = 0;
@@ -131,7 +152,11 @@ export async function scheduleIosWindow(
           { id: `alarm-${scheduleId}-win-${di}-${b}`, title: `${tod} 약 복용 시간입니다`,
             body: "약을 드신 후 '지금 약 먹기'를 눌러주세요.",
             data: { scheduleId, hour: String(hour), minute: String(minute), tod, seq: String(b) },
-            ios: { categoryId: "care-alarm", sound: `${SOUND[tod]}.mp3`, interruptionLevel: "timeSensitive" as const } },
+            ios: {
+              categoryId: "care-alarm",
+              ...(silent ? {} : { sound: `${SOUND[tod]}.mp3` }),
+              interruptionLevel: "timeSensitive" as const,
+            } },
           { type: TriggerType.TIMESTAMP, timestamp: base + b * BURST_GAP_MS });
       } catch {}
     }
@@ -204,14 +229,15 @@ export async function rescheduleNext(
   scheduleId: string, hour: number, minute: number, repeatDays: number[], timeOfDay: string
 ): Promise<void> {
   const tod = todOf(timeOfDay);
-  const ch = await ensureChannel(tod);
+  const { silent } = await getAlarmSoundSettings();
+  const ch = await ensureChannel(tod, silent);
   // 버퍼 없이 "지금" 기준 다음 슬롯. 정시 발사 직후 DELIVERED 재예약 때도
   // "방금 울린 슬롯"은 자연히 제외된다: 알람이 HH:MM:00에 울리고 이 코드는 그보다 수 ms
   // 뒤에 실행되므로 now가 이미 슬롯(초=0)을 지나 다음날로 잡힌다. (예전엔 60초 버퍼를
   // 두는 바람에 "지금부터 2분 내" 등록·재동기화 알람이 내일로 밀리던 버그가 있었다.)
   const fireAt = nextDoseAt({ hour, minute, repeat_days: repeatDays }, new Date()).getTime();
   await notifee.createTriggerNotification(
-    { id: `alarm-${scheduleId}`, ...alarmNotification(scheduleId, tod, ch, hour, minute, 0) },
+    { id: `alarm-${scheduleId}`, ...alarmNotification(scheduleId, tod, ch, hour, minute, 0, silent) },
     { type: TriggerType.TIMESTAMP, timestamp: fireAt, ...(await exactAlarmOption()) }); // repeatFrequency 없음
 }
 
@@ -229,10 +255,11 @@ export async function scheduleSnooze(
   hour: number, minute: number, timeOfDay: string = "아침"
 ): Promise<string[]> {
   const tod = todOf(timeOfDay); // 원래 시간대 사운드/채널/반복 라벨 유지(저녁 약이 아침으로 바뀌지 않게)
-  const ch = await ensureChannel(tod);
+  const { silent } = await getAlarmSoundSettings();
+  const ch = await ensureChannel(tod, silent);
   const fireAt = nextSnoozeFire(spec, new Date()).getTime();
   const id = await notifee.createTriggerNotification(
-    { id: `alarm-${scheduleId}-snooze`, ...alarmNotification(scheduleId, tod, ch, hour, minute, 0), title: "다시 알림" },
+    { id: `alarm-${scheduleId}-snooze`, ...alarmNotification(scheduleId, tod, ch, hour, minute, 0, silent), title: "다시 알림" },
     { type: TriggerType.TIMESTAMP, timestamp: fireAt, ...(await exactAlarmOption()) });
   return [id];
 }

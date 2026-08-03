@@ -8,13 +8,14 @@ import { clearAll } from "../lib/storage";
 import { colors, fontSizes, radii, spacing } from "../theme/tokens";
 
 type IconType = React.ComponentType<{ size?: number; color?: string }>;
-type MenuItem = { Icon: IconType; label: string; color: string; sub?: string };
+// route가 있는 항목만 실제 화면으로 이동한다. 나머지는 아직 시각용 자리표시자.
+type MenuItem = { Icon: IconType; label: string; color: string; sub?: string; route?: string };
 
 const menuItems: MenuItem[] = [
-  { Icon: Volume2, label: "알림 소리 설정", color: colors.primaryBlue },
+  { Icon: Volume2, label: "알림 소리 설정", color: colors.primaryBlue, route: "AlarmSound" },
   { Icon: Mic2, label: "음성 안내 속도", color: colors.primaryBlue, sub: "기본값: 느리게" },
   { Icon: Type, label: "큰 글씨 모드", color: colors.primaryBlue },
-  { Icon: Shield, label: "개인정보 설정", color: colors.textSecondary },
+  { Icon: Shield, label: "개인정보 설정", color: colors.textSecondary, route: "Privacy" },
 ];
 
 export function SettingsScreen() {
@@ -29,20 +30,34 @@ export function SettingsScreen() {
     <View style={styles.screen}>
       <ScreenHeader title="더보기" />
       <ScrollView contentContainerStyle={styles.content}>
-        {/* 시각용 메뉴 그룹 (무동작) */}
         <View style={styles.group}>
-          {menuItems.map(({ Icon, label, color, sub }, i) => (
-            <View key={label} style={[styles.rowItem, i < menuItems.length - 1 && styles.rowDivider]}>
-              <View style={[styles.iconBox, { backgroundColor: color + "1A" }]}>
-                <Icon size={20} color={color} />
-              </View>
-              <View style={styles.rowTextWrap}>
-                <Text style={styles.rowLabel}>{label}</Text>
-                {sub ? <Text style={styles.rowSub}>{sub}</Text> : null}
-              </View>
-              <ChevronRight size={18} color={colors.textSecondary} />
-            </View>
-          ))}
+          {menuItems.map(({ Icon, label, color, sub, route }, i) => {
+            const rowStyle = [styles.rowItem, i < menuItems.length - 1 && styles.rowDivider];
+            const inner = (
+              <>
+                <View style={[styles.iconBox, { backgroundColor: color + "1A" }]}>
+                  <Icon size={20} color={color} />
+                </View>
+                <View style={styles.rowTextWrap}>
+                  <Text style={styles.rowLabel}>{label}</Text>
+                  {sub ? <Text style={styles.rowSub}>{sub}</Text> : null}
+                </View>
+                <ChevronRight size={18} color={colors.textSecondary} />
+              </>
+            );
+            // route 없는 항목(음성 안내 속도·큰 글씨 모드)은 아직 시각용이라 누를 수 없게 둔다.
+            return route ? (
+              <Pressable
+                key={label}
+                onPress={() => nav.navigate(route)}
+                style={({ pressed }) => [...rowStyle, pressed && { opacity: 0.9 }]}
+              >
+                {inner}
+              </Pressable>
+            ) : (
+              <View key={label} style={rowStyle}>{inner}</View>
+            );
+          })}
         </View>
 
         {/* 로그아웃 / 역할 다시 선택 (실제 동작) */}

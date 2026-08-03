@@ -107,6 +107,88 @@ export function parseAddMedicationArgs(json: string): AddMedicationArgs | null {
   };
 }
 
+export type UpdateMedicationArgs = {
+  index: number;
+  medicine_name?: string;
+  time_of_day?: "아침" | "점심" | "저녁" | "취침";
+  hour?: number;
+  minute?: number;
+};
+
+// update_medication 인자 검증 → 바꿀 필드만 담은 부분 갱신 객체 또는 null.
+// index는 통화 중 등록 순서(0부터). 바꿀 항목이 하나도 없으면 null —
+// 빈 update로 "수정했어요"라고 말하는 상황을 막는다.
+export function parseUpdateMedicationArgs(json: string): UpdateMedicationArgs | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(json);
+  } catch {
+    return null;
+  }
+  if (!raw || typeof raw !== "object") return null;
+  const { index, medicine_name, time_of_day, hour, minute } = raw as Record<string, unknown>;
+  if (!Number.isInteger(index) || (index as number) < 0) return null;
+  const out: UpdateMedicationArgs = { index: index as number };
+
+  if (medicine_name !== undefined && medicine_name !== null) {
+    if (typeof medicine_name !== "string" || medicine_name.trim() === "") return null;
+    out.medicine_name = medicine_name.trim();
+  }
+  if (time_of_day !== undefined && time_of_day !== null) {
+    if (
+      typeof time_of_day !== "string" ||
+      !(TIME_OF_DAY_VALUES as readonly string[]).includes(time_of_day)
+    ) {
+      return null;
+    }
+    out.time_of_day = time_of_day as UpdateMedicationArgs["time_of_day"];
+  }
+  if (hour !== undefined && hour !== null) {
+    if (!Number.isInteger(hour) || (hour as number) < 0 || (hour as number) > 23) return null;
+    out.hour = hour as number;
+  }
+  if (minute !== undefined && minute !== null) {
+    if (!Number.isInteger(minute) || (minute as number) < 0 || (minute as number) > 59) return null;
+    out.minute = minute as number;
+  }
+
+  // index 말고 바꿀 게 하나도 없으면 무의미한 호출.
+  if (
+    out.medicine_name === undefined && out.time_of_day === undefined &&
+    out.hour === undefined && out.minute === undefined
+  ) {
+    return null;
+  }
+  return out;
+}
+
+// remove_medication 인자 검증 → 0 이상 정수 index 또는 null.
+export function parseRemoveMedicationArgs(json: string): number | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(json);
+  } catch {
+    return null;
+  }
+  if (!raw || typeof raw !== "object") return null;
+  const { index } = raw as Record<string, unknown>;
+  if (!Number.isInteger(index) || (index as number) < 0) return null;
+  return index as number;
+}
+
+// 통화 중 등록된 약 목록을 모델에게 돌려줄 요약으로 만든다.
+// remove 후 번호가 당겨지므로, 도구 결과에 현재 번호를 함께 실어 모델의 index를 재동기화한다.
+export function summarizeMedList<
+  T extends { medicine_name: string; time_of_day: string; hour: number; minute: number }
+>(schedules: T[]): { index: number; medicine_name: string; time_of_day: string; time: string }[] {
+  return schedules.map((s, i) => ({
+    index: i,
+    medicine_name: s.medicine_name,
+    time_of_day: s.time_of_day,
+    time: `${String(s.hour).padStart(2, "0")}:${String(s.minute).padStart(2, "0")}`,
+  }));
+}
+
 // 도구 status(한국어) → intake_records에 저장하는 IntakeStatus 값 매핑.
 // "안먹음"은 skipped — "missed"는 기록 없음에서 파생되는 표시 전용 값이고,
 // 미복용 저장은 알람 화면·STT와 마찬가지로 skipped를 쓴다.

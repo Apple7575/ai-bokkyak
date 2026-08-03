@@ -11,6 +11,8 @@ export type RootStackParamList = {
   SnoozePicker: { scheduleId: string };
   SnoozeCountdown: { scheduleId: string; fireAt: string; hour: number; minute: number };
   Call: { setup?: boolean } | undefined;
+  AlarmSound: undefined;
+  Privacy: undefined;
 };
 export type TabParamList = {
   Home: undefined;

@@ -4,6 +4,9 @@ import {
   parseRecordMedicationArgs,
   parseBirthDateArgs,
   parseAddMedicationArgs,
+  parseUpdateMedicationArgs,
+  parseRemoveMedicationArgs,
+  summarizeMedList,
   toolStatusToIntake,
 } from "../lib/callTools";
 
@@ -162,5 +165,66 @@ describe("buildMedsContext", () => {
     for (const m of meds) {
       expect("id" in m).toBe(false);
     }
+  });
+});
+
+describe("parseUpdateMedicationArgs", () => {
+  it("바꿀 필드만 담아 돌려준다", () => {
+    expect(parseUpdateMedicationArgs('{"index":1,"hour":20}')).toEqual({ index: 1, hour: 20 });
+    expect(parseUpdateMedicationArgs('{"index":0,"medicine_name":" 혈압약 ","time_of_day":"저녁"}'))
+      .toEqual({ index: 0, medicine_name: "혈압약", time_of_day: "저녁" });
+  });
+
+  it("index만 있고 바꿀 게 없으면 null", () => {
+    expect(parseUpdateMedicationArgs('{"index":0}')).toBeNull();
+  });
+
+  it("null로 온 필드는 '변경 없음'으로 무시한다", () => {
+    expect(parseUpdateMedicationArgs('{"index":0,"medicine_name":null,"hour":9}'))
+      .toEqual({ index: 0, hour: 9 });
+    // 전부 null이면 바꿀 게 없으므로 null
+    expect(parseUpdateMedicationArgs('{"index":0,"medicine_name":null}')).toBeNull();
+  });
+
+  it("잘못된 index / 범위 밖 값 / 빈 약명은 null", () => {
+    expect(parseUpdateMedicationArgs('{"index":-1,"hour":8}')).toBeNull();
+    expect(parseUpdateMedicationArgs('{"index":1.5,"hour":8}')).toBeNull();
+    expect(parseUpdateMedicationArgs('{"hour":8}')).toBeNull();
+    expect(parseUpdateMedicationArgs('{"index":0,"hour":24}')).toBeNull();
+    expect(parseUpdateMedicationArgs('{"index":0,"minute":60}')).toBeNull();
+    expect(parseUpdateMedicationArgs('{"index":0,"medicine_name":"   "}')).toBeNull();
+    expect(parseUpdateMedicationArgs('{"index":0,"time_of_day":"새벽"}')).toBeNull();
+    expect(parseUpdateMedicationArgs("깨진 JSON")).toBeNull();
+  });
+
+  it("경계값 hour 0/23, minute 0/59 허용", () => {
+    expect(parseUpdateMedicationArgs('{"index":0,"hour":0}')).toEqual({ index: 0, hour: 0 });
+    expect(parseUpdateMedicationArgs('{"index":0,"hour":23,"minute":59}'))
+      .toEqual({ index: 0, hour: 23, minute: 59 });
+    expect(parseUpdateMedicationArgs('{"index":0,"minute":0}')).toEqual({ index: 0, minute: 0 });
+  });
+});
+
+describe("parseRemoveMedicationArgs", () => {
+  it("0 이상 정수 index만 허용", () => {
+    expect(parseRemoveMedicationArgs('{"index":0}')).toBe(0);
+    expect(parseRemoveMedicationArgs('{"index":3}')).toBe(3);
+    expect(parseRemoveMedicationArgs('{"index":-1}')).toBeNull();
+    expect(parseRemoveMedicationArgs('{"index":"1"}')).toBeNull();
+    expect(parseRemoveMedicationArgs("{}")).toBeNull();
+    expect(parseRemoveMedicationArgs("깨진 JSON")).toBeNull();
+  });
+});
+
+describe("summarizeMedList", () => {
+  it("현재 순서대로 0부터 번호를 다시 매긴다", () => {
+    const meds = summarizeMedList([
+      { medicine_name: "혈압약", time_of_day: "아침", hour: 8, minute: 0 },
+      { medicine_name: "당뇨약", time_of_day: "저녁", hour: 19, minute: 5 },
+    ]);
+    expect(meds).toEqual([
+      { index: 0, medicine_name: "혈압약", time_of_day: "아침", time: "08:00" },
+      { index: 1, medicine_name: "당뇨약", time_of_day: "저녁", time: "19:05" },
+    ]);
   });
 });

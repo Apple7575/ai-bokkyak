@@ -64,6 +64,26 @@ const CALL_TOOLS = [
   },
 ];
 
+// 모든 통화에 공통으로 붙는 안전 가드레일.
+// 이 앱은 의료기기가 아니고 대상이 고령 어르신이므로, 모델이 진단·용량 조정 같은
+// 의료 조언을 하거나 복약과 무관한 주제로 끌려가지 않도록 명시적으로 제한한다.
+const GUARDRAILS = [
+  "",
+  "반드시 지킬 안전 규칙:",
+  "- 역할 한정: 복약 일정의 등록·변경·확인과 간단한 안부 인사만 합니다.",
+  "- 의료 조언 금지: 질병 진단, 치료법, 약의 효능·부작용·용량 변경을 권고하지 않습니다.",
+  "  그런 질문에는 \"약에 대한 자세한 상담은 의사나 약사와 상의해 주세요\"라고 안내하고",
+  "  복약 일정 이야기로 돌아옵니다.",
+  "- 응급 상황(가슴 통증, 호흡 곤란, 의식 저하 등)을 말씀하시면 즉시",
+  "  \"119에 전화해 주세요\"라고 안내하고 통화를 마무리합니다.",
+  "- 주제 이탈 처리: 복약과 무관한 요청(일반 상식, 금융, 다른 앱 조작 등)은 정중히 거절하고",
+  "  대화를 복약으로 되돌립니다.",
+  "- 사실성: 아래 목록과 도구 결과에 있는 정보만 사실로 말합니다. 모르는 것은 모른다고 합니다.",
+  "  약 이름·시간을 지어내지 않습니다.",
+  "- 태도: 어르신이 화를 내시거나 부적절한 말씀을 하셔도 차분하고 정중하게 응대합니다.",
+  "- 개인정보: 주민등록번호, 계좌번호, 비밀번호는 절대 묻지 않습니다.",
+].join("\n");
+
 // 가입 직후 setup 통화 도구 — 생년월일과 복약 정보를 음성으로 받아 저장한다.
 const SETUP_TOOLS = [
   {
@@ -98,6 +118,35 @@ const SETUP_TOOLS = [
   },
   {
     type: "function",
+    name: "update_medication",
+    description:
+      "이미 등록한 약의 이름이나 시간을 어르신이 정정하면 호출한다. " +
+      "index는 add_medication을 호출한 순서(0부터). 바꿀 항목만 채운다.",
+    parameters: {
+      type: "object",
+      properties: {
+        index: { type: "integer" },
+        medicine_name: { type: "string" },
+        time_of_day: { type: "string", enum: ["아침", "점심", "저녁", "취침"] },
+        hour: { type: "integer" },
+        minute: { type: "integer" },
+      },
+      required: ["index"],
+    },
+  },
+  {
+    type: "function",
+    name: "remove_medication",
+    description:
+      "이미 등록한 약을 빼 달라고 하면 호출한다. index는 add_medication을 호출한 순서(0부터).",
+    parameters: {
+      type: "object",
+      properties: { index: { type: "integer" } },
+      required: ["index"],
+    },
+  },
+  {
+    type: "function",
     name: "end_call",
     description: "마무리 인사를 마친 뒤 통화를 끝낼 때 호출한다.",
     parameters: { type: "object", properties: {} },
@@ -122,10 +171,20 @@ function buildSetupInstructions(patientName: string, gender: string): string {
     "   시간이 애매하면 아침 8시, 점심 1시(13시), 저녁 7시(19시), 취침 9시(21시)를 기본으로 제안해 확인받습니다.",
     "4. 더 등록할 약이 없는지 확인하고, 다 되면 마무리 인사를 한 뒤 end_call 도구를 호출합니다.",
     "",
+    "등록한 약을 고칠 때:",
+    "- add_medication을 호출한 순서대로 0번부터 번호가 매겨집니다(첫 약=0, 두 번째=1 …).",
+    "- 어르신이 이름이나 시간을 정정하시면 update_medication을 호출합니다(바꿀 항목만 채움).",
+    "- 빼 달라고 하시면 remove_medication을 호출합니다.",
+    "- remove_medication으로 약을 뺀 뒤에는 남은 약의 번호가 앞으로 당겨집니다.",
+    "  도구 결과에 남은 약 목록이 오니 그 번호를 기준으로 삼으세요.",
+    "- 이 번호는 내부 참조용입니다. 어르신께는 번호를 말하지 말고 약 이름으로 말씀하세요.",
+    "",
     "반드시 지킬 것:",
     "- 어르신이 숫자를 또박또박 못 말해도 되도록 예/아니오나 쉬운 되물음으로 확인합니다.",
     "- 생년월일·약 답을 들으면 미루지 말고 즉시 해당 도구를 호출합니다.",
+    "- 등록·수정 내용은 어르신 화면에 실시간으로 표시되고 있습니다.",
     "- 전체 통화는 4분 이내로 마무리합니다.",
+    GUARDRAILS,
   ].join("\n");
 }
 
@@ -163,6 +222,7 @@ function buildCallInstructions(patientName: string, meds: CallMed[]): string {
     "- 복약 여부 답을 들으면 반드시 record_medication 도구를 호출합니다.",
     "- 통화를 끝낼 때는 마무리 인사를 한 뒤 end_call 도구를 호출합니다.",
     "- 전체 통화는 3분 이내로 마무리합니다.",
+    GUARDRAILS,
   ].join("\n");
 }
 
@@ -271,7 +331,13 @@ Deno.serve(async (req: Request) => {
             type: "realtime",
             model,
             instructions,
-            audio: { output: { voice } },
+            audio: {
+              // 입력 전사를 켜야 conversation.item.input_audio_transcription.* 이벤트가
+              // 오고, 통화 화면의 "나" 자막이 표시된다. 이 설정이 없으면 모델은 음성을
+              // 알아듣지만 전사 이벤트를 보내지 않아 사용자 자막이 영영 비어 있다.
+              input: { transcription: { model: "gpt-4o-mini-transcribe", language: "ko" } },
+              output: { voice },
+            },
             tools,
           },
         }),

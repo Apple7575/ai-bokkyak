@@ -145,10 +145,29 @@ export async function startCall(opts: {
   let finished = false;
   let cleaned = false;
 
+  // 한 응답에 도구가 여러 개 담겨 올 수 있다("아침 혈압약이랑 저녁 당뇨약 먹어요"
+  // → add_medication 2회). 도구마다 response.create를 보내면 두 번째가
+  // "이미 진행 중인 응답이 있다"로 거부돼 통화가 그대로 멈춘다.
+  // 그래서 배치의 결과를 다 돌려준 뒤에 딱 한 번만 응답을 요청한다.
+  const emittedCallIds = new Set<string>(); // 같은 call_id 중복 발행 방지
+  const outstanding = new Set<string>();    // 아직 결과를 못 돌려준 도구
+  let batchTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function clearBatchTimer(): void {
+    if (batchTimer) { clearTimeout(batchTimer); batchTimer = null; }
+  }
+
+  function requestResponse(): void {
+    clearBatchTimer();
+    if (finished || !dc || dc.readyState !== "open") return;
+    try { dc.send(JSON.stringify({ type: "response.create" })); } catch {}
+  }
+
   // 자원 정리 — 멱등. 어느 단계에서 실패했든 마이크 트랙이 살아남지 않게 한다.
   function cleanup(): void {
     if (cleaned) return;
     cleaned = true;
+    clearBatchTimer();
     try {
       dc?.close();
     } catch {}
@@ -288,19 +307,29 @@ export async function startCall(opts: {
           break;
         case "response.done": {
           const output: any[] = Array.isArray(event.response?.output) ? event.response.output : [];
+          const batch: { name: string; argsJson: string; callId: string }[] = [];
           for (const item of output) {
             if (item?.type !== "function_call") continue;
             const name = typeof item.name === "string" ? item.name : "";
             const callId = typeof item.call_id === "string" ? item.call_id : "";
             // name/call_id 없는 항목은 결과를 돌려줄 수 없으므로 발행하지 않는다.
             if (!name || !callId) continue;
-            safeEmit({
-              type: "tool-call",
+            if (emittedCallIds.has(callId)) continue; // 같은 response.done 재도착 방어
+            emittedCallIds.add(callId);
+            batch.push({
               name,
               argsJson: typeof item.arguments === "string" ? item.arguments : "{}",
               callId,
             });
           }
+          if (batch.length === 0) break;
+          // 먼저 전부 outstanding에 등록한 뒤 발행한다. 발행 도중 첫 도구의 결과가
+          // 돌아와 outstanding이 잠깐 비면 response.create가 조기 발사되기 때문.
+          for (const t of batch) outstanding.add(t.callId);
+          // 화면이 어떤 이유로든 결과를 안 돌려주면 통화가 영영 멈추므로 안전망을 둔다.
+          clearBatchTimer();
+          batchTimer = setTimeout(() => { outstanding.clear(); requestResponse(); }, 10000);
+          for (const t of batch) safeEmit({ type: "tool-call", ...t });
           break;
         }
         default:
@@ -354,16 +383,22 @@ export async function startCall(opts: {
       }
       finish();
     },
-    // 도구 실행 결과를 모델에 돌려주고 다음 응답을 요청한다. 채널이 닫혀 있으면 no-op.
+    // 도구 실행 결과를 모델에 돌려준다. 채널이 닫혀 있으면 no-op.
+    // 응답 요청(response.create)은 이 배치의 도구 결과가 전부 돌아온 뒤 한 번만 보낸다.
     sendToolResult(callId: string, output: string): void {
       if (!dc || dc.readyState !== "open") return;
-      dc.send(
-        JSON.stringify({
-          type: "conversation.item.create",
-          item: { type: "function_call_output", call_id: callId, output },
-        })
-      );
-      dc.send(JSON.stringify({ type: "response.create" }));
+      try {
+        dc.send(
+          JSON.stringify({
+            type: "conversation.item.create",
+            item: { type: "function_call_output", call_id: callId, output },
+          })
+        );
+      } catch {
+        return; // 전송 실패 시 outstanding을 지우지 않는다 — 안전망 타이머가 회수한다.
+      }
+      outstanding.delete(callId);
+      if (outstanding.size === 0) requestResponse();
     },
   };
 }

@@ -5,7 +5,10 @@ const { withAndroidManifest, withDangerousMod, AndroidConfig } = require("expo/c
 const fs = require("fs");
 const path = require("path");
 
-const RECEIVER_KT = `package com.shawn777.careapp
+// Kotlin 파일의 package 선언은 앱의 android.package와 반드시 같아야 한다.
+// 매니페스트에 `.AlarmBootReceiver`(상대 이름)로 등록하므로 android.package 기준으로
+// 클래스를 찾는다. 하드코딩하면 패키지명을 바꾼 순간 부팅 시 ClassNotFoundException.
+const receiverKt = (pkg) => `package ${pkg}
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -26,7 +29,7 @@ class AlarmBootReceiver : BroadcastReceiver() {
 }
 `;
 
-const SERVICE_KT = `package com.shawn777.careapp
+const serviceKt = (pkg) => `package ${pkg}
 import android.content.Intent
 import com.facebook.react.HeadlessJsTaskService
 import com.facebook.react.bridge.Arguments
@@ -40,12 +43,18 @@ class AlarmResyncService : HeadlessJsTaskService() {
 `;
 
 module.exports = function withAlarmReceiver(config) {
-  // 1) 네이티브 소스 파일 작성 (Kotlin)
+  // 1) 네이티브 소스 파일 작성 (Kotlin) — 경로·package 모두 android.package 기준
   config = withDangerousMod(config, ["android", async (cfg) => {
-    const pkgDir = path.join(cfg.modRequest.platformProjectRoot, "app/src/main/java/com/shawn777/careapp");
+    const pkg = cfg.android?.package;
+    if (!pkg) throw new Error("withAlarmReceiver: app.json의 android.package가 필요합니다.");
+    const pkgDir = path.join(
+      cfg.modRequest.platformProjectRoot,
+      "app/src/main/java",
+      ...pkg.split(".")
+    );
     fs.mkdirSync(pkgDir, { recursive: true });
-    fs.writeFileSync(path.join(pkgDir, "AlarmBootReceiver.kt"), RECEIVER_KT);
-    fs.writeFileSync(path.join(pkgDir, "AlarmResyncService.kt"), SERVICE_KT);
+    fs.writeFileSync(path.join(pkgDir, "AlarmBootReceiver.kt"), receiverKt(pkg));
+    fs.writeFileSync(path.join(pkgDir, "AlarmResyncService.kt"), serviceKt(pkg));
     return cfg;
   }]);
 
