@@ -2,7 +2,14 @@
   "expo": {
     "name": "모두의 복약",
     "slug": "care-app",
+    "owner": "shawn777",
     "version": "1.1.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/248ad789-5d52-4843-a401-20c7a22afc9e"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -17,7 +24,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.care.bokyak",
+      "bundleIdentifier": "com.modoobokyak.app",
       "bitcode": false,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "음성으로 복약 응답과 약 등록을 하기 위해 마이크를 사용합니다.",
@@ -97,7 +104,10 @@
     "extra": {
       "supabaseUrl": "https://atzosfqrzsfrveympcfj.supabase.co",
       "supabaseAnonKey": "sb_publishable_IxiFvJXOgllELr1E69-u-Q_34H6Oz8a",
-      "openaiApiKey": ""
+      "openaiApiKey": "",
+      "eas": {
+        "projectId": "248ad789-5d52-4843-a401-20c7a22afc9e"
+      }
     }
   }
 }
