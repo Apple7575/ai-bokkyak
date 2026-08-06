@@ -1,0 +1,61 @@
+# EAS Build 업로드에서 제외할 것.
+#
+# .easignore 가 있으면 EAS는 .gitignore 대신 이 파일을 본다. 그래서 .gitignore의
+# 내용을 그대로 옮겨 적고, 네이티브 폴더를 확실히 빼는 것이 목적이다.
+#
+# 왜 android/ ios/ 를 빼나:
+#   이 프로젝트는 CNG(managed + prebuild)라 네이티브 폴더가 산출물이다. EAS 빌더가
+#   자기 쪽에서 prebuild를 다시 하므로 올릴 필요가 없다. 게다가 로컬에서 gradle을
+#   돌리는 중이면 .gradle/*.lock 을 복사하다 EBUSY로 업로드가 깨진다(실제로 겪었다).
+#   빌드 산출물까지 올리면 업로드가 수백 MB로 불어난다.
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# 생성되는 네이티브 폴더 (EAS가 직접 prebuild 한다)
+/ios
+/android
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# supabase local link metadata
+supabase/.temp/
+
+# local build artifacts
+build-*.apk
+sound-samples/
+*.apk
+
+# 공공데이터 원본에서 만든 시드 CSV — 빌드에 필요 없다(약 4MB)
+supabase/seed/
