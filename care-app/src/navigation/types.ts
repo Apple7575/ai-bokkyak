@@ -13,9 +13,12 @@ export type RootStackParamList = {
   Call: { setup?: boolean } | undefined;
   AlarmSound: undefined;
   Privacy: undefined;
+  MedicineDetail: { scheduleId: string };
+  Interaction: undefined;
 };
 export type TabParamList = {
   Home: undefined;
+  Cabinet: undefined;
   Record: undefined;
   More: undefined;
 };

@@ -39,6 +39,20 @@ const OCR_SYSTEM =
   '글자가 안 보이거나 약이 없으면 medicines를 빈 배열로 두세요. ' +
   '형식: {"medicines":[{"medicine_name":string,"time_of_day":"아침|점심|저녁|취침","hour":0-23,"minute":0-59,"repeat_days":"매일" 또는 number[]}]}';
 
+const DRUGINFO_SYSTEM = [
+  "고령 어르신이 읽을 약 설명을 씁니다. 한국어 존댓말, 쉬운 단어, 짧은 문장.",
+  "형식은 아래 세 줄만. 각 줄은 한두 문장으로 끝냅니다.",
+  "무슨 약인가요: (어떤 증상·질환에 쓰는 약인지)",
+  "이렇게 드세요: (복용 시 일반적으로 알아두면 좋은 점. 용량은 말하지 않습니다)",
+  "조심할 점: (흔한 주의사항. 없으면 '특별히 알려진 건 없어요')",
+  "",
+  "반드시 지킬 것:",
+  "- 용량·복용 횟수를 정하거나 바꾸라고 말하지 않습니다.",
+  "- 진단하지 않습니다. 특정 질병이 있다고 단정하지 않습니다.",
+  "- 모르는 약이면 추측하지 말고 '이 약은 정보를 찾지 못했어요'라고만 씁니다.",
+  "- 마지막 줄에 반드시 '자세한 것은 약사나 의사에게 확인해 주세요.'를 붙입니다.",
+].join("\n");
+
 // AI 건강전화(Realtime 통화)에서 어르신이 답한 복약 여부를 기록하는 도구 정의.
 // Realtime GA 세션 형식: top-level type/name/description/parameters.
 const CALL_TOOLS = [
@@ -271,6 +285,29 @@ Deno.serve(async (req: Request) => {
       return json({ content: j.choices?.[0]?.message?.content ?? "{}" });
     }
 
+    if (op === "druginfo") {
+      // 약 상세(D-02) 설명. 우리 DB에 정보가 없는 약을 위한 보완 수단이다.
+      // 진단·용량 조정은 금지하고, 마지막에 반드시 약사·의사 확인을 붙이게 한다
+      // (통화 가드레일과 같은 원칙 — 이 앱은 의료기기가 아니다).
+      const { name } = await req.json().catch(() => ({ name: "" }));
+      if (!name || typeof name !== "string") return json({ error: "no name" }, 400);
+      const r = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${OPENAI_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          max_tokens: 400,
+          messages: [
+            { role: "system", content: DRUGINFO_SYSTEM },
+            { role: "user", content: `약 이름: ${name}` },
+          ],
+        }),
+      });
+      const j = await r.json();
+      if (!r.ok) return json({ error: "gpt failed", detail: j }, 502);
+      return json({ content: j.choices?.[0]?.message?.content ?? "" });
+    }
+
     if (op === "ocr") {
       const { image } = await req.json().catch(() => ({ image: "" }));
       if (!image || typeof image !== "string") return json({ error: "no image" }, 400);
@@ -349,7 +386,10 @@ Deno.serve(async (req: Request) => {
       return json({ value: j.value, model });
     }
 
-    return json({ error: "unknown op (use ?op=tts, ?op=parse, ?op=ocr, or ?op=realtime-token)" }, 400);
+    return json(
+      { error: "unknown op (use ?op=tts, ?op=parse, ?op=ocr, ?op=druginfo, or ?op=realtime-token)" },
+      400
+    );
   } catch (e) {
     return json({ error: String(e) }, 500);
   }

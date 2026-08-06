@@ -21,7 +21,10 @@ import { CallScreen } from "../screens/CallScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { AlarmSoundScreen } from "../screens/AlarmSoundScreen";
 import { PrivacyScreen } from "../screens/PrivacyScreen";
-import { Home as HomeIcon, ClipboardList, Menu } from "lucide-react-native";
+import { CabinetScreen } from "../screens/CabinetScreen";
+import { MedicineDetailScreen } from "../screens/MedicineDetailScreen";
+import { InteractionScreen } from "../screens/InteractionScreen";
+import { Home as HomeIcon, ClipboardList, Menu, Pill } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../theme/tokens";
 
@@ -53,6 +56,15 @@ function PatientTabs() {
         options={{
           title: "홈",
           tabBarIcon: ({ color, size }) => <HomeIcon size={size ?? 24} color={color} />,
+        }}
+      />
+      {/* 내 약장 — 회의 결정(D-01)으로 탭으로 승격 */}
+      <Tab.Screen
+        name="Cabinet"
+        component={CabinetScreen}
+        options={{
+          title: "내 약장",
+          tabBarIcon: ({ color, size }) => <Pill size={size ?? 24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -120,6 +132,8 @@ export function RootNavigator() {
       <Stack.Screen name="Call" component={CallScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AlarmSound" component={AlarmSoundScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Privacy" component={PrivacyScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="MedicineDetail" component={MedicineDetailScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Interaction" component={InteractionScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
