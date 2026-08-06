@@ -82,7 +82,9 @@ export function ButtonRegisterScreen() {
         try { if (await ensurePermission()) await scheduleReminders(data.id, data.medicine_name, hour, minute, days, data.time_of_day); } catch {}
         Alert.alert("복약 일정을 등록했습니다.");
       }
-      nav.navigate("Tabs");
+      // 저장하면 홈이 아니라 약 목록으로 바로 보낸다 (C-04 확정 "저장하면 바로 약장 등록").
+      // 방금 등록한 약이 목록에 들어간 걸 그 자리에서 확인할 수 있어야 한다.
+      nav.navigate("MedicineList");
     } catch (e: any) {
       Alert.alert("저장 실패", e?.message ?? "다시 시도해 주세요.");
       savingRef.current = false; setSaving(false);

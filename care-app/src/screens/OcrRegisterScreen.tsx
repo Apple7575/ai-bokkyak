@@ -101,7 +101,8 @@ export function OcrRegisterScreen() {
         if (granted) { try { await scheduleReminders(data.id, data.medicine_name, it.hour, it.minute, days, it.time_of_day); } catch {} }
       }
       await speak("복약 일정을 등록했습니다.");
-      nav.navigate("Tabs");
+      // 사진 인식 → 확인 화면(아래 인식 결과 목록) → 등록 → 약 목록. (C-05 확정)
+      nav.navigate("MedicineList");
     } catch {
       setItems(remaining); // 아직 저장 안 된 항목만 남겨 재시도 중복 방지
       Alert.alert("일부만 저장됐어요", "남은 약만 다시 등록해 주세요. 인터넷 연결을 확인해 주세요.");

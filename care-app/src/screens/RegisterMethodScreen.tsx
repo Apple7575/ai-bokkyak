@@ -46,7 +46,7 @@ export function RegisterMethodScreen() {
           <ChevronRight size={20} color={colors.textSecondary} />
         </Pressable>
 
-        {/* 사진 - 준비 중 (비활성) */}
+        {/* 사진(OCR) — 알파 테스트 범위에 포함 (C-05 확정) */}
         <Pressable
           onPress={() => nav.navigate("OcrRegister")}
           style={({ pressed }) => [styles.card, styles.cardSecondary, pressed && { opacity: 0.92 }]}

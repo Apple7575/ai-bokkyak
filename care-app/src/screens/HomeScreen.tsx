@@ -2,7 +2,7 @@ import React, { useCallback, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, Pressable } from "react-native";
 import notifee from "@notifee/react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { Bell, UserCheck, ChevronRight, Clock, AlertTriangle } from "lucide-react-native";
+import { Bell, Phone, ChevronRight, Clock, AlertTriangle } from "lucide-react-native";
 import Svg, { Circle } from "react-native-svg";
 import { BigButton } from "../components/BigButton";
 import { ScheduleCard } from "../components/ScheduleCard";
@@ -62,11 +62,9 @@ export function HomeScreen() {
           <Text style={styles.greetSub}>오늘도 건강한 하루 보내세요.</Text>
         </View>
         <View style={styles.headerIcons}>
+          {/* 보호자 아이콘(UserCheck)은 보호자 기능 제거(B-01)와 함께 뺐다. */}
           <View style={[styles.iconBtn, { backgroundColor: colors.lightBlueBg }]}>
-            <Bell size={20} color={colors.primaryBlue} />
-          </View>
-          <View style={[styles.iconBtn, { backgroundColor: "#E6F9F1" }]}>
-            <UserCheck size={20} color={colors.successGreen} />
+            <Bell size={22} color={colors.primaryBlue} />
           </View>
         </View>
       </View>
@@ -80,6 +78,22 @@ export function HomeScreen() {
           </Text>
         </Pressable>
       ) : null}
+
+      {/* 음성 AI가 이 앱의 핵심이라, 홈 최상단에 가장 크게 둔다 (B-01 확정).
+          기존에는 화면 중간의 일반 버튼 하나여서 눈에 띄지 않았다. */}
+      <Pressable
+        onPress={() => nav.navigate("Call")}
+        style={({ pressed }) => [styles.callCard, pressed && { opacity: 0.92 }]}
+      >
+        <View style={styles.callIcon}>
+          <Phone size={34} color="#fff" strokeWidth={2} />
+        </View>
+        <View style={styles.callTextWrap}>
+          <Text style={styles.callTitle}>AI 건강전화</Text>
+          <Text style={styles.callSub}>눌러서 통화하고 약을 확인하세요</Text>
+        </View>
+        <ChevronRight size={26} color="#fff" />
+      </Pressable>
 
       {/* Next medicine hero card */}
       <View style={styles.hero}>
@@ -95,8 +109,8 @@ export function HomeScreen() {
         </Pressable>
       </View>
 
-      <BigButton label="AI 건강전화" onPress={() => nav.navigate("Call")} />
-      <BigButton label="약 등록 / 복약 관리" variant="secondary" onPress={() => nav.navigate("MedicineList")} />
+      {/* AI 건강전화는 위 카드로 올렸으므로 여기서는 중복 제거 */}
+      <BigButton label="약 등록 / 복약 관리" onPress={() => nav.navigate("MedicineList")} />
 
       {/* Today's schedule */}
       <Text style={styles.section}>오늘 복약 일정</Text>
@@ -143,10 +157,34 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   headerText: { flexShrink: 1 },
-  greet: { fontSize: fontSizes.title, fontWeight: "800", color: colors.primaryNavy },
-  greetSub: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: spacing.xs },
+  // 고령층 대상 — 홈 글자를 전반적으로 키웠다 (B-01 "텍스트 더 키워야 함").
+  greet: { fontSize: 30, fontWeight: "800", color: colors.primaryNavy },
+  greetSub: { fontSize: 20, color: colors.textSecondary, marginTop: spacing.xs },
   headerIcons: { flexDirection: "row", gap: spacing.sm },
-  iconBtn: { width: 44, height: 44, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  iconBtn: { width: 48, height: 48, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  callCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    backgroundColor: colors.primaryBlue,
+    borderRadius: 20,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    minHeight: 108, // BigButton(56)의 약 2배 — 홈에서 가장 큰 요소
+    shadowColor: colors.primaryBlue,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.32,
+    shadowRadius: 18,
+    elevation: 6,
+  },
+  callIcon: {
+    width: 64, height: 64, borderRadius: 999,
+    alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.22)",
+  },
+  callTextWrap: { flex: 1 },
+  callTitle: { fontSize: 30, fontWeight: "800", color: "#fff" },
+  callSub: { fontSize: 19, color: "rgba(255,255,255,0.9)", marginTop: 4 },
   hero: {
     backgroundColor: colors.primaryBlue,
     borderRadius: 20,
@@ -159,9 +197,9 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   heroLabelRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm },
-  heroLabel: { color: "#cfe0ff", fontSize: fontSizes.body },
+  heroLabel: { color: "#cfe0ff", fontSize: 20 },
   heroTime: { color: "#fff", fontSize: fontSizes.hero, fontWeight: "800", marginVertical: spacing.xs },
-  heroMed: { color: "#fff", fontSize: fontSizes.emphasis },
+  heroMed: { color: "#fff", fontSize: 26, fontWeight: "700" },
   heroBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -173,9 +211,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     marginTop: spacing.md,
   },
-  heroBtnText: { color: "#fff", fontSize: fontSizes.body, fontWeight: "700" },
+  heroBtnText: { color: "#fff", fontSize: 20, fontWeight: "700" },
   section: {
-    fontSize: fontSizes.emphasis,
+    fontSize: 26,
     fontWeight: "700",
     color: colors.text,
     marginTop: spacing.lg,
@@ -201,9 +239,9 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginTop: spacing.md,
   },
-  statusTitle: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text, marginBottom: spacing.md },
+  statusTitle: { fontSize: 26, fontWeight: "700", color: colors.text, marginBottom: spacing.md },
   statusRow: { flexDirection: "row", alignItems: "center", gap: spacing.lg },
   statusTextWrap: { flexShrink: 1 },
-  statusCount: { fontSize: 28, fontWeight: "800", color: colors.primaryNavy },
-  statusDesc: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: spacing.xs },
+  statusCount: { fontSize: 36, fontWeight: "800", color: colors.primaryNavy },
+  statusDesc: { fontSize: 20, color: colors.textSecondary, marginTop: spacing.xs },
 });
