@@ -15,6 +15,7 @@ import Constants from "expo-constants";
 import { mediaDevices, RTCPeerConnection, MediaStream } from "react-native-webrtc";
 import InCallManager from "react-native-incall-manager";
 import { CallMed } from "./callTools";
+import { sdpErrorMessage, tokenErrorMessage } from "./callErrors";
 
 const extra = Constants.expoConfig?.extra ?? {};
 const SUPABASE_URL = (extra.supabaseUrl as string) ?? "";
@@ -86,7 +87,9 @@ async function fetchRealtimeToken(payload: {
     clearTimeout(timer);
   }
   if (!res.ok) {
-    throw new Error(`통화 준비에 실패했어요. (서버 오류 ${res.status})`);
+    // 서버가 감싼 OpenAI 오류(detail)까지 보고 원인별 안내로 바꾼다.
+    const detail = await res.text().catch(() => "");
+    throw new Error(tokenErrorMessage(res.status, detail));
   }
   const j = (await res.json().catch(() => null)) as { value?: unknown; model?: unknown } | null;
   if (!j || typeof j.value !== "string" || j.value === "") {
@@ -361,7 +364,9 @@ export async function startCall(opts: {
       clearTimeout(timer);
     }
     if (!res.ok) {
-      throw koreanError(`통화 서버 연결에 실패했어요. (오류 ${res.status})`);
+      // 본문을 읽어 원인별 안내로 바꾼다(크레딧 소진 / 과부하 / 인증 / 서버 장애).
+      const detail = await res.text().catch(() => "");
+      throw koreanError(sdpErrorMessage(res.status, detail));
     }
     const answerSdp = await res.text();
     await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
