@@ -1,0 +1,1707 @@
+ingredient_a,ingredient_b,reason,notice_no,product_rows
+cyclosporine,rosuvastatin,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,12225
+felodipine,itraconazole,"Felodipine의 혈중농도 증가. 저혈압, 말초부종 같은 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20190131,1406
+ezetimibe,itraconazole,"근육병증, 횡문근융해증의 위험성 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20110110,23384
+cyclosporine,telmisartan,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,2130
+amlodipine,cyclosporine,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,2655
+iohexol,teneligliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,14466
+empagliflozin,iohexol,기능적 신부전에 의해 유산 산성증 촉진,20200061,27804
+iohexol,metformin,기능적 신부전에 의해 유산 산성증 촉진,20200061,150696
+iohexol,linagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,17901
+dapagliflozin,iohexol,기능적 신부전에 의해 유산 산성증 촉진,20200061,9984
+dapagliflozin bis,iohexol,기능적 신부전에 의해 유산 산성증 촉진,20200061,1524
+iohexol,sitagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,44196
+iohexol,rosuvastatin,기능적 신부전에 의해 유산 산성증 촉진,20200061,738
+iohexol,lobeglitazone,기능적 신부전에 의해 유산 산성증 촉진,20200061,1254
+meloxicam,methotrexate,신세뇨관에서 Methotrexate 배설이 지연되어 Methotrexate의 혈액학적 독성 증가,20110070,1440
+posaconazole,rivaroxaban,Rivaroxaban의 혈중농도가 상승하여 출혈위험 증가,20250086,292
+itraconazole,rivaroxaban,"Rivaroxaban의 혈중농도가 상승하여 출혈위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 권장하지 않음.",20150021,10804
+atorvastatin,itraconazole,"근육병증, 횡문근융해증 위험 증가 가능",20050017,46398
+atazanavir,esomeprazole,아타자나비르의 혈중농도 감소,20230045,297
+iohexol,vildagliptin,기능적 신부전에 의해 유산 산성증 촉진,20110188,3333
+iopamidol,vildagliptin,기능성 신부전에 의한 유산산성증 촉진,20110188,1404
+ezetimibe,posaconazole,근육병증의 위험 증가 가능,20170086,632
+atorvastatin,cyclosporine,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,9405
+cobicistat,lansoprazole,아타자나비르의 혈중농도 감소,20230045,52
+atazanavir,lansoprazole,아타자나비르의 혈중농도 감소,20230045,52
+glimepiride,iodixanol,기능적 신부전에 의해 유산 산성증 촉진,20200061,852
+glimepiride,iohexol,기능적 신부전에 의해 유산 산성증 촉진,20110188,9017
+glimepiride,iomeprol,기능성 신부전에 의한 유산산성증 촉진,20110188,923
+itraconazole,simvastatin,"근육병증, 횡문근융해증, 간효소이상 같은 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20040002,8066
+cyclosporine,ezetimibe,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,7920
+iopromide,metformin,기능적 신부전에 의해 유산 산성증 촉진,20200061,10773
+iopamidol,metformin,기능적 신부전에 의해 유산 산성증 촉진,20200061,62244
+iopamidol,sitagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,18096
+iomeprol,metformin,기능적 신부전에 의해 유산 산성증 촉진,20200061,15561
+cyclosporine,pitavastatin,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,2010
+candesartan cilexetil,cyclosporine,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,750
+amlodipine,itraconazole,"근육병증, 횡문근융해증 위험 증가 가능",20230083,4810
+clarithromycin,ezetimibe,근육병증의 위험 증가 가능,20170086,9735
+clarithromycin,simvastatin,"근병증, 횡문근융해의 위험증가",20040002,19293
+cyclosporine,simvastatin,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,1635
+alprazolam,itraconazole,"alprazolam의 혈장농도 증가, 수면 및 진정작용 증강 및 연장",20040002,2072
+iohexol,saxagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,246
+dapagliflozin anhydrous lactose mixture,iohexol,기능적 신부전에 의해 유산 산성증 촉진,20200061,1905
+atorvastatin,iohexol,기능적 신부전에 의해 유산 산성증 촉진,20200061,1107
+iopamidol,linagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,7436
+empagliflozin,iopamidol,기능적 신부전에 의해 유산 산성증 촉진,20200061,11648
+dapagliflozin citric acid,iopamidol,기능적 신부전에 의해 유산 산성증 촉진,20200061,1248
+iopamidol,teneligliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,5928
+dapagliflozin bis,iopamidol,기능적 신부전에 의해 유산 산성증 촉진,20200061,624
+dapagliflozin anhydrous lactose mixture,iopamidol,기능적 신부전에 의해 유산 산성증 촉진,20200061,780
+dapagliflozin,iopamidol,기능적 신부전에 의해 유산 산성증 촉진,20200061,4160
+atorvastatin,iopamidol,기능적 신부전에 의해 유산 산성증 촉진,20200061,468
+iopamidol,rosuvastatin,기능적 신부전에 의해 유산 산성증 촉진,20200061,312
+evogliptin,iopamidol,기능적 신부전에 의해 유산 산성증 촉진,20200061,208
+gemigliptin,iopamidol,기능적 신부전에 의해 유산 산성증 촉진,20200061,260
+empagliflozin,iodixanol,기능적 신부전에 의해 유산 산성증 촉진,20200061,2688
+iodixanol,teneligliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,1368
+iodixanol,metformin,기능적 신부전에 의해 유산 산성증 촉진,20200061,14365
+dapagliflozin,iodixanol,기능적 신부전에 의해 유산 산성증 촉진,20200061,960
+iodixanol,linagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,1716
+gemigliptin,iodixanol,기능적 신부전에 의해 유산 산성증 촉진,20200061,60
+iodixanol,sitagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,4176
+alfacalcidol,calcitriol,고칼슘혈증,20100278,287
+ledipasvir,rosuvastatin,"로수바스타틴 농도를 현저하게 증가시킬 수 있으며, 이는 횡문근융해증을 포함하여 근육병증의 위험 증가",20170086,815
+cyclosporine,nebivolol,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,150
+cyclosporine,filgotinib,면억억제 효과 증가,20240466,30
+filgotinib,tacrolimus,면억억제 효과 증가,20240466,60
+dapagliflozin citric acid,iomeprol,기능적 신부전에 의해 유산 산성증 촉진,20200061,312
+iomeprol,teneligliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,1482
+empagliflozin,iomeprol,기능적 신부전에 의해 유산 산성증 촉진,20200061,2912
+iomeprol,linagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,1859
+alogliptin,iomeprol,기능적 신부전에 의해 유산 산성증 촉진,20200061,78
+dapagliflozin anhydrous lactose mixture,iomeprol,기능적 신부전에 의해 유산 산성증 촉진,20200061,195
+iomeprol,sitagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,4524
+dapagliflozin,iomeprol,기능적 신부전에 의해 유산 산성증 촉진,20200061,1040
+evogliptin,iomeprol,기능적 신부전에 의해 유산 산성증 촉진,20200061,52
+iomeprol,rosuvastatin,기능적 신부전에 의해 유산 산성증 촉진,20200061,78
+irinotecan,itraconazole,"골수억제 및 설사 같은 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20190131,1406
+itraconazole,lercanidipine,"Lercanidipine의 혈중농도 증가. 저혈압, 말초부종 같은 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20190131,1258
+atazanavir,simvastatin,횡문근 융해를 포함한 근육병과 같은 중대한 반응 가능,20230083,109
+gemigliptin,iohexol,기능적 신부전에 의해 유산 산성증 촉진,20200061,619
+dapagliflozin citric acid,iohexol,기능적 신부전에 의해 유산 산성증 촉진,20200061,3049
+evogliptin,iohexol,기능적 신부전에 의해 유산 산성증 촉진,20200061,496
+ethyl esters of the iodised fatty acids of poppyseed oil,teneligliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,342
+iobitridol,metformin,기능적 신부전에 의해 유산 산성증 촉진,20200061,9576
+iopromide,teneligliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,1026
+doxycycline,isotretinoin,두개내 고혈압,20040002,112
+apixaban,itraconazole,"Apixaban 관련 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 권장하지 않음",20240030,3478
+glimepiride,iopamidol,기능성 신부전에 의한 유산산성증 촉진,20110188,3692
+rasagiline,tramadol,"고혈압위기, 세로토닌증후군 발생 위험 증가",20150021,891
+ezetimibe,sofosbuvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,195
+iopromide,vildagliptin,기능성 신부전에 의한 유산산성증 촉진,20110188,243
+iopamidol,lobeglitazone,기능적 신부전에 의해 유산 산성증 촉진,20200061,520
+atorvastatin,glecaprevir,횡문근융해증을 비롯한 근육질환 등 중증 이상반응,20200130,627
+atorvastatin,pibrentasvir,횡문근융해증을 비롯한 근육질환 등 중증 이상반응,20200130,627
+rifampicin,venetoclax,강력한 CYP3A 유도제인 Rifampicin과 병용 투여 시 Venetoclax의 Cmax 및 AUC∞는 각각 42% 및 71%까지 감소함,20250086,24
+carbamazepine,venetoclax,CYP3A 유도제와의 병용은 Venetoclax의 노출을 감소시켜 결과적으로 효능 부족을 초래할 수 있음,20250086,30
+iohexol,pioglitazone,기능적 신부전에 의해 유산 산성증 촉진,20110188,2159
+iobitridol,sitagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,2784
+rosuvastatin,sofosbuvir,"로수바스타틴 농도를 현저하게 증가시킬 수 있으며, 이는 횡문근융해증을 포함하여 근육병증의 위험 증가",20170086,815
+ledipasvir,oxcarbazepine,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,7
+emtricitabine,simvastatin,"Simvastatin 혈중농도 증가, 횡문근융해를 비롯한 근육병증",20190131,109
+bictegravir,rifampicin,Bictegravir의 혈중 농도 감소로 인해 치료 효과 소실 및 내성 발현 야기 가능,20250086,8
+ioversol,metformin,기능적 신부전에 의해 유산 산성증 촉진,20200061,11970
+empagliflozin,ioversol,기능적 신부전에 의해 유산 산성증 촉진,20200061,2240
+dapagliflozin anhydrous lactose mixture,ioversol,기능적 신부전에 의해 유산 산성증 촉진,20200061,150
+dapagliflozin,ioversol,기능적 신부전에 의해 유산 산성증 촉진,20200061,800
+dapagliflozin citric acid,ioversol,기능적 신부전에 의해 유산 산성증 촉진,20200061,240
+dapagliflozin bis,ioversol,기능적 신부전에 의해 유산 산성증 촉진,20200061,120
+ioversol,linagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,1430
+ioversol,teneligliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,1140
+ioversol,lobeglitazone,기능적 신부전에 의해 유산 산성증 촉진,20200061,100
+alogliptin,ioversol,기능적 신부전에 의해 유산 산성증 촉진,20200061,60
+ioversol,sitagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,3480
+enavogliflozin,ioversol,기능적 신부전에 의해 유산 산성증 촉진,20200061,30
+bosentan,tacrolimus,보센탄의 혈중농도 증가,20110110,90
+ergotamine,fluconazole,"맥각독성(혈관경련, 말단 및 기타조직 허혈 등) 위험 증가",20100278,153
+iopamidol,pioglitazone,기능성 신부전에 의한 유산산성증 촉진,20110188,884
+iopromide,pioglitazone,기능성 신부전에 의한 유산산성증 촉진,20110188,153
+buspirone,selegiline,혈압상승,20040002,25
+itraconazole,ticagrelor,"출혈 같은 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20180088,740
+itraconazole,metformin,"근육병증, 횡문근융해증 위험 증가 가능",20230083,666
+cyclosporine,metformin,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,225
+cyclosporine,valsartan,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,1035
+itraconazole,valsartan,"근육병증, 횡문근융해증 위험 증가 가능",20230083,1184
+edoxaban,itraconazole,"Edoxaban 관련 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 권장하지 않음",20240030,592
+clarithromycin,domperidone,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성. 강력한 CYP억제제가 돔페리돈의 대사를 감소시켜, 돔페리돈의 영향(이상반응 포함) 증대 가능성",20150090,3009
+domperidone,levofloxacin,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,2244
+ciprofloxacin,domperidone,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,1785
+domperidone,escitalopram,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,1632
+domperidone,itraconazole,"중대한 심실성 부정맥, 급성심장사 같은 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20150090,1258
+bicalutamide,domperidone,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,204
+alfacalcidol,paricalcitol,고칼슘혈증,20100278,410
+iopromide,sitagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,3132
+dapagliflozin citric acid,iopromide,기능적 신부전에 의해 유산 산성증 촉진,20200061,216
+empagliflozin,iopromide,기능적 신부전에 의해 유산 산성증 촉진,20200061,2016
+dapagliflozin,iopromide,기능적 신부전에 의해 유산 산성증 촉진,20200061,720
+iopromide,lobeglitazone,기능적 신부전에 의해 유산 산성증 촉진,20200061,90
+iopromide,linagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,1287
+dapagliflozin anhydrous lactose mixture,iopromide,기능적 신부전에 의해 유산 산성증 촉진,20200061,135
+anagliptin,iopromide,기능적 신부전에 의해 유산 산성증 촉진,20200061,27
+clarithromycin,finerenone,Finerenone 혈중농도의 현저한 증가가 예상됨,20240030,354
+glibenclamide,iopamidol,기능성 신부전에 의한 유산산성증 촉진,20110188,208
+glibenclamide,iomeprol,기능성 신부전에 의한 유산산성증 촉진,20110188,52
+glibenclamide,iodixanol,기능적 신부전에 의해 유산 산성증 촉진,20200061,48
+glibenclamide,iohexol,기능적 신부전에 의해 유산 산성증 촉진,20110188,508
+cyclosporine,fenofibrate,신기능 악화를 수반하는 횡문근융해증 발현 가능,20230083,465
+tacrolimus,tofacitinib,면억억제 효과 증가,20240466,900
+rifampicin,tamoxifen,Tamoxifen의 혈장농도를 낮춤,20250086,56
+irinotecan,pyrazinamide,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,19
+ciprofloxacin,tizanidine,"저혈압에 의해 졸음, 현기증 및 정신운동능력 감소",20090300,315
+clarithromycin,colchicine,콜키신에 대한 노출 증가 가능,20180088,354
+fimasartan,itraconazole,"근육병증, 횡문근융해증 위험 증가 가능",20230083,444
+cyclosporine,fimasartan,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,285
+ethyl esters of the iodised fatty acids of poppyseed oil,sitagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,1009
+ethambutol,irinotecan,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,19
+glimepiride,iopromide,기능성 신부전에 의한 유산산성증 촉진,20110188,639
+aspirin,methotrexate,혈액학적 독성,20040002,828
+domperidone,haloperidol,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,204
+domperidone,voriconazole,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성. 강력한 CYP억제제가 돔페리돈의 대사를 감소시켜, 돔페리돈의 영향(이상반응 포함) 증대 가능성",20150090,34
+domperidone,fluconazole,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,2601
+domperidone,ebastine,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,374
+ketoprofen,methotrexate,신세뇨관에서 Methotrexate 배설이 지연되어 Methotrexate의 혈액학적 독성 증가,20110070,45
+meropenem,sodium valproate,발프론산의 작용 감약,20080056,528
+clarithromycin,lurasidone,Lurasidone의 노출을 증가시킬 수 있음,20250046,885
+itraconazole,lurasidone,"저혈압, 순환허탈, 중증의 추체외로 증상, 발작과 같은 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 금기",20250046,370
+caffeine,fluconazole,"맥각독성(혈관경련, 말단 및 기타조직 허혈 등) 위험 증가",20100278,153
+domperidone,venlafaxine,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,238
+domperidone,pseudoephedrine,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,255
+domperidone,trazodone,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,119
+domperidone,metoclopramide,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,68
+domperidone,paliperidone,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,187
+domperidone,granisetron,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,221
+entacapone,metoclopramide,레보도파 효과 감소,20240466,72
+ethyl esters of the iodised fatty acids of poppyseed oil,glimepiride,기능성 신부전에 의한 유산산성증 촉진,20110188,142
+iobitridol,teneligliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,912
+darunavir ethanolate,simvastatin,근육병증과 같은 이상사례 초래 가능,20230083,327
+itraconazole,triazolam,"발작, 호흡저하, 혈관부종, 무호흡, 혼수 같은 약물이상반응 발생 위험 증가, itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20040002,296
+adefovir dipivoxil,tenofovir disoproxil,뉴클레오시드 유사체 단독투여 또는 다른 항레트로바이러스제를 병용투여했을 때 치명적인 사례를 포함한 유산산증과 지방증을 동반한 중증 간비대가 보고됨,20220049,161
+ethyl esters of the iodised fatty acids of poppyseed oil,metformin,기능적 신부전에 의해 유산 산성증 촉진,20200061,3338
+glimepiride,iobitridol,기능성 신부전에 의한 유산산성증 촉진,20110188,568
+glimepiride,ioversol,기능성 신부전에 의한 유산산성증 촉진,20110188,710
+candesartan cilexetil,itraconazole,"근육병증, 횡문근융해증 위험 증가 가능",20230083,370
+cyclosporine,tofacitinib,면억억제 효과 증가,20240466,450
+diphenylhydantoin,irinotecan,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,57
+irinotecan,rifampicin,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,152
+ibuprofen,methotrexate,혈액학적 독성,20040002,1800
+atorvastatin strontium pentahydrate,itraconazole,"근육병증, 횡문근융해증 위험 증가 가능",20050017,296
+norepinephrine,tulobuterol,부정맥 또는 심정지,20100246,414
+cyclosporine,irbesartan,"근육병증, 횡문근융해 위험 증가 가능",20230083,60
+itraconazole,salmeterol xinafoate,"Fluticasone의 혈중농도 증가로 쿠싱증후군 및 부신억제와 같은 전신 코르티코스테로이드 효과 나타날 수 있음. Salmeterol의 혈중농도 증가로 QT연장, 심계항진 등 심혈관계 이상반응 위험 증가",20250046,444
+glecaprevir,irbesartan,횡문근융해증을 포함한 근육병증 위험 가능,20230083,4
+irbesartan,itraconazole,"근육병증, 횡문근융해증 위험 증가 가능",20230083,296
+clarithromycin,silodosin,실로도신의 혈중농도 증가,20150021,1770
+cyclosporine,losartan,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,210
+losartan,sofosbuvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,14
+iodixanol,vildagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,324
+iomeprol,vildagliptin,기능성 신부전에 의한 유산산성증 촉진,20110188,351
+clarithromycin,ticagrelor,티카그렐러의 혈중농도 증가,20150021,1770
+methotrexate,trimethoprim,신세뇨관에서 methotrexate 배설이 지연되어 methotrexate의 혈액학적 독성 증가,20200130,18
+divalproex sodium particle,meropenem,발프론산의 작용 감약,20080056,44
+divalproex sodium particle,mefloquine,메플로퀸은 발프로산의 대사를 증가시키며 경련 효과를 가지고 있으므로 병용투여 시 간질성 발작이 일어날 수 있음,20220049,1
+amlodipine,posaconazole,"근육병증, 횡문근융해 위험 증가 가능",20230083,130
+ezetimibe,ritonavir,"횡문근융해증을 포함하는 근육병증의 잠재적인 가능성. 이 약의 투여 시작으로부터 최소 12시간 전, 투여 중 5일동안 및 투여완료 후 5일동안 심바스타틴의 사용을 중단할 것",20210113,110
+itraconazole,omega-3-acid ethyl esters90,"근육병증, 횡문근융해증 위험 증가 가능",20230083,518
+cyclosporine,omega-3-acid ethyl esters90,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,330
+febuxostat,mercaptopurine,메르캅토푸린의 혈중농도 증가,20150021,32
+clarithromycin,pimozide,"pimozide의 혈중농도 상승, QT연장",20040002,177
+fluconazole,triazolam,triazolam 의 약리학적 효과 및 작용증가,20040002,612
+methotrexate,piroxicam,신세뇨관에서 Methotrexate 배설이 지연되어 Methotrexate의 혈액학적 독성 증가,20110070,209
+hydroxyzine,levofloxacin,심부정맥 위험 증가 가능,20180088,528
+escitalopram,hydroxyzine,심부정맥 위험 증가 가능,20180088,384
+cyclosporine,d-mannitol,신부전 위험 증가,20250086,195
+itraconazole,silodosin,"Silodosin의 혈중농도 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20150021,740
+cobicistat,sodium bicarbonate,아타자나비르의 혈중농도 감소,20230045,67
+clarithromycin,trastuzumab emtansine,이 약의 구성 성분인 DM1이 주로 CYP3A4에 의해 대사됨. 강한 CYP3A4억제제와 병용시 DM1 노출과 독성 증가 가능성,20160155,354
+itraconazole,trastuzumab emtansine,"이 약의 구성 성분인 DM1이 주로 CYP3A4에 의해 대사됨. 강한 CYP3A4억제제와 병용시 DM1 노출과 독성 증가 가능성, 항암제 관련 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 권장하지 않음",20160155,148
+alogliptin,iohexol,기능적 신부전에 의해 유산 산성증 촉진,20200061,750
+acetazolamide,topiramate,신결석,20050017,218
+pseudoephedrine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,2808
+amiodarone,hydroxyzine,심부정맥 위험 증가 가능,20180088,8
+aceclofenac,ketorolac tromethamine,중증의 위장관계 이상반응,20050017,1440
+celecoxib,ketorolac tromethamine,중증의 위장관계 이상반응,20050017,1720
+dexibuprofen,ketorolac tromethamine,중증의 위장관계 이상반응,20050017,1120
+diclofenac-β-dimethyl-aminoethanol,ketorolac tromethamine,중증의 위장관계 이상반응,20160155,210
+aspirin,ketorolac tromethamine,중증의 위장관계 이상반응,20080068,460
+ketorolac tromethamine,loxoprofen,"상가적인 위장관 궤양, 출혈의 위험",20080056,1200
+ibuprofen,ketorolac tromethamine,중증의 위장관계 이상반응,20080068,1000
+ketorolac tromethamine,meloxicam,중증의 위장관계 이상반응,20050017,960
+ezetimibe,glecaprevir,횡문근융해증을 포함한 근육병증 위험 가능,20230083,316
+domperidone,vandetanib,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,34
+dronedarone,itraconazole,"Dronedarone의 혈중농도 증가. QT 연장, 심혈관계 사망 같은 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20190131,148
+dapagliflozin citric acid,iodixanol,기능적 신부전에 의해 유산 산성증 촉진,20200061,289
+atorvastatin,iodixanol,기능적 신부전에 의해 유산 산성증 촉진,20200061,108
+evogliptin,iodixanol,기능적 신부전에 의해 유산 산성증 촉진,20200061,48
+esomeprazole,rilpivirine,위장 pH의 증가로 릴피비린의 흡수가 저하되어 릴피비린의 치료효과 감소,20150021,297
+omeprazole,rilpivirine,위장 pH의 증가로 릴피비린의 흡수가 저하되어 릴피비린의 치료효과 감소,20150021,40
+rabeprazole,rilpivirine,위장 pH의 증가로 릴피비린의 흡수가 저하되어 릴피비린의 치료효과 감소,20150021,233
+fosphenytoin,rilpivirine,릴피비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,2
+clarithromycin,ibrutinib,Ibrutinib의 혈중 농도 증가,20250086,177
+ketoprofen,ketorolac tromethamine,중증의 위장관계 이상반응,20080068,30
+ketorolac tromethamine,naproxen,중증의 위장관계 이상반응,20080068,610
+ketorolac tromethamine,nabumetone,중증의 위장관계 이상반응,20050017,130
+diclofenac,ketorolac tromethamine,중증의 위장관계 이상반응,20050017,270
+domperidone,ondansetron,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,374
+amiodarone,domperidone,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,34
+calcitriol,paricalcitol,고칼슘혈증,20100278,70
+atazanavir,rabeprazole,아타자나비르의 혈중농도 감소,20230045,233
+irinotecan,st john's wort 80% methanol ext,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20220087,38
+azathioprine,tofacitinib,면억억제 효과 증가,20240466,300
+clarithromycin,palbociclib,팔보시클립의 혈장 농도 증가,20180088,1593
+itraconazole,palbociclib,팔보시클립의 혈장 농도 증가,20180088,666
+lorlatinib,tacrolimus,Tacrolimus의 혈중농도가 감소될 수 있음,20240030,60
+clopidogrel bisulfate,nirmatrelvir,Clopidogrel 활성대사체의 농도를 감소시킬 수 있음,20250046,127
+nirmatrelvir,tamsulosin,Tamsulosin의 혈중농도를 증가시킬 수 있음,20250046,161
+ritonavir,rivaroxaban,리바록사반의 혈중농도가 상승하여 출혈위험 증가,20150021,292
+amiodarone,nirmatrelvir,심장 부정맥의 가능성,20250046,2
+ritonavir,tamsulosin,Tamsulosin의 혈중농도를 증가시킬 수 있음,20250046,161
+alfuzosin,nirmatrelvir,저혈압의 가능성,20250046,18
+nirmatrelvir,simvastatin,"횡문근융해증을 포함하는 근육병증의 잠재적인 가능성. 이 약의 투여 시작으로부터 최소 12시간 전, 투여 중 5일동안 및 투여완료 후 5일동안 Simvastatin 사용을 중단할 것",20250046,109
+cyclosporine,olmesartan medoxomil,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,300
+ezetimibe,pibrentasvir,횡문근융해증을 포함한 근육병증 위험 가능,20230083,316
+alfacalcidol,sodium alendronate,고칼슘혈증,20110188,41
+atorvastatin,posaconazole,횡문근융해를 비롯한 근육병증 발생가능성 증가,20190131,1254
+caffeine,itraconazole,"맥각독성(혈관경련, 말단 및 기타조직 허혈), Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20090300,74
+ergotamine,roxithromycin,"맥각독성(혈관경련, 말단 및 기타조직 허혈)",20090300,65
+caffeine,clarithromycin,"맥각독성(혈관경련, 말단 및 기타조직 허혈)",20090300,177
+caffeine,roxithromycin,"맥각독성(혈관경련, 말단 및 기타조직 허혈)",20090300,65
+clarithromycin,ergotamine,"맥각독성(혈관경련, 말단 및 기타조직 허혈)",20090300,177
+ergotamine,itraconazole,"맥각독성(혈관경련, 말단 및 기타조직 허혈), Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20090300,74
+carbamazepine,voriconazole,혈중농도가 저하되어 보리코나졸의 약물효과 감소,20070030,20
+capecitabine,oteracil,"해당 약물 병용 시 gimeracil에 의해 fluoropyrimidine 계열 약물의 대사가 감소하여 항암제의 독성이 증가, gimeracil/oteracil/tegafur 투여 중 및 종료 후 7일 간 해당 성분 투여 금기",20200130,20
+clarithromycin,tolvaptan sd powder,톨밥탄의 혈중농도 증가,20150021,354
+ponatinib,rifampicin,Ponatinib의 노출 감소,20250086,16
+elvitegravir,lamivudine,"세포내 인산화 방해, 동일한 역전사효소 유전자(M184V)변이를 통한 바이러스 내성 - 항바이러스 효과 감소",20150090,4
+ciprofloxacin,ketoprofen,경련,20050017,315
+sofosbuvir,telmisartan,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,142
+azathioprine,febuxostat,아자치오프린의 혈중농도 증가,20150021,320
+amantadine,mizolastine,QT 간격 연장,20110070,2
+haloperidol,hydroxyzine,심부정맥 위험 증가 가능,20180088,48
+escitalopram,pimozide,QT 간격 연장,20090300,96
+clarithromycin,haloperidol,QT간격 연장 위험 증가,20190131,2124
+haloperidol,pentamidine isethionate,QT간격 연장 위험 증가,20190131,12
+haloperidol,levofloxacin,QT간격 연장 위험 증가,20190131,1584
+escitalopram,haloperidol,QT간격 연장 위험 증가,20190131,1152
+dronedarone,haloperidol,QT간격 연장 위험 증가,20190131,24
+haloperidol,levodopa,Levodopa의 치료효과 감소,20190131,348
+azithromycin,haloperidol,QT간격 연장 위험 증가,20190131,192
+entacapone,haloperidol,Levodopa의 치료효과 감소,20190131,216
+amiodarone,haloperidol,QT간격 연장 위험 증가,20190131,24
+carbidopa,haloperidol,Levodopa의 치료효과 감소,20190131,252
+cilastatin,valproate,간질 발작 재발,20090300,21
+clarithromycin,tolvaptan,톨밥탄의 혈중농도 증가,20150021,708
+itraconazole,tolvaptan,"Tolvaptan의 혈중농도 증가로 인한 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 권장하지 않음.",20150021,296
+clarithromycin,dronedarone,Dronedarone 노출량 증가,20250046,354
+itraconazole,mizolastine,"QT 연장 같은 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20190131,74
+epinephrine,quetiapine,중증의 혈압강하를 일으킬 수 있음,20160155,680
+diclofenac,methotrexate,신세뇨관에서 Methotrexate 배설이 지연되어 Methotrexate의 혈액학적 독성 증가,20250086,486
+anagliptin,iohexol,기능적 신부전에 의해 유산 산성증 촉진,20200061,369
+itraconazole,venetoclax,Venetoclax의 혈장 농도 및 종양용해증후군 위험 증가 가능,20240030,222
+empagliflozin,ethyl esters of the iodised fatty acids of poppyseed oil,기능적 신부전에 의해 유산 산성증 촉진,20200061,672
+ethyl esters of the iodised fatty acids of poppyseed oil,linagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,429
+alogliptin,ethyl esters of the iodised fatty acids of poppyseed oil,기능적 신부전에 의해 유산 산성증 촉진,20200061,18
+cyclosporine,dabigatran etexilate,다비가트란의 혈중농도가 상승하여 출혈위험 증가,20150021,30
+ceritinib,diphenylhydantoin,Ceritinib의 혈장 농도 감소,20250086,3
+clarithromycin,ribociclib,QT 간격 연장을 유발할 수 있음,20250086,177
+domperidone,radotinib,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,34
+cobicistat,esomeprazole,아타자나비르의 혈중농도 감소,20230045,297
+diclofenac-β-dimethyl-aminoethanol,methotrexate,신세뇨관에서 Methotrexate 배설이 지연되어 Methotrexate의 혈액학적 독성 증가,20250086,378
+dapagliflozin,iobitridol,기능적 신부전에 의해 유산 산성증 촉진,20200061,640
+iobitridol,linagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,1144
+empagliflozin,iobitridol,기능적 신부전에 의해 유산 산성증 촉진,20200061,1792
+anagliptin,iobitridol,기능적 신부전에 의해 유산 산성증 촉진,20200061,24
+alogliptin,iobitridol,기능적 신부전에 의해 유산 산성증 촉진,20200061,48
+dapagliflozin bis,iobitridol,기능적 신부전에 의해 유산 산성증 촉진,20200061,96
+dapagliflozin citric acid,iobitridol,기능적 신부전에 의해 유산 산성증 촉진,20200061,192
+epinephrine,tulobuterol,부정맥 또는 심정지,20100246,276
+amlodipine,sofosbuvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,112
+posaconazole,simvastatin,근육병증의 위험 증가 가능,20170086,218
+itraconazole,pimozide,"QT 연장, TdP을 동반할 가능성이 높은 심부정맥 같은 약물이상반응 발생 위험 증가, Itraconaozole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20040002,74
+cilastatin,sodium valproate,간질 발작 재발,20090300,84
+epinephrine,haloperidol,혈압강하효과,20040002,64
+haloperidol,ziprasidone,QT간격 연장 위험 증가,20190131,48
+epinephrine,olanzapine,중증의 혈압강하를 일으킬 수 있음,20140179,223
+alitretinoin,doxycycline,양성 두개내압 상승(가성뇌종양) 보고,20250046,136
+cyclosporine,tacrolimus,신독성 증가,20080056,450
+alitretinoin,doxycycline hyclate,양성 두개내압 상승(가성뇌종양) 보고,20250046,34
+itraconazole,vincristine,"신경정신계 이상반응 증가, 항암제 관련 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 권장하지 않음",20230083,222
+ketorolac tromethamine,zaltoprofen,"상가적인 위장관 궤양, 출혈의 위험",20080056,130
+amlodipine,pibrentasvir,횡문근융해증을 포함한 근육병증 위험 가능,20230083,65
+cobicistat,rabeprazole,아타자나비르의 혈중농도 감소,20230045,233
+iodixanol,pioglitazone,기능적 신부전에 의해 유산 산성증 촉진,20200061,204
+darunavir ethanolate,ezetimibe,근증/횡문근변성의 위험성이 증가,20110110,165
+elvitegravir,simvastatin,"Simvastatin 혈중농도 증가, 횡문근융해를 비롯한 근육병증",20190131,109
+chlorpromazine,domperidone,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,68
+ezetimibe,tenofovir alafenamide,횡문근융해를 포함한 근육병증 위험 가능,20230083,55
+itraconazole,methylergonovine,"맥각독성(말초혈관 경련, 사지와 기타 조직의 허혈, 감각이상 등) 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20070030,74
+ioversol,vildagliptin,기능성 신부전에 의한 유산산성증 촉진,20110188,270
+amisulpride,domperidone,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,170
+emtricitabine,ezetimibe,횡문근융해를 포함한 근육병증 위험 가능,20230083,55
+domperidone,pimozide,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,17
+cobicistat,rivaroxaban,리바록사반의 혈중농도가 상승하여 출혈위험 증가,20150021,147
+selegiline,sertraline,"세로토닌성 증후군 (고열, 간대성근경련, 정신상태 변화등)",20040002,21
+fluoxetine,selegiline,"세로토닌성 증후군(고혈압, 고열, 간대성 근경련, 정신상태 변화 등)",20040002,105
+cyclobenzaprine,selegiline,"고혈압, 저혈압, 발한을 동반한 심각한 중추신경계 이상반응(현기, 진전, 발작등)",20080056,2
+selegiline,tramadol,"중추 흥분, 설사, 빈맥, 땀, 진전, 혼동, 혼수상태, 사망을 유발할 수 있는 세로토닌 증후군 보고",20080056,33
+ephedrine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,3
+ciprofloxacin,dexketoprofen trometamol,경련 발생,20110070,105
+itraconazole,ivabradine,"Ivabradine의 혈중농도 증가, 심방세동, 서맥, 심방정지 및 심장 차단 같은 Ivabradine 관련 약물이상반응 발생 위험이 증가함. Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20150021,148
+clarithromycin,ivabradine,이바브라딘의 혈중농도 증가,20150021,354
+buprenorphine,morphine,"진통효과 감소, 금단증상 위험",20050017,72
+cobicistat,simvastatin,"Simvastatin 혈중농도 증가, 횡문근융해를 비롯한 근육병증",20190131,327
+rasagiline,selegiline,"고혈압위기, 세로토닌증후군 발생 위험 증가",20150021,27
+cobicistat,ezetimibe,횡문근융해를 포함한 근육병증 위험 가능,20230083,165
+ethambutol,ixazomib,Ixazomib의 효과 감소,20250086,3
+carbamazepine,ixazomib,Ixazomib의 효과 감소,20250086,30
+brigatinib,sirolimus,Brigatinib에 의해 Sirolimus의 유효성이 감소될 수 있음,20250086,18
+brigatinib,cyclosporine,Brigatinib에 의해 Cyclosporine의 유효성이 감소될 수 있음,20250086,45
+brigatinib,pyrazinamide,Brigatinib의 혈장 농도를 감소시킬 수 있음,20250086,3
+brigatinib,tacrolimus,Brigatinib에 의해 Tacrolimus의 유효성이 감소될 수 있음,20250086,90
+amiodarone,hydroxychloroquine,"심실성 부정맥, 서맥, 심장 전도장애를 포함한 심장 부정맥 위험성 증가",20210106,26
+rivaroxaban,tenofovir alafenamide,리바록사반의 혈중농도가 상승하여 출혈위험 증가,20150021,146
+emtricitabine,rivaroxaban,리바록사반의 혈중농도가 상승하여 출혈위험 증가,20150021,146
+enavogliflozin,iohexol,기능적 신부전에 의해 유산 산성증 촉진,20200061,381
+dapagliflozin anhydrous lactose mixture,iodixanol,기능적 신부전에 의해 유산 산성증 촉진,20200061,180
+clarithromycin,haloperidol decanoate,QT간격 연장 위험 증가,20190131,177
+escitalopram,haloperidol decanoate,QT간격 연장 위험 증가,20190131,96
+iomeprol,lobeglitazone,기능적 신부전에 의해 유산 산성증 촉진,20200061,130
+atorvastatin,iomeprol,기능적 신부전에 의해 유산 산성증 촉진,20200061,117
+anagliptin,iomeprol,기능적 신부전에 의해 유산 산성증 촉진,20200061,39
+iomeprol,saxagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,26
+cobicistat,pantoprazole,아타자나비르의 혈중농도 감소,20230045,43
+pethidine,rasagiline,"고혈압위기, 세로토닌증후군 발생 위험 증가",20150021,162
+anagliptin,iopamidol,기능적 신부전에 의해 유산 산성증 촉진,20200061,156
+alogliptin,iopamidol,기능적 신부전에 의해 유산 산성증 촉진,20200061,312
+atorvastatin strontium pentahydrate,glecaprevir,횡문근융해증을 비롯한 근육질환 등 중증 이상반응,20200130,4
+glecaprevir,simvastatin,횡문근융해증을 비롯한 근육질환 등 중증 이상반응,20200130,109
+cobicistat,fosphenytoin,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,2
+alfuzosin,cobicistat,Alfuzosin 혈중농도 증가,20190131,18
+atorvastatin,ioversol,기능적 신부전에 의해 유산 산성증 촉진,20200061,90
+anagliptin,ioversol,기능적 신부전에 의해 유산 산성증 촉진,20200061,30
+carbamazepine,irinotecan,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,190
+ezetimibe,ledipasvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,195
+eliglustat,itraconazole,"PR, QTc 및/또는 QRS 심전도 간격 연장, 심부정맥 같은 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20240030,74
+atazanavir,ezetimibe,횡문근융해를 포함한 근육병증 위험 가능,20230083,55
+iopromide,rosuvastatin,기능적 신부전에 의해 유산 산성증 촉진,20200061,54
+micronized riociguat,vericiguat,두 약제는 동일 계열임,20250086,15
+elvitegravir,finerenone,Finerenone 혈중농도의 현저한 증가가 예상됨,20240030,2
+linezolid,sertraline,세로토닌 증후군 위험 증가 가능성,20180088,147
+almotriptan,naratriptan,"상가적인 혈관수축반응, 혈압상승",20100125,6
+lurasidone,rifampicin,Lurasidone의 노출을 감소시킬 수 있음,20250046,30
+candesartan cilexetil,sofosbuvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,45
+amlodipine,ledipasvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,112
+cyclobenzaprine,rasagiline,"고혈압위기, 세로토닌증후군 발생 위험 증가",20150021,54
+atazanavir,sodium bicarbonate,아타자나비르의 혈중농도 감소,20230045,67
+atorvastatin strontium pentahydrate,cyclosporine,혈중농도 상승 및 근육병증/횡문근융해증 위험성 증가,20200061,60
+fluticasone,itraconazole,"Fluticasone의 혈중농도 증가로 쿠싱증후군 및 부신억제와 같은 전신 코르티코스테로이드 효과 나타날 수 있음. Salmeterol의 혈중농도 증가로 QT연장, 심계항진 등 심혈관계 이상반응 위험 증가",20250046,444
+divalproex,imipenem,간질 발작 재발,20090300,28
+doripenem,valproate,발프론산의 혈중농도를 감소시켜 간질발작 재발의 위험 증가,20150021,3
+epinephrine,risperidone,중증의 혈압강하를 일으킬 수 있음,20160155,245
+dapagliflozin bis,iodixanol,기능적 신부전에 의해 유산 산성증 촉진,20200061,144
+carbamazepine,ibrutinib,Ibrutinib의 혈중 농도 감소,20250086,10
+imipenem,sodium valproate,간질 발작 재발,20090300,84
+carbamazepine,dronedarone,Dronedarone 노출량 감소,20250046,20
+ketorolac tromethamine,pentoxifylline,출혈 및 프로트롬빈시간 연장,20050017,20
+furosemide,gentamicin,신독성 및 청각독성증강,20100278,8
+diphenylhydantoin,palbociclib,팔보시클립의 혈장 농도 감소,20180088,27
+amisulpride,pentamidine isethionate,심실성 부정맥(특히 torsades de pointes) 위험 증가,20080056,10
+palbociclib,rifampicin,팔보시클립의 혈장 농도 감소,20180088,54
+ritonavir,simvastatin,"횡문근융해증을 포함하는 근육병증의 잠재적인 가능성. 이 약의 투여 시작으로부터 최소 12시간 전, 투여 중 5일동안 및 투여완료 후 5일동안 Simvastatin 사용을 중단할 것",20250046,218
+ritonavir,tacrolimus,"Tacrolimus의 혈중농도를 증가시키고 중대한 이상반응 초래할 수 있음. 병용투여할 경우, 면역억제제의 용량 조절 및 이상반응에 대한 면밀한 모니터링 권장됨",20250046,30
+alitretinoin,isotretinoin,비타민A과다증,20250046,238
+posaconazole,valsartan,"근육병증, 횡문근융해 위험 증가 가능",20230083,32
+caffeine,voriconazole,"맥각독성(혈관경련, 말단 및 기타조직 허혈)",20090300,2
+cabotegravir sodium micronized,carbamazepine,Cabotegravir의 혈중농도를 감소시켜 치료 효과를 감소시킬 수 있음,20240030,10
+cabotegravir,phenobarbital,Cabotegravir의 혈중농도를 감소시켜 치료 효과를 감소시킬 수 있음,20240030,3
+ledipasvir,telmisartan,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,142
+carbidopa,metoclopramide,레보도파 효과 감소,20240466,84
+hydroxyzine,moxifloxacin,심부정맥 위험 증가 가능,20180088,41
+fluconazole,pimozide,QT연장 및 심실성부정맥 유발 가능,20170086,153
+gemifloxacin,haloperidol,QT간격 연장 위험 증가,20200130,24
+haloperidol,moxifloxacin,QT간격 연장 위험 증가,20190131,132
+meropenem,valproate,간질 발작 재발,20090300,132
+amiodarone,amisulpride,심실성 부정맥(특히 torsades de pointes),20090300,20
+amantadine,amiodarone,Torsade de pointes 위험 증가,20110110,4
+azithromycin,domperidone,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,272
+divalproex,meropenem,발프론산의 작용 감약,20080056,176
+cilastatin,divalproex,간질 발작 재발,20090300,28
+dapagliflozin,ethyl esters of the iodised fatty acids of poppyseed oil,기능적 신부전에 의해 유산 산성증 촉진,20200061,240
+atorvastatin,ethyl esters of the iodised fatty acids of poppyseed oil,기능적 신부전에 의해 유산 산성증 촉진,20200061,27
+ethyl esters of the iodised fatty acids of poppyseed oil,gemigliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,15
+iobitridol,lobeglitazone,기능적 신부전에 의해 유산 산성증 촉진,20200061,80
+dapagliflozin anhydrous lactose mixture,iobitridol,기능적 신부전에 의해 유산 산성증 촉진,20200061,120
+letermovir,pimozide,"QT 연장, 심실성 빈맥, 심실세동 및 torsades de pointes 등 심독성위험 증가",20200130,4
+adefovir dipivoxil,lamivudine,뉴클레오시드 유사체 단독투여 또는 다른 항레트로바이러스제를 병용투여했을 때 치명적인 사례를 포함한 유산산증과 지방증을 동반한 중증 간비대가 보고됨,20220049,7
+carbamazepine,lamivudine,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,10
+doravirine,oxcarbazepine,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,14
+etoricoxib,methotrexate,신세뇨관에서 메토트렉세이트의 배설이 지연되어 치명적인 메토트렉세이트의 혈액학적 독성이 증가될 수 있음,20160155,162
+benserazide,haloperidol,Levodopa의 치료효과 감소,20190131,96
+agomelatine,ciprofloxacin,아고멜라틴 혈중농도 증가,20150021,105
+iomeprol,pioglitazone,기능성 신부전에 의한 유산산성증 촉진,20110188,221
+etodolac,ketorolac tromethamine,중증의 위장관계 이상반응,20050017,50
+acitretin,alitretinoin,비타민A과다증,20250046,17
+clarithromycin,mizolastine,심실부정맥(Torsade de pointes),20040002,177
+spironolactone,tacrolimus,고칼륨혈증,20080056,90
+arsenic trioxide,domperidone,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,51
+itraconazole,nanoliposomal irinotecan,"골수억제 및 설사 같은 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20190131,74
+gliclazide,iohexol,기능적 신부전에 의해 유산 산성증 촉진,20110188,127
+omidenepag isopropyl,timolol,"중등도 이상의 눈부심, 홍채염 등의 안염증이 유발될 우려가 있음",20220049,4
+cyclosporine,gemigliptin,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,45
+pirfenidone,rifampicin,Pirfenidone의 혈중농도가 유의하게 감소할 수 있음,20230083,54
+pibrentasvir,simvastatin,횡문근융해증을 비롯한 근육질환 등 중증 이상반응,20200130,109
+gilteritinib,rifampicin,Gilteritinib의 혈장 농도 감소,20250086,8
+cabozantinib s-malate,pyrazinamide,Cabozantinib의 혈장 노출 감소,20250086,3
+ethyl esters of the iodised fatty acids of poppyseed oil,pioglitazone,기능성 신부전에 의한 유산산성증 촉진,20110188,34
+omega-3-acid ethyl esters90,sofosbuvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,15
+alogliptin,iodixanol,기능적 신부전에 의해 유산 산성증 촉진,20200061,72
+haloperidol decanoate,perphenazine,QT간격 연장 위험 증가,20190131,2
+benserazide,haloperidol decanoate,Levodopa의 치료효과 감소,20190131,8
+rasagiline,safinamide,고혈압 위기,20250086,27
+iobitridol,vildagliptin,기능성 신부전에 의한 유산산성증 촉진,20110188,216
+diphenylhydantoin,ledipasvir,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,3
+ioversol,rosuvastatin,기능적 신부전에 의해 유산 산성증 촉진,20200061,60
+atorvastatin,iopromide,기능적 신부전에 의해 유산 산성증 촉진,20200061,81
+finerenone,itraconazole,"Finerenone의 혈중농도 증가로 인한 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20240030,148
+darunavir ethanolate,finerenone,Finerenone 혈중농도의 현저한 증가가 예상됨,20240030,2
+glibenclamide,iopromide,기능성 신부전에 의한 유산산성증 촉진,20110188,36
+irinotecan,isoniazid,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,38
+mizolastine,roxithromycin,"말초혈관경련, 사지허혈, 감각이상등",20040002,65
+domperidone,oxatomide,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,17
+benserazide,metoclopramide,레보도파 효과 감소,20240466,32
+acitretin,minocycline,두개내압 증가,20070030,3
+amiloride,tacrolimus,고칼륨혈증,20080056,30
+amlodipine camsylate,cyclosporine,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,90
+pimozide,roxithromycin,심실부정맥(Torsades de pointes 포함)등의 심혈관계 이상반응,20080056,65
+potassium,spironolactone,고칼륨혈증,20100278,18
+levodopa,metoclopramide,레보도파 효과 감소,20240466,116
+iobitridol,pioglitazone,기능성 신부전에 의한 유산산성증 촉진,20110188,136
+ioversol,pioglitazone,기능성 신부전에 의한 유산산성증 촉진,20110188,170
+domperidone,ziprasidone,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,68
+domperidone,prucalopride,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,272
+ibrutinib,itraconazole,"Ibrutinib의 혈중 농도 증가, 항암제 관련 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 권장하지 않음",20250086,74
+dronedarone,phenobarbital,Dronedarone 노출량 감소,20250046,6
+amitriptyline,dronedarone,Torsade de pointes 위험 증가,20110110,10
+ketorolac tromethamine,piroxicam β-cyclodextrin,중증의 위장관계 이상반응,20080068,10
+calcium,cobicistat,아타자나비르의 혈중농도 감소,20230045,18
+rivaroxaban,voriconazole,리바록사반의 혈중농도가 상승하여 출혈위험 증가,20150021,292
+furosemide,netilmicin,신독성 및 청각독성증강,20100278,48
+domperidone,mizolastine,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,17
+elvitegravir,ezetimibe,횡문근융해를 포함한 근육병증 위험 가능,20230083,55
+tolvaptan,voriconazole,Tolvaptan의 혈장 농도 증가 가능,20240030,8
+carbamazepine,palbociclib,팔보시클립의 혈장 농도 감소,20180088,90
+lorlatinib,rifampicin,Lorlatinib의 혈중농도를 감소시킬 수 있음. 총 빌리루빈과 알칼리인산분해효소의 증가 없이 AST와 ALT의 증가와 연관 있음,20240030,12
+nirmatrelvir,rivaroxaban,출혈 위험의 증가,20250046,146
+nirmatrelvir,ticagrelor,Ticagrelor의 혈중농도를 증가시킬 수 있음,20250046,10
+ritonavir,silodosin,실로도신의 혈중농도 증가,20150021,20
+sofosbuvir,valsartan,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,49
+capecitabine,gimeracil,"해당 약물 병용 시 gimeracil에 의해 fluoropyrimidine 계열 약물의 대사가 감소하여 항암제의 독성이 증가, gimeracil/oteracil/tegafur 투여 중 및 종료 후 7일 간 해당 성분 투여 금기",20200130,20
+choline fenofibrate,cyclosporine,신기능 악화를 수반하는 횡문근융해증 발현 가능,20230083,60
+itraconazole,tolvaptan sd powder,"Tolvaptan의 혈중농도 증가로 인한 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 권장하지 않음.",20150021,148
+lithium,sumatriptan,세로토닌 증후군,20050017,28
+amantadine,chlorpromazine,항콜린 작용 증가,20080056,8
+candesartan cilexetil,ledipasvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,45
+fluoxetine,pimozide,QT 간격 연장,20090300,105
+haloperidol,levomepromazine,QT간격 연장 위험 증가,20190131,36
+chlorpromazine,haloperidol,QT간격 연장 위험 증가,20190131,48
+paroxetine,selegiline,"세로토닌성 증후군(고혈압, 고열, 간대성 근경련, 정신상태 변화 등)",20040002,25
+methylphenidate,selegiline,고혈압성 위기(현저한 혈압상승),20070030,13
+amisulpride,pramipexole dihydrochloride,길항작용,20110070,250
+atomoxetine,selegiline,"고열, 경직, 간대성근경련, 정신상태 변화 등",20100125,18
+rasagiline,tapentadol,"세로토닌성 증후군(고혈압, 고열, 간대성 근경련, 정신상태 변화 등) 위험 증가 가능성",20160155,108
+dabigatran etexilate,itraconazole,"다비가트란의 혈중농도가 상승하여 출혈위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20150021,148
+carbamazepine,ceritinib,Ceritinib의 혈장 농도 감소,20250086,10
+ondansetron,ribociclib,QT 간격 연장을 유발할 수 있음,20250086,22
+atorvastatin,iobitridol,기능적 신부전에 의해 유산 산성증 촉진,20200061,72
+adefovir dipivoxil,doravirine,뉴클레오시드 유사체 단독투여 또는 다른 항레트로바이러스제를 병용투여했을 때 치명적인 사례를 포함한 유산산증과 지방증을 동반한 중증 간비대가 보고됨,20220049,7
+phenobarbital,tenofovir disoproxil,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,3
+doravirine,enzalutamide,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,14
+duloxetine,selegiline,세로토닌 증후군 위험 증가 가능성,20160155,36
+ketorolac tromethamine,piroxicam,중증의 위장관계 이상반응,20080068,140
+darunavir ethanolate,domperidone,"강력한 CYP억제제가 돔페리돈의 대사를 감소시켜, 돔페리돈의 영향(이상반응 포함) 증대 가능성",20150090,34
+bupropion,selegiline,bupropion의 급성독성 증가,20080056,10
+ethyl esters of the iodised fatty acids of poppyseed oil,vildagliptin,기능성 신부전에 의한 유산산성증 촉진,20110188,60
+brigatinib,phenytoin,Brigatinib의 혈장 농도를 감소시킬 수 있음,20250086,6
+isotretinoin,minocycline,테트라사이클린 가성뇌종양 보고,20040002,42
+carbamazepine,zanubrutinib,Zanubrutinib의 혈중농도를 감소시켜 유효성을 감소시킬 수 있음,20250046,10
+haloperidol decanoate,levofloxacin,QT간격 연장 위험 증가,20190131,132
+molsidomin,sildenafil,혈압강하작용 증강,20070030,182
+isosorbide mononitrate,sildenafil,혈관확장작용 증가로 저혈압 효과 상승,20070030,637
+fluoxetine,safinamide,세로토닌 증후군,20250086,105
+gemigliptin,iomeprol,기능적 신부전에 의해 유산 산성증 촉진,20200061,65
+elvitegravir,rifabutin,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,1
+simvastatin,tenofovir alafenamide,"Simvastatin 혈중농도 증가, 횡문근융해를 비롯한 근육병증",20190131,109
+blonanserin,emtricitabine,Blonanserin 혈중농도 증가,20190131,9
+elvitegravir,fosphenytoin,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,2
+alfuzosin,tenofovir alafenamide,Alfuzosin 혈중농도 증가,20190131,18
+emtricitabine,lamivudine,"라미부딘이 엠트리시타빈의 세포내 인산화를 저해할 수도 있음. 동일한 역전사효소 유전자(M184V) 변이를 통해 바이러스 내성 기전이 일어나므로, 병용 시 치료 효과가 제한적일 수 있음",20220049,22
+domperidone,posaconazole,"강력한 CYP억제제가 돔페리돈의 대사를 감소시켜, 돔페리돈의 영향(이상반응 포함) 증대 가능성",20150090,34
+fexuprazan,rilpivirine,위 내 pH 증가로 인한 Rilpivirine의 생체이용률 감소,20250086,8
+metronidazole,mizolastine,심실부정맥(Torsade de pointes),20040002,6
+isosorbide dinitrate,sildenafil,혈관확장작용 증가로 저혈압 효과 상승,20070030,273
+anagrelide,domperidone,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,85
+praziquantel,rifampicin,Praziquantel의 치료적 유효 혈중농도에 도달하지 못할 수 있음,20250086,8
+calcium,digoxin,"Digoxin의 작용 증강으로 인한 디기탈리스 중독(서맥, 심실성기외수축, 방실블록 등) 위험 증가",20250086,15
+cyclosporine,fenofibric acid,신기능 악화를 수반하는 횡문근융해증 발현 가능,20230083,30
+domperidone,dronedarone,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,34
+methotrexate,nitrous oxide,"엽산 의존 대사 경로에서 구내염, 골수억제 및 신경독성과 같은 독성을 잠재적으로 유발하는 메토트렉세이트의 효과 증가",20190041,18
+fentanyl,lorlatinib,Fentanyl의 혈중농도가 감소될 수 있음,20240030,158
+clopidogrel bisulfate,ritonavir,Clopidogrel 활성대사체의 농도를 감소시킬 수 있음,20250046,127
+ritonavir,salmeterol xinafoate,"Fluticasone의 혈중농도 증가로 쿠싱증후군 및 부신억제와 같은 전신 코르티코스테로이드 효과 나타날 수 있음. Salmeterol의 혈중농도 증가로 QT연장, 심계항진 등 심혈관계 이상반응 위험 증가",20250046,12
+alfuzosin,ritonavir,저혈압의 가능성,20250046,18
+5-fluorouracil,tegafur,"해당 약물 병용 시 gimeracil에 의해 fluoropyrimidine 계열 약물의 대사가 감소하여 항암제의 독성이 증가, gimeracil/oteracil/tegafur 투여 중 및 종료 후 7일 간 해당 성분 투여 금기",20200130,12
+emtricitabine,zidovudine,"라미부딘이 엠트리시타빈의 세포내 인산화를 저해할 수도 있음. 동일한 역전사효소 유전자(M184V) 변이를 통해 바이러스 내성 기전이 일어나므로, 병용 시 치료 효과가 제한적일 수 있음",20220049,5
+cabotegravir,carbamazepine,Cabotegravir의 혈중농도를 감소시켜 치료 효과를 감소시킬 수 있음,20240030,10
+chlorpromazine,epinephrine,혈압강하,20080056,24
+dapagliflozin citric acid,ethyl esters of the iodised fatty acids of poppyseed oil,기능적 신부전에 의해 유산 산성증 촉진,20200061,72
+domperidone,moxifloxacin,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,187
+atazanavir,omeprazole,아타자나비르의 혈중농도 감소,20230045,40
+gemigliptin,iobitridol,기능적 신부전에 의해 유산 산성증 촉진,20200061,40
+enavogliflozin,iopamidol,기능적 신부전에 의해 유산 산성증 촉진,20200061,156
+carbamazepine,tenofovir disoproxil,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,10
+lamivudine,phenobarbital,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,3
+olmesartan medoxomil,sofosbuvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,20
+ozanimod,selegiline,Ozanimod의 노출을 감소시킬 수 있음,20250046,1
+degarelix,domperidone,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,34
+gliclazide,iopamidol,기능성 신부전에 의한 유산산성증 촉진,20110188,52
+gliclazide,iodixanol,기능적 신부전에 의해 유산 산성증 촉진,20200061,12
+burosumab,calcitriol,고인산혈증 발생 가능,20250086,21
+naratriptan,selegiline,"동맥 고혈압, 관상동맥 수축의 위험이 있음",20250086,6
+methylergonovine,sumatriptan,"상가적인 혈관수축반응, 현저한 혈압상승",20070068,7
+cabozantinib s-malate,phenobarbital,Cabozantinib의 혈장 노출 감소,20250086,9
+diluted nitroglycerin,ergotamine,"맥각독성(말초허혈, 감각이상, 구역, 구토) 위험 증가",20170086,8
+iopamidol,saxagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,104
+iodixanol,rosuvastatin,기능적 신부전에 의해 유산 산성증 촉진,20200061,72
+enavogliflozin,iodixanol,기능적 신부전에 의해 유산 산성증 촉진,20200061,36
+haloperidol decanoate,levodopa,Levodopa의 치료효과 감소,20190131,29
+safinamide,tramadol,"중추신경계, 호흡기, 심혈관기능에 대해 생명을 위협하는 약물상호작용이 관찰됨. 세로토닌 증후군이 보고됨",20250086,33
+dapagliflozin bis,iomeprol,기능적 신부전에 의해 유산 산성증 촉진,20200061,156
+enavogliflozin,iomeprol,기능적 신부전에 의해 유산 산성증 촉진,20200061,39
+blonanserin,cobicistat,Blonanserin 혈중농도 증가,20190131,9
+ioversol,saxagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,20
+diphenylhydantoin,finerenone,Finerenone 혈중농도의 현저한 감소 및 치료효과 감소가 예상됨,20240030,6
+ethyl esters of the iodised fatty acids of poppyseed oil,glibenclamide,기능성 신부전에 의한 유산산성증 촉진,20110188,8
+amlodipine camsylate,sofosbuvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,6
+divalproex sodium particle,imipenem,간질 발작 재발,20090300,7
+doripenem,sodium valproate,발프론산의 혈중농도를 감소시켜 간질발작 재발의 위험 증가,20150021,12
+amiloride,potassium,고칼륨혈증 위험 증가,20100246,7
+5-fluorouracil,oteracil,"해당 약물 병용 시 gimeracil에 의해 fluoropyrimidine 계열 약물의 대사가 감소하여 항암제의 독성이 증가, gimeracil/oteracil/tegafur 투여 중 및 종료 후 7일 간 해당 성분 투여 금기",20200130,12
+epinephrine,formoterol,부정맥 또는 심정지 유도,20080056,6
+rasagiline,st john's wort 80% methanol ext,"고혈압위기, 세로토닌증후군 발생 위험 증가",20150021,54
+rifabutin,voriconazole,"Rifabutin의 혈중농도 증가, Voriconazole의 농도 감소",20190131,2
+bosutinib,rifampicin,Bosutinib의 혈중농도를 감소시켜 유효성을 감소시킬 수 있음,20250046,18
+cyclosporine,ritonavir,"Cyclosporine의 혈중농도를 증가시키고 중대한 이상반응 초래할 수 있음. 병용투여할 경우, 면역억제제의 용량 조절 및 이상반응에 대한 면밀한 모니터링 권장됨",20250046,15
+clopidogrel camsylate,nirmatrelvir,Clopidogrel 활성대사체의 농도를 감소시킬 수 있음,20250046,1
+fluticasone,ritonavir,"Fluticasone의 혈중농도 증가로 쿠싱증후군 및 부신억제와 같은 전신 코르티코스테로이드 효과 나타날 수 있음. Salmeterol의 혈중농도 증가로 QT연장, 심계항진 등 심혈관계 이상반응 위험 증가",20250046,12
+norepinephrine,procaterol,부정맥 또는 심정지,20100246,18
+carbamazepine,ponatinib,Ponatinib의 노출 감소,20250086,20
+pyrazinamide,tamoxifen,Tamoxifen의 혈장농도를 낮춤,20250086,7
+paroxetine,pimozide,QT 간격 연장,20090300,25
+haloperidol,perphenazine,QT간격 연장 위험 증가,20190131,24
+dapagliflozin anhydrous lactose mixture,ethyl esters of the iodised fatty acids of poppyseed oil,기능적 신부전에 의해 유산 산성증 촉진,20200061,45
+rilpivirine,sodium bicarbonate,위장 pH의 증가로 릴피비린의 흡수가 저하되어 릴피비린의 치료효과 감소,20180088,67
+ethyl esters of the iodised fatty acids of poppyseed oil,lobeglitazone,기능적 신부전에 의해 유산 산성증 촉진,20200061,30
+haloperidol,pimozide,QT간격 연장 위험 증가,20190131,12
+gliclazide,ioversol,기능성 신부전에 의한 유산산성증 촉진,20110188,10
+domperidone,pilsicainide,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,34
+carbamazepine,nanoliposomal irinotecan,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,10
+cabozantinib s-malate,carbamazepine,Cabozantinib의 혈장 노출 감소,20250086,30
+ixazomib,rifampicin,Ixazomib의 효과 감소,20250086,24
+brigatinib,rifampicin,Brigatinib의 혈장 농도를 감소시킬 수 있음,20250086,24
+iodixanol,lobeglitazone,기능적 신부전에 의해 유산 산성증 촉진,20200061,120
+haloperidol decanoate,moxifloxacin,QT간격 연장 위험 증가,20190131,11
+elvitegravir,rivaroxaban,리바록사반의 혈중농도가 상승하여 출혈위험 증가,20150021,146
+rifampicin,voriconazole,혈중농도가 저하되어 보리코나졸의 약물효과 감소,20070030,12
+acitretin,doxycycline,두개내압 증가,20070030,8
+irbesartan,pibrentasvir,횡문근융해증을 포함한 근육병증 위험 가능,20230083,4
+adefovir dipivoxil,tenofovir alafenamide hemitartrate,신장청소율을 감소시켜 양쪽 약물 모두 혈장농도 상승,20110009,7
+cilastatin,divalproex sodium particle,간질 발작 재발,20090300,7
+hydroxyzine,mefloquine,심부정맥 위험 증가 가능,20180088,4
+glecaprevir,metformin,횡문근융해증을 포함한 근육병증 위험 가능,20230083,9
+etravirine,phenobarbital,에트라비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,3
+pantoprazole,rilpivirine,위장 pH의 증가로 릴피비린의 흡수가 저하되어 릴피비린의 치료효과 감소,20150021,43
+bedaquiline,domperidone,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,17
+naratriptan,sumatriptan,"상가적인 혈관수축반응, 현저한 혈압상승",20070068,42
+lorlatinib,sirolimus,Sirolimus의 혈중농도가 감소될 수 있음,20240030,12
+palbociclib,st john's wort 80% methanol ext,팔보시클립의 혈장 농도 감소,20180088,18
+diphenylhydantoin,ritonavir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Phenytoin 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20250046,3
+nirmatrelvir,tolvaptan,"탈수, 저혈량증 및 고칼륨혈증의 가능성",20250046,4
+carbamazepine,ritonavir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Carbamazepine 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20250046,10
+pimozide,ritonavir,"QT 연장, 심실성 빈맥, 심실세동 및 torsades de pointes 등 심독성위험 증가",20070030,2
+imipenem,valproate,간질 발작 재발,20090300,21
+evogliptin,iobitridol,기능적 신부전에 의해 유산 산성증 촉진,20200061,32
+iobitridol,rosuvastatin,기능적 신부전에 의해 유산 산성증 촉진,20200061,48
+alfacalcidol,burosumab,고인산혈증 발생 가능,20250086,123
+domperidone,pentamidine isethionate,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,17
+rifampicin,zanubrutinib,Zanubrutinib의 혈중농도를 감소시켜 유효성을 감소시킬 수 있음,20250046,6
+haloperidol decanoate,levomepromazine,QT간격 연장 위험 증가,20190131,3
+carbidopa,haloperidol decanoate,Levodopa의 치료효과 감소,20190131,21
+nebivolol,sofosbuvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,10
+linezolid,safinamide,고혈압 위기,20250086,7
+etravirine,venetoclax,CYP3A 유도제와의 병용은 Venetoclax의 노출을 감소시켜 결과적으로 효능 부족을 초래할 수 있음,20250086,3
+cobicistat,phenobarbital,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,3
+elvitegravir,triazolam,"Triazolam 혈중농도 증가, 진정 또는 호흡 억제의 연장 또는 증가",20190131,4
+glecaprevir,valsartan,횡문근융해증을 포함한 근육병증 위험 가능,20230083,16
+cobicistat,finerenone,Finerenone 혈중농도의 현저한 증가가 예상됨,20240030,6
+finerenone,rifampicin,Finerenone 혈중농도의 현저한 감소 및 치료효과 감소가 예상됨,20240030,12
+ledipasvir,olmesartan medoxomil,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,20
+fimasartan,pibrentasvir,횡문근융해증을 포함한 근육병증 위험 가능,20230083,6
+lurasidone,st john's wort 80% methanol ext,Lurasidone의 노출을 감소시킬 수 있음,20250046,10
+nifedipine,rifampicin,nifedipine의 혈장농도 저하,20080056,36
+candesartan cilexetil,pibrentasvir,횡문근융해증을 포함한 근육병증 위험 가능,20230083,5
+sildenafil,sodium nitroprusside,혈압강하작용 증강,20080056,91
+hemocoagulase,thrombin,혈전형성,20100278,14
+carbamazepine,lorlatinib,Lorlatinib의 혈중농도를 감소시킬 수 있음,20240030,20
+palbociclib,posaconazole,팔보시클립의 혈장 농도 증가,20180088,18
+everolimus,nirmatrelvir,Everolimus의 혈중농도를 증가시킬 수 있음,20250046,16
+cobicistat,omeprazole,아타자나비르의 혈중농도 감소,20230045,40
+capecitabine,tegafur,"해당 약물 병용 시 gimeracil에 의해 fluoropyrimidine 계열 약물의 대사가 감소하여 항암제의 독성이 증가, gimeracil/oteracil/tegafur 투여 중 및 종료 후 7일 간 해당 성분 투여 금기",20200130,20
+epinephrine,salbutamol,부정맥 또는 심정지,20090300,27
+cabotegravir sodium micronized,phenytoin,Cabotegravir의 혈중농도를 감소시켜 치료 효과를 감소시킬 수 있음,20240030,2
+cabotegravir sodium micronized,diphenylhydantoin,Cabotegravir의 혈중농도를 감소시켜 치료 효과를 감소시킬 수 있음,20240030,3
+haloperidol decanoate,hydroxyzine,심부정맥 위험 증가 가능,20180088,4
+dronedarone,st john's wort 80% methanol ext,Dronedarone 노출량 감소,20250046,4
+diltiazem,ivabradine,이바브라딘의 혈중농도 증가,20160155,20
+dabigatran etexilate,ethambutol,다비가트란의 혈중농도 감소,20180088,2
+isoniazid,ribociclib,강력한 CYP3A 유도제(Rifampicin)와의 병용투여는 건강한 시험대상자에서 Ribociclib의 혈장 노출을 89%까지 감소시킴,20250086,2
+haloperidol,ribociclib,QT 간격 연장을 유발할 수 있음,20250086,12
+carbamazepine,doravirine,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,20
+alitretinoin,tetracycline,양성 두개내압 상승(가성뇌종양) 보고,20250046,17
+nanoliposomal irinotecan,phenytoin,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,2
+cabozantinib s-malate,rifampicin,Cabozantinib의 혈장 노출 감소,20250086,24
+agalsidase α,gentamicin,Gentamicin은 세포내 알파-갈락토시다제 활성을 저해할 가능성 있음,20250086,2
+amlodipine,glecaprevir,횡문근융해증을 포함한 근육병증 위험 가능,20230083,65
+iodixanol,saxagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,24
+azithromycin,haloperidol decanoate,QT간격 연장 위험 증가,20190131,16
+methylphenidate,safinamide,고혈압 위기,20250086,13
+carbamazepine,pibrentasvir,Glecaprevir와 Pibrentasvir의 혈장 농도가 유의하게 감소하여 이 약의 바이러스학적 반응 감소 가능,20200130,10
+modafinil,venetoclax,CYP3A 유도제와의 병용은 Venetoclax의 노출을 감소시켜 결과적으로 효능 부족을 초래할 수 있음,20250086,6
+alfuzosin,elvitegravir,Alfuzosin 혈중농도 증가,20190131,18
+emtricitabine,rifampicin,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,14
+rifampicin,velpatasvir,소포스부비르 혈장 농도를 현저히 떨어트려 소포스부비르의 치료 효과를 감소시킬 수 있음,20240030,12
+gemigliptin,ioversol,기능적 신부전에 의해 유산 산성증 촉진,20200061,50
+metformin,posaconazole,"근육병증, 횡문근융해 위험 증가 가능",20230083,18
+glibenclamide,ioversol,기능성 신부전에 의한 유산산성증 촉진,20110188,40
+acitretin,isotretinoin,비타민A과다증,20250046,14
+adefovir dipivoxil,tenofovir alafenamide,신장청소율을 감소시켜 양쪽 약물 모두 혈장농도 상승,20110009,21
+irinotecan,phenobarbital,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,57
+alitretinoin,tigecycline,양성 두개내압 상승(가성뇌종양) 보고,20250046,34
+lansoprazole,rilpivirine,위장 pH의 증가로 릴피비린의 흡수가 저하되어 릴피비린의 치료효과 감소,20150021,52
+carbamazepine,rilpivirine micronized,릴피비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20240030,10
+domperidone,fingolimod,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,17
+irinotecan,phenytoin,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,38
+cyclosporine,lorlatinib,Cyclosporine의 혈중농도가 감소될 수 있음,20240030,30
+ezetimibe,nirmatrelvir,"횡문근융해증을 포함하는 근육병증의 잠재적인 가능성. 이 약의 투여 시작으로부터 최소 12시간 전, 투여 중 5일동안 및 투여완료 후 5일동안 심바스타틴의 사용을 중단할 것",20210113,55
+nirmatrelvir,tacrolimus,"Tacrolimus의 혈중농도를 증가시키고 중대한 이상반응 초래할 수 있음. 병용투여할 경우, 면역억제제의 용량 조절 및 이상반응에 대한 면밀한 모니터링 권장됨",20250046,30
+norepinephrine,salbutamol,부정맥 또는 심정지,20100246,45
+atazanavir,naproxen,아타자나비르의 혈중농도 감소,20230045,11
+ethyl esters of the iodised fatty acids of poppyseed oil,saxagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,6
+dabigatran etexilate,st john's wort 80% methanol ext,다비가트란의 혈중농도 감소,20180088,4
+doravirine,rifampicin,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,16
+haloperidol,vandetanib,QT간격 연장 위험 증가,20190131,24
+diluted nitroglycerin,micronized riociguat,혈압강하작용 증가,20170086,40
+gliclazide,iopromide,기능성 신부전에 의한 유산산성증 촉진,20110188,9
+ketorolac tromethamine,nimesulide,중증의 위장관계 이상반응,20080068,20
+atazanavir,calcium,아타자나비르의 혈중농도 감소,20230045,18
+omidenepag isopropyl,tafluprost,"중등도 이상의 눈부심, 홍채염 등의 안염증이 유발될 우려가 있음",20220049,8
+isotretinoin,tigecycline,가성뇌종양 보고,20250046,28
+morphine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20080056,24
+selegiline,sumatriptan,"동맥 고혈압, 관상동맥 수축",20080056,7
+ritonavir,tolvaptan,"탈수, 저혈량증 및 고칼륨혈증의 가능성",20250046,8
+isotretinoin,tetracycline,테트라사이클린 가성뇌종양 보고,20040002,14
+carbamazepine,emtricitabine,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,10
+bictegravir,micronized dolutegravir,"라미부딘이 엠트리시타빈의 세포내 인산화를 저해할 수도 있음. 동일한 역전사효소 유전자(M184V) 변이를 통해 바이러스 내성 기전이 일어나므로, 병용 시 치료 효과가 제한적일 수 있음",20220049,1
+pibrentasvir,valsartan,횡문근융해증을 포함한 근육병증 위험 가능,20230083,16
+alogliptin,iopromide,기능적 신부전에 의해 유산 산성증 촉진,20200061,54
+evogliptin,iopromide,기능적 신부전에 의해 유산 산성증 촉진,20200061,36
+atazanavir,finerenone,Finerenone 혈중농도의 현저한 증가가 예상됨,20240030,2
+finerenone,st john's wort 80% methanol ext,Finerenone 혈중농도의 현저한 감소 및 치료효과 감소가 예상됨,20240030,4
+carbamazepine,finerenone,Finerenone 혈중농도의 현저한 감소 및 치료효과 감소가 예상됨,20240030,20
+atropine,oxatomide,항콜린 작용 증가,20080056,5
+domperidone,mequitazine,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,34
+magnesium hydroxide,rilpivirine,위장 pH의 증가로 릴피비린의 흡수가 저하되어 릴피비린의 치료효과 감소,20230045,2
+darunavir ethanolate,ergotamine,"맥각독성(혈관경련, 말단 및 기타조직 허혈 등) 위험 증가",20100278,2
+dexketoprofen trometamol,ketorolac tromethamine,"상가적인 위장관 궤양, 출혈의 위험",20080056,10
+nirmatrelvir,silodosin,기립성저혈압의 가능성,20250046,10
+carbamazepine,selegiline,"고혈압, 저혈압, 발한을 동반한 심각한 중추신경계 이상반응(현기, 진전, 발작 등)",20070030,10
+epinephrine,procaterol,부정맥 또는 심정지 유도,20080056,12
+ritonavir,tolvaptan sd powder,"탈수, 저혈량증 및 고칼륨혈증의 가능성",20250046,4
+ceritinib,digoxin,심장 박동수와 혈압을 정기적으로 모니터링할 것,20250086,3
+domperidone,nilotinib,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,34
+hydroxyzine,sotalol,심부정맥 위험 증가 가능,20180088,4
+phenytoin,tenofovir disoproxil,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,2
+epinephrine,fenoterol,부정맥 또는 심정지 유도,20080056,6
+atazanavir,pantoprazole,아타자나비르의 혈중농도 감소,20230045,43
+mirtazapine,selegiline,"구역, 구토, 안면홍조, 어지러움, 진전, 산동, 강직, 발한, 고온증, 심장지표의 빠른 변화, 자율신경계의 불안정, 정신상태의 변화",20040002,32
+entacapone,haloperidol decanoate,Levodopa의 치료효과 감소,20190131,18
+adefovir dipivoxil,tenofovir alafenamide hemifumarate,신장청소율을 감소시켜 양쪽 약물 모두 혈장농도 상승,20110009,28
+abacavir,tenofovir alafenamide hemifumarate,"라미부딘이 엠트리시타빈의 세포내 인산화를 저해할 수도 있음. 동일한 역전사효소 유전자(M184V) 변이를 통해 바이러스 내성 기전이 일어나므로, 병용 시 치료 효과가 제한적일 수 있음",20220049,4
+evogliptin,ioversol,기능적 신부전에 의해 유산 산성증 촉진,20200061,40
+gemigliptin,iopromide,기능적 신부전에 의해 유산 산성증 촉진,20200061,45
+glibenclamide,iobitridol,기능성 신부전에 의한 유산산성증 촉진,20110188,32
+metformin,sofosbuvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,6
+adefovir dipivoxil,emtricitabine,양쪽 약물 모두 혈장농도 상승 가능,20110188,28
+omega-3-acid ethyl esters90,posaconazole,"근육병증, 횡문근융해 위험 증가 가능",20230083,14
+emtricitabine,ibrutinib,Ibrutinib의 혈중 농도 증가,20250086,1
+nirmatrelvir,phenobarbital,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Phenobarbital 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20250046,3
+lamivudine,tenofovir alafenamide hemifumarate,"라미부딘이 엠트리시타빈의 세포내 인산화를 저해할 수도 있음. 동일한 역전사효소 유전자(M184V) 변이를 통해 바이러스 내성 기전이 일어나므로, 병용 시 치료 효과가 제한적일 수 있음",20220049,14
+ritonavir,ticagrelor,Ticagrelor의 혈중농도를 증가시킬 수 있음,20250046,20
+selegiline,tapentadol,"세로토닌성 증후군(고혈압, 고열, 간대성 근경련, 정신상태 변화 등) 위험 증가 가능성",20160155,4
+ethyl esters of the iodised fatty acids of poppyseed oil,rosuvastatin,기능적 신부전에 의해 유산 산성증 촉진,20200061,18
+dabigatran etexilate,rifampicin,다비가트란의 혈중농도 감소,20180088,16
+doravirine,pyrazinamide,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,2
+haloperidol,sotalol,QT간격 연장 위험 증가,20190131,12
+desvenlafaxine,selegiline,"세로토닌성 증후군(고혈압, 고열, 간대성 근경련, 정신상태 변화 등) 위험 증가 가능성",20160155,18
+eslicarbazepine,oxcarbazepine,활성대사체의 과다노출을 유발할 수 있음,20250086,14
+methotrexate,piroxicam β-cyclodextrin,신세뇨관에서 Methotrexate 배설이 지연되어 Methotrexate의 혈액학적 독성 증가,20110070,15
+ledipasvir,valsartan,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,49
+ledipasvir,omega-3-acid ethyl esters90,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,15
+amiodarone,tenofovir alafenamide,Amiodarone 혈중농도 증가,20190131,2
+azithromycin,caffeine,"맥각독성(혈관경련, 말단 및 기타조직 허혈 등) 위험 증가",20100278,16
+rifampicin,ritonavir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Rifampicin 함유제제 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20210113,8
+ivabradine,verapamil,이바브라딘의 혈중농도 증가,20160155,12
+lamivudine,rifampicin,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,8
+flecainide,mizolastine,심실성부정맥,20080056,2
+gliclazide,iomeprol,기능성 신부전에 의한 유산산성증 촉진,20110188,13
+cabozantinib s-malate,diphenylhydantoin,Cabozantinib의 혈장 노출 감소,20250086,9
+brigatinib,carbamazepine,Brigatinib의 혈장 농도를 감소시킬 수 있음,20250086,30
+brigatinib,isoniazid,Brigatinib의 혈장 농도를 감소시킬 수 있음,20250086,6
+brigatinib,ethambutol,Brigatinib의 혈장 농도를 감소시킬 수 있음,20250086,3
+emtricitabine,sildenafil,"Sildenafil 혈중농도 증가, 병용투여 할 경우에는 Sildenafil의 투여용량이 25mg을 초과하지 않도록 하며, 48시간 내 재투여 금지",20190131,91
+rifampicin,tenofovir alafenamide hemifumarate,Bictegravir의 혈중 농도 감소로 인해 치료 효과 소실 및 내성 발현 야기 가능,20250086,8
+doxepin,selegiline,"근독성, 간질, 세로토닌성 증후군(고혈압, 고열, 간대성 근경련, 정신상태 변화 등)",20070068,6
+dapagliflozin bis,iopromide,기능적 신부전에 의해 유산 산성증 촉진,20200061,108
+enavogliflozin,iopromide,기능적 신부전에 의해 유산 산성증 촉진,20200061,27
+fimasartan,posaconazole,"근육병증, 횡문근융해 위험 증가 가능",20230083,12
+carbamazepine,lurasidone,Lurasidone의 노출을 감소시킬 수 있음,20250046,50
+acitretin,methotrexate,간 독성,20040002,18
+clomipramine,sumatriptan,세로토닌 증후군,20050017,42
+trastuzumab emtansine,voriconazole,이 약의 구성 성분인 DM1이 주로 CYP3A4에 의해 대사됨. 강한 CYP3A4억제제와 병용시 DM1 노출과 독성 증가 가능성,20160155,4
+entrectinib,rifampicin,Entrectinib의 전신 노출 감소,20250086,16
+diphenylhydantoin,etravirine,에트라비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,3
+pantoprazole hemimagnesium,rilpivirine,위장 pH의 증가로 릴피비린의 흡수가 저하되어 릴피비린의 치료효과 감소,20150021,1
+rifabutin,rilpivirine micronized,Rilpivirine 혈중농도 감소로 치료효과 감소 혹은 내성발현,20250046,1
+rifampicin,rilpivirine micronized,릴피비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,6
+azithromycin,ergotamine,"맥각독성(혈관경련, 말단 및 기타조직 허혈 등) 위험 증가",20100278,16
+primidone,ritonavir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Primidone 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20250046,1
+nirmatrelvir,propafenone,심장 부정맥의 가능성,20250046,5
+nirmatrelvir,sirolimus,Sirolimus의 혈중농도를 증가시킬 수 있음,20250046,6
+diphenylhydantoin,ponatinib,Ponatinib의 노출 감소,20250086,6
+anastrozole,tamoxifen,anastrozole의 혈장농도 감소,20080056,28
+imipramine,pimozide,QT연장,20050017,2
+pimozide,sertraline,QT 간격 연장,20090300,21
+dabigatran etexilate,isoniazid,다비가트란의 혈중농도 감소,20180088,4
+domperidone,ritonavir,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성. 강력한 CYP억제제가 돔페리돈의 대사를 감소시켜, 돔페리돈의 영향(이상반응 포함) 증대 가능성",20150090,17
+iobitridol,saxagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,16
+enavogliflozin,iobitridol,기능적 신부전에 의해 유산 산성증 촉진,20200061,24
+selegiline,vortioxetine,"세로토닌성 증후군(고혈압, 고열, 간대성 근경련, 정신상태 변화 등) 위험 증가 가능성",20160155,7
+isoniazid,nanoliposomal irinotecan,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,2
+cabozantinib s-malate,ethambutol,Cabozantinib의 혈장 노출 감소,20250086,3
+isoniazid,ixazomib,Ixazomib의 효과 감소,20250086,6
+pimozide,ziprasidone,QT 간격 연장,20110070,4
+dronedarone,ziprasidone,QT 간격 연장,20110070,8
+atorvastatin strontium pentahydrate,pibrentasvir,횡문근융해증을 비롯한 근육질환 등 중증 이상반응,20200130,4
+amiodarone,cobicistat,Amiodarone 혈중농도 증가,20190131,2
+lurasidone,phenytoin,Lurasidone의 노출을 감소시킬 수 있음,20250046,10
+diphenylhydantoin,lurasidone,Lurasidone의 노출을 감소시킬 수 있음,20250046,15
+amlodipine camsylate,ledipasvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,6
+hydroxyzine,vandetanib,심부정맥 위험 증가 가능,20180088,8
+oxcarbazepine,rilpivirine,릴피비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,6
+carbamazepine,rilpivirine,릴피비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,10
+cyclosporine,dronedarone,Dronedarone 노출량 증가,20250046,30
+ergotamine,sumatriptan,혈압상승 및 맥각독성(말초혈관수축증가) 위험,20040002,7
+sumatriptan,zolmitriptan,"상가적인 혈관수축반응, 현저한 혈압상승",20070030,7
+carbamazepine,dabigatran etexilate,다비가트란의 혈중농도 감소,20180088,20
+lamivudine,oxcarbazepine,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,7
+ethambutol,lamivudine,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,1
+diluted nitroglycerin,sildenafil,혈압강하작용 증가,20080056,728
+alitretinoin,minocycline,양성 두개내압 상승(가성뇌종양) 보고,20250046,51
+cobicistat,naproxen,아타자나비르의 혈중농도 감소,20230045,11
+carbamazepine,glecaprevir,Glecaprevir와 Pibrentasvir의 혈장 농도가 유의하게 감소하여 이 약의 바이러스학적 반응 감소 가능,20200130,10
+carbamazepine,elvitegravir,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,10
+emtricitabine,pyrazinamide,Bictegravir의 혈중 농도 감소로 인해 치료 효과 소실 및 내성 발현 야기 가능,20250086,1
+doxycycline hyclate,isotretinoin,두개내 고혈압,20040002,28
+candesartan cilexetil,glecaprevir,횡문근융해증을 포함한 근육병증 위험 가능,20230083,5
+formoterol,norepinephrine,부정맥 또는 심정지,20100246,9
+oxcarbazepine,rilpivirine micronized,릴피비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,7
+fosphenytoin,rilpivirine micronized,릴피비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,2
+enzalutamide,palbociclib,팔보시클립의 혈장 농도 감소,20180088,63
+cyclosporine,nirmatrelvir,"Cyclosporine의 혈중농도를 증가시키고 중대한 이상반응 초래할 수 있음. 병용투여할 경우, 면역억제제의 용량 조절 및 이상반응에 대한 면밀한 모니터링 권장됨",20250046,15
+ethambutol,nirmatrelvir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Rifampicin 함유제제 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20210113,1
+pyrazinamide,ritonavir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Rifampicin 함유제제 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20210113,1
+divalproex,mefloquine,메플로퀸은 발프로산의 대사를 증가시키며 경련 효과를 가지고 있으므로 병용투여 시 간질성 발작이 일어날 수 있음,20220049,4
+ethyl esters of the iodised fatty acids of poppyseed oil,evogliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,12
+dapagliflozin bis,ethyl esters of the iodised fatty acids of poppyseed oil,기능적 신부전에 의해 유산 산성증 촉진,20200061,36
+anagliptin,ethyl esters of the iodised fatty acids of poppyseed oil,기능적 신부전에 의해 유산 산성증 촉진,20200061,9
+pseudoephedrine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,103
+brigatinib,diphenylhydantoin,Brigatinib의 혈장 농도를 감소시킬 수 있음,20250086,9
+doxycycline,tretinoin,두개내 고혈압,20080056,8
+tigecycline,tretinoin,뇌내압 상승 위험,20250046,2
+bosentan,venetoclax,CYP3A 유도제와의 병용은 Venetoclax의 노출을 감소시켜 결과적으로 효능 부족을 초래할 수 있음,20250086,9
+elvitegravir,sildenafil,"Sildenafil 혈중농도 증가, 병용투여 할 경우에는 Sildenafil의 투여용량이 25mg을 초과하지 않도록 하며, 48시간 내 재투여 금지",20190131,91
+bictegravir,dolutegravir,"라미부딘이 엠트리시타빈의 세포내 인산화를 저해할 수도 있음. 동일한 역전사효소 유전자(M184V) 변이를 통해 바이러스 내성 기전이 일어나므로, 병용 시 치료 효과가 제한적일 수 있음",20220049,1
+adefovir dipivoxil,tenofovir disoproxil hemiedisylate,신장청소율을 감소시켜 양쪽 약물 모두 혈장농도 상승,20110009,28
+domperidone,sotalol,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,17
+sirolimus,voriconazole,Sirolimus의 농도 증가,20190131,12
+palbociclib,voriconazole,팔보시클립의 혈장 농도 증가,20180088,18
+nirmatrelvir,triazolam,과도한 진정 및 호흡억제의 가능성,20250046,4
+nirmatrelvir,sildenafil,"시각 이상, 발기 시간 지연 및 실신을 포함한 Sildenafil 관련 이상반응의 가능성. 폐고혈압 치료에 사용 시 병용투여 금기, 발기부전에 사용 시 Sildenafil의 용량조절이 권장됨",20250046,93
+ergotamine,ritonavir,사지 및 중추신경계를 포함하는 기타 조직의 혈관 경련 및 허혈을 특징으로 하는 급성 맥각 독성의 잠재적인 가능성,20210113,2
+amisulpride,bromocryptine,길항작용,20110070,10
+bromocryptine,octreotide,bromocriptine mesylate 혈중농도 상승,20080056,5
+brigatinib,phenobarbital,Brigatinib의 혈장 농도를 감소시킬 수 있음,20250086,9
+paricalcitol,sodium alendronate,고칼슘혈증,20110188,10
+ledipasvir,phenytoin,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,2
+isoniazid,tamoxifen,Tamoxifen의 혈장농도를 낮춤,20250086,14
+etravirine,rifampicin,에트라비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,6
+carbamazepine,etravirine,에트라비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,10
+ilaprazole,rilpivirine,위장 pH의 증가로 릴피비린의 흡수가 저하되어 릴피비린의 치료효과 감소,20150021,1
+dronedarone,propafenone,QT 간격을 연장시키고 염전성 심실빈맥 발생 위험을 높일 수 있음,20250046,10
+frovatriptan,naratriptan,추가적인 관상혈관 경련으로 고혈압 및 관상 동맥 협착의 위험성 증가,20110070,12
+calcium,rilpivirine,위장 pH의 증가로 릴피비린의 흡수가 저하되어 릴피비린의 치료효과 감소,20230045,18
+carbamazepine,delamanid,Delamanid의 혈중농도 감소,20250086,10
+dronedarone,imipramine,Torsade de pointes 위험 증가,20110110,4
+enavogliflozin,ethyl esters of the iodised fatty acids of poppyseed oil,기능적 신부전에 의해 유산 산성증 촉진,20200061,9
+rifampicin,tenofovir disoproxil,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,8
+selegiline,venlafaxine,"세로토닌성 증후군(고혈압, 고열, 간대성 근경련, 정신상태 변화 등)",20070030,14
+haloperidol decanoate,vandetanib,QT간격 연장 위험 증가,20190131,2
+carbamazepine,tenofovir alafenamide,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,10
+caffeine,tenofovir alafenamide,"Ergotamine 혈중농도 증가, 말초혈관연축 또는 국소빈혈",20190131,1
+adefovir dipivoxil,tenofovir alafenamide hemimalate,신장청소율을 감소시켜 양쪽 약물 모두 혈장농도 상승,20110009,28
+ethambutol,tamoxifen,Tamoxifen의 혈장농도를 낮춤,20250086,7
+almotriptan,frovatriptan,추가적인 관상혈관 경련으로 고혈압 및 관상 동맥 협착의 위험성 증가,20110070,2
+divalproex,doripenem,발프론산의 혈중농도를 감소시켜 간질발작 재발의 위험 증가,20150021,4
+ethambutol,ibrutinib,Ibrutinib의 혈중 농도 감소,20250086,1
+elvitegravir,ibrutinib,Ibrutinib의 혈중 농도 증가,20250086,1
+brimonidine,selegiline,"교감신경흥분제의 작용 증강 또는 연장(고혈압, 빈맥 등)",20070068,8
+ephedrine,norepinephrine,부정맥 또는 심정지,20100246,18
+dabigatran etexilate,diphenylhydantoin,다비가트란의 혈중농도 감소,20180088,6
+carbamazepine,ribociclib,강력한 CYP3A 유도제와의 병용투여는 Ribociclib의 혈장 노출을 감소시킬 수 있음,20250086,10
+almotriptan,selegiline,"동맥 고혈압, 관상동맥 수축의 위험이 있음",20250086,1
+ephedrine,epinephrine,부정맥 또는 심정지 유도,20080056,12
+gilteritinib,pyrazinamide,Gilteritinib의 혈장 농도 감소,20250086,1
+diphenylhydantoin,gilteritinib,Gilteritinib의 혈장 농도 감소,20250086,3
+rifampicin,sofosbuvir,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,18
+phenobarbital,tenofovir alafenamide,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,3
+blonanserin,elvitegravir,Blonanserin 혈중농도 증가,20190131,9
+irbesartan,posaconazole,"근육병증, 횡문근융해 위험 증가 가능",20230083,8
+methotrexate,sulfamethoxazole,신세뇨관에서 methotrexate 배설이 지연되어 methotrexate의 혈액학적 독성 증가,20200130,18
+diphenylhydantoin,ibrutinib,Ibrutinib의 혈중 농도 감소,20250086,3
+pethidine,ritonavir,Ritonavir와 병용 시 Pethidine의 독성이 나타날 위험이 있음,20250086,6
+amantadine,perphenazine,amantadine의 효과 저해,20080056,4
+diphenylhydantoin,doravirine,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,6
+atazanavir,fexuprazan,위 내 pH 증가로 인한 Atazanavir의 생체이용률 감소,20250086,8
+cabozantinib s-malate,st john's wort 80% methanol ext,Cabozantinib의 혈장 노출 감소,20250086,6
+diphenylhydantoin,venetoclax,CYP3A 유도제와의 병용은 Venetoclax의 노출을 감소시켜 결과적으로 효능 부족을 초래할 수 있음,20250086,9
+amiodarone,sofosbuvir,중대한 증상성 서맥이 나타날 수 있음. 병용이 필요한 경우 심장 모니터링이  권장됨,20170086,6
+rifampicin,tenofovir alafenamide,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,6
+cobicistat,triazolam,"Triazolam 혈중농도 증가, 진정 또는 호흡 억제의 연장 또는 증가",20190131,4
+bictegravir,lamivudine,"라미부딘이 엠트리시타빈의 세포내 인산화를 저해할 수도 있음. 동일한 역전사효소 유전자(M184V) 변이를 통해 바이러스 내성 기전이 일어나므로, 병용 시 치료 효과가 제한적일 수 있음",20220049,6
+iopromide,saxagliptin,기능적 신부전에 의해 유산 산성증 촉진,20200061,18
+lurasidone,ritonavir,심장 부정맥과 같은 중대한 및/또는 생명을 위협하는 반응의 가능성,20250046,10
+naproxen,rilpivirine,위장 pH의 증가로 릴피비린의 흡수가 저하되어 릴피비린의 치료효과 감소,20180088,11
+nirmatrelvir,rifampicin,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Rifampicin 함유제제 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20210113,8
+cabotegravir sodium micronized,rifampicin,Cabotegravir의 혈중농도를 감소시켜 치료 효과를 감소시킬 수 있음,20240030,6
+epinephrine,perphenazine,혈압강하효과,20040002,12
+amiodarone,nortriptyline,Torsade de pointes 위험 증가,20110110,4
+glecaprevir,omega-3-acid ethyl esters90,횡문근융해증을 포함한 근육병증 위험 가능,20230083,7
+dexketoprofen trometamol,methotrexate,신세뇨관에서 Methotrexate 배설이 지연되어 Methotrexate의 혈액학적 독성 증가,20110070,15
+agalsidase α,amiodarone,Amiodarone은 세포내 알파-갈락토시다제 활성을 저해할 가능성 있음,20250086,2
+ledipasvir,nebivolol,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,10
+carbamazepine,sofosbuvir,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,10
+5-fluorouracil,gimeracil,"해당 약물 병용 시 gimeracil에 의해 fluoropyrimidine 계열 약물의 대사가 감소하여 항암제의 독성이 증가, gimeracil/oteracil/tegafur 투여 중 및 종료 후 7일 간 해당 성분 투여 금기",20200130,12
+anagliptin,iodixanol,기능적 신부전에 의해 유산 산성증 촉진,20200061,36
+dronedarone,nortriptyline,Torsade de pointes 위험 증가,20110110,4
+lurasidone,nirmatrelvir,심장 부정맥과 같은 중대한 및/또는 생명을 위협하는 반응의 가능성,20250046,5
+caffeine,diluted nitroglycerin,"맥각독성(말초허혈, 감각이상, 구역, 구토) 위험 증가",20170086,8
+amitriptyline,pimozide,QT연장,20050017,5
+gliclazide,iobitridol,기능성 신부전에 의한 유산산성증 촉진,20110188,8
+cobicistat,fexuprazan,위 내 pH 증가로 인한 Atazanavir의 생체이용률 감소,20250086,8
+epinephrine,haloperidol decanoate,혈압강하효과,20040002,6
+glecaprevir,phenytoin,Glecaprevir와 Pibrentasvir의 혈장 농도가 유의하게 감소하여 이 약의 바이러스학적 반응 감소 가능,20200130,2
+carbamazepine,cobicistat,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,10
+palonosetron,rifampicin,Netupitant의 혈중농도 감소,20200130,6
+metformin,pibrentasvir,횡문근융해증을 포함한 근육병증 위험 가능,20230083,9
+caffeine,darunavir ethanolate,"맥각독성(혈관경련, 말단 및 기타조직 허혈 등) 위험 증가",20100278,2
+lorlatinib,pimozide,Pimozide의 혈중농도가 감소될 수 있음,20240030,2
+phenobarbital,ritonavir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Phenobarbital 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20250046,3
+everolimus,ritonavir,Everolimus의 혈중농도를 증가시킬 수 있음,20250046,16
+ledipasvir,metformin,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,6
+brigatinib,st john's wort 80% methanol ext,Brigatinib의 혈장 농도를 감소시킬 수 있음,20250086,6
+glecaprevir,rifampicin,Glecaprevir와 Pibrentasvir의 혈장 농도가 유의하게 감소하여 이 약의 바이러스학적 반응 감소 가능,20200130,6
+acitretin,tetracycline,두개내압 증가,20070030,1
+ritonavir,st john's wort 80% methanol ext,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 St. john’s wort 함유제제 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20210113,16
+ritonavir,trastuzumab emtansine,이 약의 구성 성분인 DM1이 주로 CYP3A4에 의해 대사됨. 강한 CYP3A4억제제와 병용시 DM1 노출과 독성 증가 가능성,20160155,2
+ritonavir,sildenafil,"시각 이상, 발기 시간 지연 및 실신을 포함한 Sildenafil 관련 이상반응의 가능성. 폐고혈압 치료에 사용 시 병용투여 금기, 발기부전에 사용 시 Sildenafil의 용량조절이 권장됨",20250046,184
+cabotegravir,oxcarbazepine,Cabotegravir의 혈중농도를 감소시켜 치료 효과를 감소시킬 수 있음,20240030,7
+pethidine,selegiline,"아편중추 흥분, 설사, 빈맥, 땀, 진전, 혼동, 혼수상태, 사망을 유발할 수 있는 세로토닌 증후군 보고 셀레길린-페티딘 병용 시 고도의 흥분,정신착란 등 보고",20070068,6
+diluted nitroglycerin solution,micronized riociguat,혈압강하작용 증가,20170086,5
+mizolastine,ziprasidone,QT 간격 연장,20110070,4
+fimasartan,glecaprevir,횡문근융해증을 포함한 근육병증 위험 가능,20230083,6
+adefovir dipivoxil,tenofovir disoproxil orotate,신장청소율을 감소시켜 양쪽 약물 모두 혈장농도 상승,20110009,7
+micronized dolutegravir,st john's wort 80% methanol ext,병용 시 항바이러스 약의 치료효과가 떨어지고 내성 발현 가능,20170086,2
+nicorandil,sildenafil,혈관확장작용 증가로 저혈압 효과 상승,20070030,364
+phenobarbital,rilpivirine,릴피비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,3
+bedaquiline,ethambutol,Bedaquiline의 혈중농도와 치료효과 감소,20250086,1
+propafenone,ritonavir,심장 부정맥의 가능성,20250046,5
+domperidone,haloperidol decanoate,"QTc 연장 효과 증대로 심각한 위험(Torsade de Pointes, 심각한 심실성 부정맥 포함) 가능성",20150090,17
+praziquantel,pyrazinamide,Praziquantel의 치료적 유효 혈중농도에 도달하지 못할 수 있음,20250086,1
+ceritinib,rifampicin,Ceritinib의 혈장 농도 감소,20250086,8
+fenoterol,norepinephrine,부정맥 또는 심정지,20100246,9
+fexuprazan,rilpivirine micronized,위 내 pH 증가로 인한 Rilpivirine의 생체이용률 감소,20250086,8
+carbamazepine,ledipasvir,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,10
+ledipasvir,rifampicin,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,6
+emtricitabine,ethambutol,Bictegravir의 혈중 농도 감소로 인해 치료 효과 소실 및 내성 발현 야기 가능,20250086,1
+amiodarone,voxilaprevir,중대한 증상성 서맥이 나타날 수 있음. 병용이 필요한 경우 심장 모니터링이 권장됨,20240030,2
+apalutamide,irinotecan,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,19
+fimasartan,ledipasvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,13
+acitretin,doxycycline hyclate,두개내압 증가,20070030,2
+ledipasvir,losartan,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,14
+phenobarbital,rilpivirine micronized,릴피비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,3
+colchicine,nirmatrelvir,신장 및/또는 간장애가 있는 환자에서 중대한 및/또는 생명을 위협하는 반응의 가능성,20250046,2
+cabotegravir sodium micronized,oxcarbazepine,Cabotegravir의 혈중농도를 감소시켜 치료 효과를 감소시킬 수 있음,20240030,7
+diphenylhydantoin,dronedarone,Dronedarone 노출량 감소,20250046,6
+ixazomib,phenytoin,Ixazomib의 효과 감소,20250086,6
+oxcarbazepine,sofosbuvir,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,7
+alfuzosin,emtricitabine,Alfuzosin 혈중농도 증가,20190131,18
+emtricitabine,finerenone,Finerenone 혈중농도의 현저한 증가가 예상됨,20240030,2
+dexlansoprazole,rilpivirine,위장 pH의 증가로 릴피비린의 흡수가 저하되어 릴피비린의 치료효과 감소,20150021,2
+venetoclax,voriconazole,Venetoclax의 혈장 농도 및 종양용해증후군 위험 증가 가능,20240030,6
+palbociclib,phenytoin,팔보시클립의 혈장 농도 감소,20180088,18
+ergotamine,zolmitriptan,"약리적 상가작용에 의해, 혈압 상승 및 맥각중독(에르고티즘)(말초혈관수축 증가)의 위험성을 증가",20090300,1
+amantadine,dronedarone,QT 간격 연장,20110070,4
+enzalutamide,tenofovir disoproxil,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,7
+primidone,sofosbuvir,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,1
+emtricitabine,micronized dolutegravir,"라미부딘이 엠트리시타빈의 세포내 인산화를 저해할 수도 있음. 동일한 역전사효소 유전자(M184V) 변이를 통해 바이러스 내성 기전이 일어나므로, 병용 시 치료 효과가 제한적일 수 있음",20220049,1
+finerenone,phenobarbital,Finerenone 혈중농도의 현저한 감소 및 치료효과 감소가 예상됨,20240030,6
+isotretinoin,tretinoin,비타민A 과잉증,20080056,14
+glecaprevir,nirmatrelvir,증가된 Glecaprevir 농도는 알라닌아미노전달효소(ALT) 상승을 유발할 수 있음,20250046,1
+pimozide,voriconazole,"QT 연장, 심실성 빈맥, 심실세동 및 torsades de pointes 등 심독성위험 증가",20070030,2
+alitretinoin,tretinoin,비타민A과다증,20250046,17
+pethidine,safinamide,고혈압 또는 저혈압 위기가 동반되는 중추신경 흥분 또는 억제를 일으킬 수 있음,20250086,6
+isoniazid,venetoclax,강력한 CYP3A 유도제인 Rifampicin과 병용 투여 시 Venetoclax의 Cmax 및 AUC∞는 각각 42% 및 71%까지 감소함,20250086,6
+adefovir dipivoxil,tenofovir disoproxil asparate,신장청소율을 감소시켜 양쪽 약물 모두 혈장농도 상승,20110009,7
+atazanavir,ibrutinib,Ibrutinib의 혈중 농도 증가,20250086,1
+enzalutamide,lorlatinib,Lorlatinib의 혈중농도를 감소시킬 수 있음,20240030,14
+carbamazepine,nirmatrelvir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Carbamazepine 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20250046,10
+atorvastatin strontium pentahydrate,posaconazole,횡문근융해를 비롯한 근육병증 발생가능성 증가,20190131,8
+chlorpromazine,haloperidol decanoate,QT간격 연장 위험 증가,20190131,4
+blonanserin,ritonavir,신경학적 또는 기타 독성의 빈도 및 강도가 증가,20100278,9
+ibrutinib,rifampicin,Ibrutinib의 혈중 농도 감소,20250086,8
+dabigatran etexilate,dronedarone,다비가트란의 혈중농도가 상승하여 출혈위험 증가,20150021,4
+moxifloxacin,ribociclib,QT 간격 연장을 유발할 수 있음,20250086,11
+sildenafil,tenofovir alafenamide,"Sildenafil 혈중농도 증가, 병용투여 할 경우에는 Sildenafil의 투여용량이 25mg을 초과하지 않도록 하며, 48시간 내 재투여 금지",20190131,91
+rifampicin,voxilaprevir,소포스부비르 혈장 농도를 현저히 떨어트려 소포스부비르의 치료 효과를 감소시킬 수 있음,20240030,6
+atazanavir,magnesium hydroxide,아타자나비르의 혈중농도 감소,20230045,2
+cobicistat,ibrutinib,Ibrutinib의 혈중 농도 증가,20250086,3
+diphenylhydantoin,nirmatrelvir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Phenytoin 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20250046,3
+doravirine,st john's wort 80% methanol ext,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,4
+rilpivirine,s-pantoprazole,위장 pH의 증가로 릴피비린의 흡수가 저하되어 릴피비린의 치료효과 감소,20150021,2
+diphenylhydantoin,rilpivirine,릴피비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,3
+nirmatrelvir,salmeterol xinafoate,"QT 연장, 심계항진, 동성빈맥(sinus tachycardia)을 포함하여 살메테롤과 관련된 심혈관 부작용의 위험을 증가시킬 수 있음",20250046,6
+doravirine,phenytoin,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,4
+isoniazid,tenofovir disoproxil,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,2
+linezolid,selegiline,"고혈압 위기의 위험 증가, 투여 중지 후 MAO억제제인 다른 약물을 투여하기까지 적어도 14일 이상 사이를 두어야 함",20220087,7
+diphenylhydantoin,ixazomib,Ixazomib의 효과 감소,20250086,9
+diphenylhydantoin,elvitegravir,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,3
+cobicistat,rifampicin,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,6
+elvitegravir,phenytoin,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,2
+adefovir dipivoxil,bictegravir,양쪽 약물 모두 혈장농도 상승 가능,20220049,7
+almotriptan,sumatriptan,"상가적인 혈관수축반응, 혈압상승",20100125,7
+ibrutinib,ritonavir,Ibrutinib의 혈중 농도 증가. Ibrutinib의 노출 증가로 종양 용해 증후군의 위험을 포함한 독성 위험성 증가,20250086,1
+palbociclib,ritonavir,팔보시클립의 혈장 농도 증가,20180088,9
+cabotegravir,rifampicin,Cabotegravir의 혈중농도를 감소시켜 치료 효과를 감소시킬 수 있음,20240030,6
+glecaprevir,st john's wort 80% methanol ext,Glecaprevir와 Pibrentasvir의 혈장 농도가 유의하게 감소하여 이 약의 바이러스학적 반응 감소 가능,20200130,2
+ledipasvir,modafinil,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,2
+elvitegravir,rifampicin,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,6
+rilpivirine micronized,tegoprazan,위장 pH의 증가로 rilpivirine의 흡수가 저하되어 rilpivirine의 치료효과 감소,20200130,6
+cobicistat,magnesium hydroxide,아타자나비르의 혈중농도 감소,20230045,2
+bedaquiline,rifampicin,Bedaquiline의 혈중농도와 치료효과 감소,20250086,8
+amiodarone,amitriptyline,Torsade de pointes 위험 증가,20110110,10
+hydroxyzine,pentamidine isethionate,심부정맥 위험 증가 가능,20180088,4
+ritonavir,triazolam,"진정작용의 연장 또는 증가, 호흡 저하",20220087,8
+ibrutinib,phenytoin,Ibrutinib의 혈중 농도 감소,20250086,2
+imipramine,selegiline,"근독성, 간질, 세로토닌성 증후군(고혈압, 고열, 간대성 근경련, 정신상태 변화 등)",20070030,2
+ribociclib,rifampicin,강력한 CYP3A 유도제(Rifampicin)와의 병용투여는 건강한 시험대상자에서 Ribociclib의 혈장 노출을 89%까지 감소시킴,20250086,8
+apalutamide,nanoliposomal irinotecan,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,1
+nanoliposomal irinotecan,rifampicin,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,8
+rifampicin,rilpivirine,릴피비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,6
+enzalutamide,ritonavir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Enzalutamide 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20250046,7
+lamivudine,tenofovir disoproxil,"세포내 인산화 방해, 동일한 역전사효소 유전자(M184V)변이를 통한 바이러스 내성 - 항바이러스 효과 감소",20150090,4
+cabotegravir,diphenylhydantoin,Cabotegravir의 혈중농도를 감소시켜 치료 효과를 감소시킬 수 있음,20240030,3
+clomipramine,selegiline,"고혈압위기, 이상고열증, 근간대경련, 격월성 발작, 정신착란, 혼수 등",20100125,6
+st john's wort 80% methanol ext,venetoclax,CYP3A 유도제와의 병용은 Venetoclax의 노출을 감소시켜 결과적으로 효능 부족을 초래할 수 있음,20250086,6
+cobicistat,phenytoin,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,2
+amiodarone,velpatasvir,중대한 증상성 서맥이 나타날 수 있음. 병용이 필요한 경우 심장 모니터링이 권장됨,20240030,4
+diphenylhydantoin,rilpivirine micronized,릴피비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,3
+isoniazid,nirmatrelvir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Rifampicin 함유제제 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20210113,2
+fosaprepitant dimeglumine,pimozide,피모짓의 혈중농도 증가,20150021,1
+brigatinib,rifabutin,Brigatinib의 혈장 농도를 감소시킬 수 있음,20250086,3
+diphenylhydantoin,tenofovir alafenamide,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,3
+caffeine,elvitegravir,"Ergotamine 혈중농도 증가, 말초혈관연축 또는 국소빈혈",20190131,1
+fimasartan,sofosbuvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,13
+ibrutinib,st john's wort 80% methanol ext,Ibrutinib의 혈중 농도 감소,20250086,2
+dronedarone,flecainide,QT 간격을 연장시키고 염전성 심실빈맥 발생 위험을 높일 수 있음,20250046,4
+ivabradine,voriconazole,QTc 연장과 매우 드물게 torsade de pointes 가능,20240030,4
+dabigatran etexilate,pyrazinamide,다비가트란의 혈중농도 감소,20180088,2
+haloperidol decanoate,ziprasidone,QT간격 연장 위험 증가,20190131,4
+pibrentasvir,rifampicin,Glecaprevir와 Pibrentasvir의 혈장 농도가 유의하게 감소하여 이 약의 바이러스학적 반응 감소 가능,20200130,6
+blonanserin,tenofovir alafenamide,Blonanserin 혈중농도 증가,20190131,9
+nortriptyline,selegiline,"근독성, 간질, 세로토닌성 증후군(고혈압, 고열, 간대성 근경련, 정신상태 변화 등)",20070030,2
+cobicistat,dexlansoprazole,아타자나비르의 혈중농도 감소,20230045,2
+tetracycline,tretinoin,두개내 고혈압,20080056,1
+cobicistat,diphenylhydantoin,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,3
+lurasidone,voriconazole,Lurasidone의 노출을 증가시킬 수 있음,20250046,10
+posaconazole,trastuzumab emtansine,이 약의 구성 성분인 DM1이 주로 CYP3A4에 의해 대사됨. 강한 CYP3A4억제제와 병용시 DM1 노출과 독성 증가 가능성,20160155,4
+caffeine,nirmatrelvir,사지 및 중추신경계를 포함하는 기타 조직의 혈관 경련 및 허혈을 특징으로 하는 급성 맥각 독성의 잠재적인 가능성,20210113,1
+amiodarone,imipramine,Torsade de pointes 위험 증가,20110110,4
+amiodarone,pentamidine isethionate,심실부정맥(Torsade de pointes) 위험 증가,20040002,2
+dolutegravir,emtricitabine,"라미부딘이 엠트리시타빈의 세포내 인산화를 저해할 수도 있음. 동일한 역전사효소 유전자(M184V) 변이를 통해 바이러스 내성 기전이 일어나므로, 병용 시 치료 효과가 제한적일 수 있음",20220049,1
+st john's wort 80% methanol ext,tenofovir alafenamide hemifumarate,Bictegravir의 혈중 농도 감소로 인해 치료 효과 소실 및 내성 발현 야기 가능,20250086,2
+ivabradine,nirmatrelvir,서맥 또는 전도장애의 가능성,20250046,2
+caffeine,sumatriptan,혈압상승 및 맥각독성(말초혈관수축증가) 위험,20040002,7
+amiodarone,mizolastine,"QT 연장, 심실성 부정맥",20090300,2
+enzalutamide,lamivudine,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,7
+safinamide,tapentadol,노르에피네프린 수치에 대한 잠재적 부가효과로 인해 심혈관계 부작용이 유발될 수 있음,20250086,4
+diphenylhydantoin,sofosbuvir,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,3
+entrectinib,isoniazid,Entrectinib의 전신 노출 감소,20250086,4
+chlorthalidone,lithium,리튬 독성 증가,20100246,8
+dronedarone,rifampicin,Dronedarone 노출량 감소,20250046,12
+amitriptyline,selegiline,"이상고열, 전신경련, 발한, 불온, 혼수 등",20040002,5
+ergotamine,letermovir,"맥각독성(혈관경련, 말단 및 기타조직 허혈 등) 위험 증가",20200130,4
+cabozantinib s-malate,phenytoin,Cabozantinib의 혈장 노출 감소,20250086,6
+fosphenytoin,sofosbuvir,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,2
+candesartan cilexetil,posaconazole,"근육병증, 횡문근융해 위험 증가 가능",20230083,10
+bosentan,nirmatrelvir,"Bosentan의 혈중농도를 증가시키고, Nirmatrelvir+Ritonavir의 혈중농도를 감소시킬 수 있음. 이 약의 투여 시작으로부터 최소 36시간 전에 Bosentan의 사용을 중단할 것",20250046,3
+nirmatrelvir,tolvaptan sd powder,"탈수, 저혈량증 및 고칼륨혈증의 가능성",20250046,2
+ergotamine,frovatriptan,"맥각독성(혈관경련, 말단 및 기타조직 허혈)",20110070,2
+ethambutol,praziquantel,Praziquantel의 치료적 유효 혈중농도에 도달하지 못할 수 있음,20250086,1
+diphenylhydantoin,tenofovir disoproxil,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,3
+pyrazinamide,tenofovir disoproxil,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,1
+micronized riociguat,sildenafil,Guanylate cyclase 자극제의 혈압강하작용 증가,20170086,455
+burosumab,sodium alendronate,고인산혈증 발생 가능,20250086,3
+phenytoin,venetoclax,CYP3A 유도제와의 병용은 Venetoclax의 노출을 감소시켜 결과적으로 효능 부족을 초래할 수 있음,20250086,6
+acitretin,tretinoin,비타민A과다증,20250046,1
+thrombin,tranexamic acid,혈전형성,20100278,84
+lamivudine,tenofovir alafenamide,"세포내 인산화 방해, 동일한 역전사효소 유전자(M184V)변이를 통한 바이러스 내성 - 항바이러스 효과 감소",20150090,4
+darunavir ethanolate,pimozide,QT연장 및 심실성부정맥 유발 가능,20170086,3
+cobicistat,esomeprazole strontium tetrahydrate,아타자나비르의 혈중농도 감소,20230045,3
+cabotegravir,phenytoin,Cabotegravir의 혈중농도를 감소시켜 치료 효과를 감소시킬 수 있음,20240030,2
+dronedarone,pimozide,QT 간격 연장,20110070,2
+letermovir,methylergonovine,"맥각독성(혈관경련, 말단 및 기타조직 허혈 등) 위험 증가",20200130,4
+apalutamide,ritonavir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Apalutamide 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20250046,1
+oxcarbazepine,tenofovir disoproxil,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,7
+isoniazid,tenofovir alafenamide hemifumarate,Bictegravir의 혈중 농도 감소로 인해 치료 효과 소실 및 내성 발현 야기 가능,20250086,2
+anastrozole,estrogen,anastrozole의 약리작용 감소,20080056,8
+finerenone,ritonavir,"고칼륨혈증, 저혈압 및 저나트륨혈증을 포함하는 중대한 이상반응의 가능성",20250046,4
+doravirine,ethambutol,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,2
+fedratinib dihydrochloride,rifampicin,Fedratinib의 혈중농도를 감소시킬 수 있음,20240030,6
+nanoliposomal irinotecan,phenobarbital,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,3
+dronedarone,voriconazole,Dronedarone 노출량 증가,20250046,4
+clopidogrel camsylate,ritonavir,Clopidogrel 활성대사체의 농도를 감소시킬 수 있음,20250046,1
+dronedarone,ritonavir,Dronedarone 노출량 증가,20250046,4
+elvitegravir,zidovudine,"세포내 인산화 방해, 동일한 역전사효소 유전자(M184V)변이를 통한 바이러스 내성 - 항바이러스 효과 감소",20150090,1
+pyrazinamide,ribociclib,강력한 CYP3A 유도제(Rifampicin)와의 병용투여는 건강한 시험대상자에서 Ribociclib의 혈장 노출을 89%까지 감소시킴,20250086,1
+haloperidol decanoate,ribociclib,QT 간격 연장을 유발할 수 있음,20250086,1
+caffeine,diluted nitroglycerin solution,"맥각독성(말초허혈, 감각이상, 구역, 구토) 위험 증가",20170086,1
+netupitant,rifampicin,Netupitant의 혈중농도 감소,20200130,6
+entrectinib,pyrazinamide,Entrectinib의 전신 노출 감소,20250086,2
+clopidogrel napadisilate,nirmatrelvir,Clopidogrel 활성대사체의 농도를 감소시킬 수 있음,20250046,1
+amiodarone,pimozide,Torsade de pointes 위험 증가,20110110,2
+phenytoin,ribociclib,강력한 CYP3A 유도제와의 병용투여는 Ribociclib의 혈장 노출을 감소시킬 수 있음,20250086,2
+ixazomib,pyrazinamide,Ixazomib의 효과 감소,20250086,3
+amiodarone,haloperidol decanoate,QT간격 연장 위험 증가,20190131,2
+abacavir,bictegravir,"라미부딘이 엠트리시타빈의 세포내 인산화를 저해할 수도 있음. 동일한 역전사효소 유전자(M184V) 변이를 통해 바이러스 내성 기전이 일어나므로, 병용 시 치료 효과가 제한적일 수 있음",20220049,2
+cobicistat,ilaprazole,아타자나비르의 혈중농도 감소,20230045,1
+dronedarone,sotalol,QT 간격을 연장시키고 염전성 심실빈맥 발생 위험을 높일 수 있음,20250046,2
+fluticasone,nirmatrelvir,"QT 연장, 심계항진, 동성빈맥(sinus tachycardia)을 포함하여 살메테롤과 관련된 심혈관 부작용의 위험을 증가시킬 수 있음",20250046,6
+amiodarone,sotalol,심실부정맥(Torsade de pointes) 위험 증가,20040002,2
+phenobarbital,sofosbuvir,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,3
+emtricitabine,ergotamine,"Ergotamine 혈중농도 증가, 말초혈관연축 또는 국소빈혈",20190131,1
+rilpivirine,st john's wort 80% methanol ext,릴피비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,2
+diphenylhydantoin,lorlatinib,Lorlatinib의 혈중농도를 감소시킬 수 있음,20240030,6
+pibrentasvir,st john's wort 80% methanol ext,Glecaprevir와 Pibrentasvir의 혈장 농도가 유의하게 감소하여 이 약의 바이러스학적 반응 감소 가능,20200130,2
+finerenone,tenofovir alafenamide,Finerenone 혈중농도의 현저한 증가가 예상됨,20240030,2
+nirmatrelvir,primidone,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Primidone 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20250046,1
+defibrotide,recombinant human tissue-type plasminogen activator,출혈 위험 증가,20220049,2
+ceritinib,phenobarbital,Ceritinib의 혈장 농도 감소,20250086,3
+doravirine,phenobarbital,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,6
+atazanavir,esomeprazole strontium tetrahydrate,아타자나비르의 혈중농도 감소,20230045,3
+omega-3-acid ethyl esters90,pibrentasvir,횡문근융해증을 포함한 근육병증 위험 가능,20230083,7
+isoniazid,ponatinib,Ponatinib의 노출 감소,20250086,4
+tenofovir alafenamide,zidovudine,"세포내 인산화 방해, 동일한 역전사효소 유전자(M184V)변이를 통한 바이러스 내성 - 항바이러스 효과 감소",20150090,1
+caffeine,ritonavir,사지 및 중추신경계를 포함하는 기타 조직의 혈관 경련 및 허혈을 특징으로 하는 급성 맥각 독성의 잠재적인 가능성,20210113,2
+emtricitabine,pimozide,QT연장 및 심실성부정맥 유발 가능,20170086,1
+isoniazid,praziquantel,Praziquantel의 치료적 유효 혈중농도에 도달하지 못할 수 있음,20250086,2
+atazanavir,pantoprazole hemimagnesium,아타자나비르의 혈중농도 감소,20230045,1
+dronedarone,haloperidol decanoate,QT간격 연장 위험 증가,20190131,2
+ledipasvir,phenobarbital,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,3
+lamivudine,st john's wort 80% methanol ext,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,4
+ponatinib,st john's wort 80% methanol ext,Ponatinib의 노출 감소,20250086,4
+amiloride,spironolactone,고칼륨혈증 위험 증가,20070030,3
+ibrutinib,tenofovir alafenamide,Ibrutinib의 혈중 농도 증가,20250086,1
+cobicistat,pimozide,QT연장 및 심실성부정맥 유발 가능,20170086,3
+nortriptyline,pimozide,QT연장,20050017,2
+caffeine,letermovir,"맥각독성(혈관경련, 말단 및 기타조직 허혈 등) 위험 증가",20200130,4
+ribociclib,sotalol,QT 간격 연장을 유발할 수 있음,20250086,1
+diphenylhydantoin,lamivudine,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,3
+rilpivirine,tegoprazan,위장 pH의 증가로 rilpivirine의 흡수가 저하되어 rilpivirine의 치료효과 감소,20200130,6
+darunavir ethanolate,trastuzumab emtansine,이 약의 구성 성분인 DM1이 주로 CYP3A4에 의해 대사됨. 강한 CYP3A4억제제와 병용시 DM1 노출과 독성 증가 가능성,20160155,4
+flecainide,ritonavir,"부정맥, 혈액장애, 경련등",20090300,4
+apalutamide,nirmatrelvir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Apalutamide 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20250046,1
+amiodarone,dronedarone,Torsade de pointes 위험 증가,20110110,4
+diphenylhydantoin,fedratinib dihydrochloride,Fedratinib의 혈중농도를 감소시킬 수 있음,20240030,3
+sofosbuvir,st john's wort 80% methanol ext,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,2
+naratriptan,zolmitriptan,"상가적인 혈관수축반응, 현저한 혈압상승",20070068,6
+ibrutinib,pyrazinamide,Ibrutinib의 혈중 농도 감소,20250086,1
+dolutegravir,pilsicainide,Pilsicainide의 혈중농도 증가로 심실빈맥(Torsades de pointes 포함) 등 심각한 독성 발생 가능성,20160155,2
+cabozantinib s-malate,isoniazid,Cabozantinib의 혈장 노출 감소,20250086,6
+apraclonidine,selegiline,"교감신경흥분제의 작용 증강 또는 연장(고혈압, 빈맥 등)",20070068,1
+diphenylhydantoin,glecaprevir,Glecaprevir와 Pibrentasvir의 혈장 농도가 유의하게 감소하여 이 약의 바이러스학적 반응 감소 가능,20200130,3
+phenobarbital,voriconazole,"Phenobarbital의 혈중농도 증가, Voriconazole의 농도 감소",20190131,6
+ivabradine,ritonavir,서맥 또는 전도장애의 가능성,20250046,4
+abacavir,emtricitabine,"라미부딘이 엠트리시타빈의 세포내 인산화를 저해할 수도 있음. 동일한 역전사효소 유전자(M184V) 변이를 통해 바이러스 내성 기전이 일어나므로, 병용 시 치료 효과가 제한적일 수 있음",20220049,6
+atazanavir,rivaroxaban,리바록사반의 혈중농도가 상승하여 출혈위험 증가,20150021,1
+clopidogrel napadisilate,ritonavir,Clopidogrel 활성대사체의 농도를 감소시킬 수 있음,20250046,1
+amiodarone,ritonavir,"부정맥, 혈액장애, 발작 등 중대한 이상반응",20070068,4
+bictegravir,ethambutol,Bictegravir의 혈중 농도 감소로 인해 치료 효과 소실 및 내성 발현 야기 가능,20250086,1
+esomeprazole strontium tetrahydrate,rilpivirine,위장 pH의 증가로 릴피비린의 흡수가 저하되어 릴피비린의 치료효과 감소,20150021,3
+lorlatinib,st john's wort 80% methanol ext,Lorlatinib의 혈중농도를 감소시킬 수 있음,20240030,4
+ethambutol,nanoliposomal irinotecan,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,1
+ethambutol,venetoclax,강력한 CYP3A 유도제인 Rifampicin과 병용 투여 시 Venetoclax의 Cmax 및 AUC∞는 각각 42% 및 71%까지 감소함,20250086,3
+modafinil,sofosbuvir,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,2
+atazanavir,dexlansoprazole,아타자나비르의 혈중농도 감소,20230045,2
+amiodarone,elvitegravir,Amiodarone 혈중농도 증가,20190131,2
+acitretin,tigecycline,두개내압 상승 위험,20250046,2
+bosentan,ritonavir,"Bosentan의 혈중농도를 증가시키고, Nirmatrelvir+Ritonavir의 혈중농도를 감소시킬 수 있음. 이 약의 투여 시작으로부터 최소 36시간 전에 Bosentan의 사용을 중단할 것",20250046,3
+gemifloxacin,haloperidol decanoate,QT간격 연장 위험 증가,20200130,2
+bictegravir,isoniazid,Bictegravir의 혈중 농도 감소로 인해 치료 효과 소실 및 내성 발현 야기 가능,20250086,2
+gemigliptin,sofosbuvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,3
+amiodarone,ledipasvir,중대한 증상성 서맥이 나타날 수 있음. 병용이 필요한 경우 심장 모니터링이  권장됨,20170086,2
+emtricitabine,triazolam,"Triazolam 혈중농도 증가, 진정 또는 호흡 억제의 연장 또는 증가",20190131,4
+tenofovir alafenamide,triazolam,"Triazolam 혈중농도 증가, 진정 또는 호흡 억제의 연장 또는 증가",20190131,4
+ritonavir,voriconazole,Voriconazole의 혈장 농도를 감소시켜 항진균 효과를 상실시킬 수 있음,20240030,4
+nirmatrelvir,pyrazinamide,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Rifampicin 함유제제 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20210113,1
+ceritinib,ethambutol,Ceritinib의 혈장 농도 감소,20250086,1
+doravirine,isoniazid,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,4
+nanoliposomal irinotecan,pyrazinamide,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,1
+ixazomib,st john's wort 80% methanol ext,Ixazomib의 효과 감소,20250086,6
+st john's wort 80% methanol ext,zanubrutinib,Zanubrutinib의 혈중농도를 감소시켜 유효성을 감소시킬 수 있음,20250046,2
+st john's wort 80% methanol ext,tenofovir alafenamide,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,2
+dronedarone,nirmatrelvir,심장 부정맥의 가능성,20250046,2
+cabotegravir sodium micronized,phenobarbital,Cabotegravir의 혈중농도를 감소시켜 치료 효과를 감소시킬 수 있음,20240030,3
+ergotamine,posaconazole,"맥각독성(혈관경련, 말단 및 기타조직 허혈 등) 위험 증가",20100278,2
+emtricitabine,fosphenytoin,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,2
+emtricitabine,st john's wort 80% methanol ext,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,4
+flecainide,nirmatrelvir,심장 부정맥의 가능성,20250046,2
+tenofovir disoproxil,zidovudine,"세포내 인산화 방해, 동일한 역전사효소 유전자(M184V)변이를 통한 바이러스 내성 - 항바이러스 효과 감소",20150090,1
+pyrazinamide,venetoclax,강력한 CYP3A 유도제인 Rifampicin과 병용 투여 시 Venetoclax의 Cmax 및 AUC∞는 각각 42% 및 71%까지 감소함,20250086,3
+fosphenytoin,tenofovir alafenamide,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,2
+cobicistat,sildenafil,"Sildenafil 혈중농도 증가, 병용투여 할 경우에는 Sildenafil의 투여용량이 25mg을 초과하지 않도록 하며, 48시간 내 재투여 금지",20190131,91
+emtricitabine,phenytoin,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,2
+alfentanil,lorlatinib,Alfentanil의 혈중농도가 감소될 수 있음,20240030,2
+phenytoin,ponatinib,Ponatinib의 노출 감소,20250086,4
+abacavir,tenofovir disoproxil,"세포내 인산화 방해, 동일한 역전사효소 유전자(M184V)변이를 통한 바이러스 내성 - 항바이러스 효과 감소",20150090,1
+ethambutol,ribociclib,강력한 CYP3A 유도제(Rifampicin)와의 병용투여는 건강한 시험대상자에서 Ribociclib의 혈장 노출을 89%까지 감소시킴,20250086,1
+caffeine,ephedrine,혈관수축 및 혈압상승효과를 증가시킴,20170086,2
+doxycycline hyclate,tretinoin,두개내 고혈압,20080056,2
+ledipasvir,rifabutin,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,1
+natalizumab,vedolizumab,기회 감염을 포함하여 감염의 위험성을 증가시킬 수 있음,20250086,3
+ergotamine,tenofovir alafenamide,"Ergotamine 혈중농도 증가, 말초혈관연축 또는 국소빈혈",20190131,1
+clopidogrel,ritonavir,Clopidogrel 활성대사체의 농도를 감소시킬 수 있음,20250046,1
+methylergonovine,ritonavir,사지 및 중추신경계를 포함하는 기타 조직의 혈관경련 및 허혈을 특징으로 하는 급성 맥각독성의 잠재적인 가능성,20250046,2
+ethambutol,ponatinib,Ponatinib의 노출 감소,20250086,2
+abacavir,elvitegravir,"세포내 인산화 방해, 동일한 역전사효소 유전자(M184V)변이를 통한 바이러스 내성 - 항바이러스 효과 감소",20150090,1
+nirmatrelvir,phenytoin,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Phenytoin 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20250046,2
+diphenylhydantoin,nanoliposomal irinotecan,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20250086,3
+ponatinib,pyrazinamide,Ponatinib의 노출 감소,20250086,2
+cabotegravir,rifabutin,Cabotegravir 혈중농도 감소로 치료 효과 감소,20250046,1
+caffeine,emtricitabine,"Ergotamine 혈중농도 증가, 말초혈관연축 또는 국소빈혈",20190131,1
+emtricitabine,isoniazid,Bictegravir의 혈중 농도 감소로 인해 치료 효과 소실 및 내성 발현 야기 가능,20250086,2
+elvitegravir,pimozide,QT연장 및 심실성부정맥 유발 가능,20170086,1
+st john's wort 80% methanol ext,tenofovir disoproxil,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,2
+lamivudine,phenytoin,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,2
+tolvaptan sd powder,voriconazole,Tolvaptan의 혈장 농도 증가 가능,20240030,4
+nirmatrelvir,voriconazole,Voriconazole의 혈중농도를 감소시킬 수 있음,20250046,2
+isoniazid,lamivudine,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,2
+diphenylhydantoin,zanubrutinib,Zanubrutinib의 혈중농도를 감소시켜 유효성을 감소시킬 수 있음,20250046,3
+etravirine,phenytoin,에트라비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,2
+lamivudine,pyrazinamide,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,1
+caffeine,frovatriptan,"맥각독성(혈관경련, 말단 및 기타조직 허혈)",20110070,2
+tenofovir alafenamide hemifumarate,zidovudine,"라미부딘이 엠트리시타빈의 세포내 인산화를 저해할 수도 있음. 동일한 역전사효소 유전자(M184V) 변이를 통해 바이러스 내성 기전이 일어나므로, 병용 시 치료 효과가 제한적일 수 있음",20220049,3
+amantadine,pimozide,QT 간격 연장,20110070,2
+ceritinib,isoniazid,Ceritinib의 혈장 농도 감소,20250086,2
+caffeine,posaconazole,"맥각독성(혈관경련, 말단 및 기타조직 허혈 등) 위험 증가",20100278,2
+ethyl esters of the iodised fatty acids of poppyseed oil,gliclazide,기능성 신부전에 의한 유산산성증 촉진,20110188,2
+gemigliptin,ledipasvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,3
+nanoliposomal irinotecan,st john's wort 80% methanol ext,이리노테칸 활성 대사물(SN-38)의 혈중 농도가 저하되어 작용 감소,20220087,2
+ibrutinib,isoniazid,Ibrutinib의 혈중 농도 감소,20250086,2
+methylergonovine,zolmitriptan,"상가적인 혈관수축반응, 현저한 혈압상승",20070068,1
+fedratinib dihydrochloride,phenytoin,Fedratinib의 혈중농도를 감소시킬 수 있음,20240030,2
+cobicistat,lamivudine,"세포내 인산화 방해, 동일한 역전사효소 유전자(M184V)변이를 통한 바이러스 내성 - 항바이러스 효과 감소",20150090,4
+bosentan,glibenclamide,간독성 및 간효소치 상승,20090300,3
+amiodarone,ribociclib,QT 간격 연장을 유발할 수 있음,20250086,2
+phenytoin,pibrentasvir,Glecaprevir와 Pibrentasvir의 혈장 농도가 유의하게 감소하여 이 약의 바이러스학적 반응 감소 가능,20200130,2
+phenytoin,rilpivirine micronized,릴피비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,2
+pimozide,posaconazole,QT 간격 연장,20110070,2
+cobicistat,st john's wort 80% methanol ext,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,2
+frovatriptan,selegiline,"동맥 고혈압, 관상동맥 수축의 위험이 있음",20250086,2
+cobicistat,rifabutin,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,1
+atazanavir,s-pantoprazole,아타자나비르의 혈중농도 감소,20230045,2
+nafcillin,venetoclax,CYP3A 유도제와의 병용은 Venetoclax의 노출을 감소시켜 결과적으로 효능 부족을 초래할 수 있음,20250086,3
+ritonavir,sirolimus,Sirolimus의 혈중농도를 증가시킬 수 있음,20250046,6
+ethambutol,ritonavir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Rifampicin 함유제제 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20210113,1
+dronedarone,phenytoin,Dronedarone 노출량 감소,20250046,4
+ceritinib,pyrazinamide,Ceritinib의 혈장 농도 감소,20250086,1
+revaprazan,rilpivirine,위장 pH의 증가로 릴피비린의 흡수가 저하되어 릴피비린의 치료효과 감소,20150021,1
+ergotamine,nirmatrelvir,사지 및 중추신경계를 포함하는 기타 조직의 혈관 경련 및 허혈을 특징으로 하는 급성 맥각 독성의 잠재적인 가능성,20210113,1
+bictegravir,pyrazinamide,Bictegravir의 혈중 농도 감소로 인해 치료 효과 소실 및 내성 발현 야기 가능,20250086,1
+pibrentasvir,ritonavir,증가된 Glecaprevir 농도는 알라닌아미노전달효소(ALT) 상승을 유발할 수 있음,20250046,1
+pimozide,tenofovir alafenamide,QT연장 및 심실성부정맥 유발 가능,20170086,1
+amiodarone,emtricitabine,Amiodarone 혈중농도 증가,20190131,2
+haloperidol decanoate,pimozide,QT간격 연장 위험 증가,20190131,1
+pyrazinamide,tenofovir alafenamide hemifumarate,Bictegravir의 혈중 농도 감소로 인해 치료 효과 소실 및 내성 발현 야기 가능,20250086,1
+bedaquiline,isoniazid,Bedaquiline의 혈중농도와 치료효과 감소,20250086,2
+ephedrine,ergotamine,혈관수축 및 혈압상승효과를 증가시킴,20170086,2
+mizolastine,spiramycin,심실부정맥(Torsade de pointes),20040002,1
+gilteritinib,isoniazid,Gilteritinib의 혈장 농도 감소,20250086,2
+finerenone,phenytoin,Finerenone 혈중농도의 현저한 감소 및 치료효과 감소가 예상됨,20240030,4
+gilteritinib,phenytoin,Gilteritinib의 혈장 농도 감소,20250086,2
+emtricitabine,rifabutin,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,1
+elvitegravir,st john's wort 80% methanol ext,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,2
+diluted nitroglycerin solution,sildenafil,혈압강하작용 증강,20080056,91
+diphenylhydantoin,emtricitabine,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,3
+st john's wort 80% methanol ext,voriconazole,Voriconazole의 농도 감소,20190131,4
+clopidogrel,nirmatrelvir,Clopidogrel 활성대사체의 농도를 감소시킬 수 있음,20250046,1
+ribociclib,st john's wort 80% methanol ext,강력한 CYP3A 유도제와의 병용투여는 Ribociclib의 혈장 노출을 감소시킬 수 있음,20250086,2
+colchicine,ritonavir,신장 및/또는 간장애가 있는 환자에서 중대한 및/또는 생명을 위협하는 반응의 가능성,20250046,2
+cobicistat,pantoprazole hemimagnesium,아타자나비르의 혈중농도 감소,20230045,1
+dolutegravir,tenofovir alafenamide hemifumarate,"라미부딘이 엠트리시타빈의 세포내 인산화를 저해할 수도 있음. 동일한 역전사효소 유전자(M184V) 변이를 통해 바이러스 내성 기전이 일어나므로, 병용 시 치료 효과가 제한적일 수 있음",20220049,1
+bictegravir,st john's wort 80% methanol ext,Bictegravir의 혈중 농도 감소로 인해 치료 효과 소실 및 내성 발현 야기 가능,20250086,2
+methylergonovine,nirmatrelvir,사지 및 중추신경계를 포함하는 기타 조직의 혈관경련 및 허혈을 특징으로 하는 급성 맥각독성의 잠재적인 가능성,20250046,1
+glecaprevir,ritonavir,증가된 Glecaprevir 농도는 알라닌아미노전달효소(ALT) 상승을 유발할 수 있음,20250046,1
+diphenylhydantoin,ribociclib,강력한 CYP3A 유도제와의 병용투여는 Ribociclib의 혈장 노출을 감소시킬 수 있음,20250086,3
+rilpivirine micronized,st john's wort 80% methanol ext,릴피비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,2
+atazanavir,pimozide,QT연장 및 심실성부정맥 유발 가능,20170086,1
+fosphenytoin,ledipasvir,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,2
+clopidogrel resinate,nirmatrelvir,Clopidogrel 활성대사체의 농도를 감소시킬 수 있음,20250046,1
+levomepromazine,selegiline,중추 흥분상태 증가,20100125,3
+elvitegravir,phenobarbital,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,3
+enzalutamide,nirmatrelvir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Enzalutamide 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20250046,7
+mizolastine,pimozide,QT 간격 연장,20110070,1
+diphenylhydantoin,pibrentasvir,Glecaprevir와 Pibrentasvir의 혈장 농도가 유의하게 감소하여 이 약의 바이러스학적 반응 감소 가능,20200130,3
+phenytoin,sofosbuvir,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,2
+emtricitabine,phenobarbital,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,3
+ergotamine,voriconazole,"맥각독성(혈관경련, 말단 및 기타조직 허혈)",20090300,2
+ethambutol,tenofovir disoproxil,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,1
+cobicistat,ergotamine,"Ergotamine 혈중농도 증가, 말초혈관연축 또는 국소빈혈",20190131,1
+phenytoin,tenofovir alafenamide,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,2
+caffeine,cobicistat,"Ergotamine 혈중농도 증가, 말초혈관연축 또는 국소빈혈",20190131,1
+darunavir ethanolate,ibrutinib,Ibrutinib의 혈중 농도 증가,20250086,1
+caffeine,zolmitriptan,"약리적 상가작용에 의해, 혈압 상승 및 맥각중독(에르고티즘)(말초혈관수축 증가)의 위험성을 증가",20090300,1
+rifabutin,tenofovir alafenamide,Cobicistat 및 Elvitegravir의 혈중농도 감소로 치료효과 소실 및 내성 발현 가능,20190131,1
+minocycline,tretinoin,두개내 고혈압,20100278,3
+lorlatinib,phenytoin,Lorlatinib의 혈중농도를 감소시킬 수 있음,20240030,4
+nirmatrelvir,pibrentasvir,증가된 Glecaprevir 농도는 알라닌아미노전달효소(ALT) 상승을 유발할 수 있음,20250046,1
+haloperidol decanoate,pentamidine isethionate,QT간격 연장 위험 증가,20190131,1
+isoniazid,ritonavir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Rifampicin 함유제제 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20210113,2
+ceritinib,clonidine,심장 박동수와 혈압을 정기적으로 모니터링할 것,20250086,1
+nirmatrelvir,st john's wort 80% methanol ext,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 St. john’s wort 함유제제 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20210113,14
+ceritinib,rifabutin,Ceritinib의 혈장 농도 감소,20250086,1
+atazanavir,ilaprazole,아타자나비르의 혈중농도 감소,20230045,1
+entrectinib,ethambutol,Entrectinib의 전신 노출 감소,20250086,2
+bedaquiline,rifabutin,Bedaquiline의 혈중농도와 치료효과 감소,20250086,1
+selegiline,zolmitriptan,"동맥 고혈압, 관상동맥 수축의 위험이 있음",20250086,1
+almotriptan,zolmitriptan,"상가적인 혈관수축반응, 혈압상승",20100125,1
+revaprazan,rilpivirine micronized,위장 pH의 증가로 릴피비린의 흡수가 저하되어 릴피비린의 치료효과 감소,20150021,1
+ledipasvir,primidone,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,1
+ceritinib,phenytoin,Ceritinib의 혈장 농도 감소,20250086,2
+gilteritinib,st john's wort 80% methanol ext,Gilteritinib의 혈장 농도 감소,20250086,2
+bictegravir,zidovudine,"라미부딘이 엠트리시타빈의 세포내 인산화를 저해할 수도 있음. 동일한 역전사효소 유전자(M184V) 변이를 통해 바이러스 내성 기전이 일어나므로, 병용 시 치료 효과가 제한적일 수 있음",20220049,1
+almotriptan,caffeine,"상가적인 혈관수축반응, 혈압상승",20100125,1
+clopidogrel resinate,ritonavir,Clopidogrel 활성대사체의 농도를 감소시킬 수 있음,20250046,1
+cobicistat,zidovudine,"세포내 인산화 방해, 동일한 역전사효소 유전자(M184V)변이를 통한 바이러스 내성 - 항바이러스 효과 감소",20150090,1
+dabigatran etexilate,phenytoin,다비가트란의 혈중농도 감소,20180088,4
+haloperidol decanoate,sotalol,QT간격 연장 위험 증가,20190131,1
+etravirine,st john's wort 80% methanol ext,에트라비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,2
+ethambutol,tenofovir alafenamide hemifumarate,Bictegravir의 혈중 농도 감소로 인해 치료 효과 소실 및 내성 발현 야기 가능,20250086,1
+almotriptan,ergotamine,"상가적인 혈관수축반응, 혈압상승",20100125,1
+divalproex sodium particle,doripenem,발프론산의 혈중농도를 감소시켜 간질발작 재발의 위험 증가,20150021,1
+ethambutol,gilteritinib,Gilteritinib의 혈장 농도 감소,20250086,1
+phenytoin,ritonavir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 Phenytoin 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20250046,2
+elvitegravir,ergotamine,"Ergotamine 혈중농도 증가, 말초혈관연축 또는 국소빈혈",20190131,1
+micronized dolutegravir,tenofovir alafenamide hemifumarate,"라미부딘이 엠트리시타빈의 세포내 인산화를 저해할 수도 있음. 동일한 역전사효소 유전자(M184V) 변이를 통해 바이러스 내성 기전이 일어나므로, 병용 시 치료 효과가 제한적일 수 있음",20220049,1
+phenytoin,rilpivirine,릴피비린의 혈중농도가 감소하여 치료효과 감소 혹은 내성발현,20150021,2
+cobicistat,s-pantoprazole,아타자나비르의 혈중농도 감소,20230045,2
+abacavir,st john's wort 80% methanol ext,병용 시 항바이러스 약의 치료효과가 떨어지고 내성 발현 가능,20170086,2
+abacavir,tenofovir alafenamide,"세포내 인산화 방해, 동일한 역전사효소 유전자(M184V)변이를 통한 바이러스 내성 - 항바이러스 효과 감소",20150090,1
+ledipasvir,st john's wort 80% methanol ext,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,2
+pimozide,ribociclib,QT 간격 연장을 유발할 수 있음,20250086,1
+diluted nitroglycerin solution,ergotamine,"맥각독성(말초허혈, 감각이상, 구역, 구토) 위험 증가",20170086,1
+phenytoin,zanubrutinib,Zanubrutinib의 혈중농도를 감소시켜 유효성을 감소시킬 수 있음,20250046,2
+ceritinib,st john's wort 80% methanol ext,Ceritinib의 혈장 농도 감소,20250086,2
+safinamide,selegiline,고혈압 위기,20250086,1
+finerenone,nirmatrelvir,"고칼륨혈증, 저혈압 및 저나트륨혈증을 포함하는 중대한 이상반응의 가능성",20250046,2
+abacavir,cobicistat,"세포내 인산화 방해, 동일한 역전사효소 유전자(M184V)변이를 통한 바이러스 내성 - 항바이러스 효과 감소",20150090,1
+rifabutin,sofosbuvir,레디파스비르 및 소포스부비르 혈장 농도를 현저히 떨어뜨려 이 약의 치료  효과를 감소시킬 수 있음,20170086,1
+bedaquiline,pyrazinamide,Bedaquiline의 혈중농도와 치료효과 감소,20250086,1
+nirmatrelvir,pimozide,심장 부정맥과 같은 중대한 및/또는 생명을 위협하는 반응의 가능성,20250046,1
+acetaminophen,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,4617
+dl-methylephedrine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,4158
+isosorbide dinitrate,tadalafil,혈압강하작용 증가,20080056,441
+nicorandil,tadalafil,혈압강하작용 증강,20090300,588
+micronized riociguat,tadalafil,Guanylate cyclase 자극제의 혈압강하작용 증가,20170086,735
+guaifenesin,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,4293
+dextromethorphan,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,5967
+rasagiline,triprolidine,"경련, 반사항진, 이상고열, 혼수 등",20250046,783
+noscapine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,756
+chlorpheniramine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,3348
+potassium guaiacolsulfonate,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,459
+powdered platycodon root,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+ephedrine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+diphenhydramine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,189
+ascorbic acid,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,270
+rasagiline,riboflavin,"경련, 반사항진, 이상고열, 혼수 등",20250046,432
+rasagiline,thiamine,"경련, 반사항진, 이상고열, 혼수 등",20250046,243
+imipramine,oxymetazoline,고혈압 초래 가능 혈관수축작용으로 혈압상승 가능,20180088,16
+rasagiline,xylometazoline,xylometazoline의 전신 작용(고혈압 위험) 증강 또는 연장,20150090,324
+ammonium,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,135
+dl-methylephedrine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,154
+phenylephrine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,54
+methylephedrine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,270
+platycodon root 50% ethanol dried extract,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+platycodon root 50% ethanol dried extract,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+isosorbide mononitrate,tadalafil,혈압강하작용 증가,20080056,1029
+diluted nitroglycerin,tadalafil,혈압강하작용 증가,20080056,1176
+molsidomin,tadalafil,혈압강하작용 증가,20080056,294
+caffeine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,837
+chlorpheniramine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,124
+diluted nitroglycerin,mirodenafil,혈압강하작용 증가,20130279,24
+mirodenafil,nicorandil,혈압강하작용 증강,20090300,12
+sodium nitroprusside,tadalafil,혈압강하작용 증강,20080056,147
+tacrolimus,tofacitinib aspartate,면억억제 효과 증가,20240466,420
+azathioprine,tofacitinib aspartate,면억억제 효과 증가,20240466,140
+methylephedrin,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+ethenzamide,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,108
+ibuprofen,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,189
+carbinoxamine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,270
+guaifenesin,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,159
+dextromethorphan,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,221
+platycodon root 50% ethanol dried ext,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,54
+coptis rhizome ext powder,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,81
+rasagiline,갈근탕엑스,"경련, 반사항진, 이상고열, 혼수 등",20250046,81
+powdered cinnamon bark,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,54
+rasagiline,trimetoquinol,"경련, 반사항진, 이상고열, 혼수 등",20250046,270
+glycyrrhiza ext powder,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,54
+cyclosporine,tofacitinib aspartate,면억억제 효과 증가,20240466,210
+carbamazepine,ranolazine,Ranolazine의 효과부족이 발생될 것으로 예상됨,20250086,30
+clarithromycin,ranolazine,Ranolazine의 혈장 농도 증가,20250086,531
+itraconazole,ranolazine,"Ranolazine의 혈중농도 증가, QT 연장, 신부전 같은 약물이상반응 발생 위험 증가, Itraconaozle 투여 중 및 종료 후 2주 간 금기",20220049,222
+riboflavin,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,16
+glycine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,54
+benfotiamine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+dl-methylephedrine hci,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+ibuprofen lysine,methotrexate,혈액학적 독성,20040002,18
+isosorbide mononitrate,udenafil,혈압강하작용 증가,20080056,28
+micronized riociguat,vardenafil,Guanylate cyclase 자극제의 혈압강하작용 증가,20170086,10
+cyclosporine,omega-3-acid ethyl esters 90,"근육통, 근육약화, 근염, 때때로 횡문근 변성을 포함한 근육독성 촉진 가능",20230083,30
+dried ginseng ext,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+isosorbide mononitrate,mirodenafil,혈압강하작용 증강,20090300,21
+brompheniramine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,108
+doxepin,oxymetazoline,고혈압 초래 가능 혈관수축작용으로 혈압상승 가능,20180088,48
+cyproheptadine orotate,rasagiline,MAO 저해제의 효과를 증가시킬 수 있음,20240030,108
+l-lysine,rasagiline,MAO 저해제의 효과를 증가시킬 수 있음,20240030,108
+lysozyme,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,54
+isavuconazonium,ritonavir,"고용량의 Ritonavir(>200mg, 1일 2회)와 병용투여 금기",20250086,2
+methylephedrin,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+fursultiamine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+bromhexine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,162
+cyanocobalamin,rasagiline,MAO 저해제의 효과를 증가시킬 수 있음,20240030,108
+methylergometrine,zolmitriptan,"상가적인 혈관수축반응, 현저한 혈압상승",20070030,1
+phenobarbital,ranolazine,Ranolazine의 효과부족이 발생될 것으로 예상됨,20250086,9
+diphenylhydantoin,ranolazine,Ranolazine의 효과부족이 발생될 것으로 예상됨,20250086,9
+platycodon root ext powder,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+selegiline,triprolidine,"경련, 반사항진, 이상고열, 혼수 등",20250046,29
+lansoprazole,neratinib,위산 억제제와의 병용으로 Neratinib의 혈중 농도 감소,20250086,52
+powdered glycyrrhizae,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+acetaminophen,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,171
+diphenhydramine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,7
+d-chlorpheniramine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,54
+caffeine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,31
+nortriptyline,oxymetazoline,고혈압 초래 가능 혈관수축작용으로 혈압상승 가능,20180088,16
+noscapine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,28
+carbamazepine,midostaurin,Midostaurin과 활성 대사체의 혈중 농도 감소,20250086,10
+itraconazole,omega-3-acid ethyl esters 90,"근육병증, 횡문근융해증 위험 증가 가능",20230083,74
+selegiline,xylometazoline,xylometazoline의 전신 작용(고혈압 위험) 증강 또는 연장,20150090,12
+powdered glycyrrhizae,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+itraconazole,omega-3-acid ethyl ester 90,"근육병증, 횡문근융해증 위험 증가 가능",20230083,74
+dl-carnitine,rasagiline,MAO 저해제의 효과를 증가시킬 수 있음,20240030,108
+carbamazepine,isavuconazonium,Isavuconazonium의 혈장농도를 유의미하게 감소시킬 수 있음,20250086,20
+cyanocobalamin,selegiline,MAO 저해제의 효과를 증가시킬 수 있음,20240030,4
+cinnamon bark dried extract,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+amitriptyline,oxymetazoline,고혈압 초래 가능 혈관수축작용으로 혈압상승 가능,20180088,40
+ascorbic acid coated,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+aspirin lysine,methotrexate,혈액학적 독성,20040002,36
+ascorbic acid granules 97%,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+molsidomin,udenafil,혈압강하작용 증가,20080056,8
+nicorandil,udenafil,혈압강하작용 증강,20090300,16
+glycyrrhiza dried extract,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+dapoxetine,sumatriptan,"세로토닌성 증후군(고혈압, 고열, 간대성 근경련, 정신상태 변화 등)",20100246,42
+coptis rhizome ext powder,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,3
+diprophylline,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+diluted nitroglycerin,udenafil,혈압강하작용 증가,20080056,32
+phendimetrazine,selegiline,혈압상승 위험,20100125,24
+isosorbide dinitrate,vardenafil,혈압강하작용 증강,20080056,6
+micronized riociguat,mirodenafil,Guanylate cyclase 자극제의 혈압강하작용 증가,20170086,15
+cinnamon bark powder,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+epinephrine,isoproterenol,부정맥 또는 심정지 유도,20080056,6
+ibuprofen arginine,methotrexate,혈액학적 독성,20040002,36
+micronized riociguat,udenafil,Guanylate cyclase 자극제의 혈압강하작용 증가,20170086,20
+cyclosporine,omega-3-acid ethyl ester 90,"근육병증, 횡문근융해 위험 증가 가능",20230083,15
+isosorbide dinitrate,mirodenafil,혈압강하작용 증강,20130279,9
+dexbrompheniramine,rasagiline,"고혈압, 빈맥 유발",20200130,27
+glycyrrhiza powder,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+methylergometrine,sumatriptan,"상가적인 혈관수축반응, 현저한 혈압상승",20070030,7
+doxylamine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+ethambutol,neratinib,강력한 CYP3A4 유도제와의 병용으로 Neratinib의 혈중 농도 감소,20250086,1
+ascorbic acid,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,10
+clomipramine,oxymetazoline,고혈압 초래 가능 혈관수축작용으로 혈압상승 가능,20180088,8
+isavuconazonium,rifampicin,Isavuconazonium의 혈장농도를 유의미하게 감소시킬 수 있음,20250086,16
+plantago herb fluid extract,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+diluted nitroglycerin,vardenafil,혈압강하작용 증강,20080056,16
+ibuprofen,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,7
+selegiline,갈근탕엑스,"경련, 반사항진, 이상고열, 혼수 등",20250046,3
+galgeun-tang ext,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+pyrazinamide,ranolazine,Ranolazine의 효과부족이 발생될 것으로 예상됨,20250086,3
+isosorbide dinitrate,udenafil,혈압강하작용 증가,20080056,12
+isosorbide mononitrate,vardenafil,혈압강하작용 증강,20080056,14
+platycodon root fluid extract,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+phentermine,selegiline,혈압상승 위험,20100125,35
+molsidomin,vardenafil,혈압강하작용 증가,20080056,4
+ritonavir,vardenafil,vardenafil 혈중농도 증가,20130279,2
+darunavir ethanolate,vardenafil,vardenafil 혈중농도 증가,20130279,4
+calcium,neratinib,위산 억제제와의 병용으로 Neratinib의 혈중 농도 감소,20250086,12
+potassium guaiacolsulfonate,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,17
+nicorandil,vardenafil,혈압강하작용 증강,20090300,8
+isavuconazonium,phenobarbital,Isavuconazonium의 혈장농도를 유의미하게 감소시킬 수 있음,20250086,6
+phenytoin,ranolazine,Ranolazine의 효과부족이 발생될 것으로 예상됨,20250086,6
+doxylamine,rasagiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,27
+ranolazine,rifampicin,Ranolazine의 효과부족이 발생될 것으로 예상됨,20250086,24
+platycodon root 50% ethanol dried ext,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,2
+isoniazid,ranolazine,Ranolazine의 효과부족이 발생될 것으로 예상됨,20250086,6
+methylephedrine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,10
+abiraterone,radium-223,골절 및 사망률 증가,20190131,3
+dl-methylephedrine hci,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+ethambutol,ranolazine,Ranolazine의 효과부족이 발생될 것으로 예상됨,20250086,3
+isavuconazonium,phenytoin,Isavuconazonium의 혈장농도를 유의미하게 감소시킬 수 있음,20250086,4
+midostaurin,st john's wort 80% methanol ext,Midostaurin과 활성 대사체의 혈중 농도 감소,20250086,2
+selegiline,trimetoquinol,"경련, 반사항진, 이상고열, 혼수 등",20250046,10
+carbinoxamine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,10
+posaconazole,ranolazine,Ranolazine의 혈장 농도 증가,20250086,6
+neratinib,rifampicin,강력한 CYP3A4 유도제와의 병용으로 Neratinib의 혈중 농도 감소,20250086,8
+selegiline,thiamine,"경련, 반사항진, 이상고열, 혼수 등",20250046,9
+diphenylhydantoin,isavuconazonium,Isavuconazonium의 혈장농도를 유의미하게 감소시킬 수 있음,20250086,6
+phenylephrine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,2
+midostaurin,rifampicin,Midostaurin과 활성 대사체의 혈중 농도 감소,20250086,8
+diphenylhydantoin,midostaurin,Midostaurin과 활성 대사체의 혈중 농도 감소,20250086,3
+dapoxetine,selegiline,"세로토닌성 증후군(고혈압, 고열, 간대성 근경련, 정신상태 변화 등)",20100246,6
+mirodenafil,sodium nitroprusside,혈압강하작용 증강,20130279,3
+amiodarone,vardenafil,QT 간격 연장,20130279,4
+enzalutamide,midostaurin,Midostaurin과 활성 대사체의 혈중 농도 감소,20250086,7
+lysozyme,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,2
+diprophylline,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+sodium nitroprusside,udenafil,혈압강하작용 증강,20080056,4
+cinnamon bark dried extract,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+isavuconazonium,st john's wort 80% methanol ext,Isavuconazonium의 혈장농도를 유의미하게 감소시킬 수 있음,20250086,4
+ethenzamide,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,4
+methylergometrine,ritonavir,사지 및 중추신경계를 포함하는 기타 조직의 혈관경련 및 허혈을 특징으로 하는 급성 맥각독성의 잠재적인 가능성,20250046,2
+selegiline,topiramate,혈압상승 위험,20250046,4
+omega-3-acid ethyl esters 90,posaconazole,"근육병증, 횡문근융해 위험 증가 가능",20230083,2
+dl-carnitine,selegiline,MAO 저해제의 효과를 증가시킬 수 있음,20240030,4
+neratinib,verapamil,중등도 CYP3A4/P-gp 억제제와의 병용으로 Neratinib의 혈중 농도 증가,20250086,6
+bromhexine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,6
+ranolazine,voriconazole,Ranolazine의 혈장 농도 증가,20250086,6
+dronedarone,vardenafil,QT 간격 연장,20130279,4
+brompheniramine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,4
+isoniazid,midostaurin,Midostaurin과 활성 대사체의 혈중 농도 감소,20250086,2
+l-lysine,selegiline,MAO 저해제의 효과를 증가시킬 수 있음,20240030,4
+d-penicillamine,zinc histidine,아연 흡수를 저해하거나 배출을 증가시킴. 병용 시 최소 한 시간 이상 간격을 두고 투여함.,20220049,2
+omega-3-acid ethyl ester 90,posaconazole,"근육병증, 횡문근융해 위험 증가 가능",20230083,2
+ammonium,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,5
+cobicistat,vardenafil,vardenafil 혈중농도 증가,20130279,2
+diluted nitroglycerin solution,mirodenafil,혈압강하작용 증강,20130279,3
+sodium nitroprusside,vardenafil,혈압강하작용 증강,20080056,2
+mirodenafil,molsidomin,혈압강하작용 증강,20130279,6
+cinnamon bark powder,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+isavuconazonium,isoniazid,Isavuconazonium의 혈장농도를 유의미하게 감소시킬 수 있음,20250086,4
+tenofovir alafenamide,vardenafil,vardenafil 혈중농도 증가,20130279,2
+isoniazid,neratinib,강력한 CYP3A4 유도제와의 병용으로 Neratinib의 혈중 농도 감소,20250086,2
+ranolazine,st john's wort 80% methanol ext,Ranolazine의 효과부족이 발생될 것으로 예상됨,20250086,6
+powdered cinnamon bark,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,2
+glycyrrhiza ext powder,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,2
+foscarnet trisodium hexahydrate,pentamidine isethionate,"신장 손상 악화, 저칼슘혈증이 일어날 수 있음",20220049,1
+neratinib,pyrazinamide,강력한 CYP3A4 유도제와의 병용으로 Neratinib의 혈중 농도 감소,20250086,1
+galgeun-tang ext,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+glycyrrhiza powder,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+emtricitabine,vardenafil,vardenafil 혈중농도 증가,20130279,2
+elvitegravir,vardenafil,vardenafil 혈중농도 증가,20130279,2
+fursultiamine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+sotalol,vardenafil,QT 간격 연장,20130279,2
+platycodon root fluid extract,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+glecaprevir,omega-3-acid ethyl esters 90,횡문근융해증을 포함한 근육병증 위험 가능,20230083,1
+ascorbic acid granules 97%,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+ledipasvir,omega-3-acid ethyl esters 90,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,1
+diethylpropion,selegiline,고혈압위기 유발,20100125,9
+midostaurin,pyrazinamide,Midostaurin과 활성 대사체의 혈중 농도 감소,20250086,1
+ethambutol,isavuconazonium,Isavuconazonium의 혈장농도를 유의미하게 감소시킬 수 있음,20250086,2
+midostaurin,phenytoin,Midostaurin과 활성 대사체의 혈중 농도 감소,20250086,2
+glycine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,2
+isavuconazonium,rifabutin,Isavuconazonium의 혈장농도를 유의미하게 감소시킬 수 있음,20250086,2
+d-chlorpheniramine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,2
+ranolazine,sotalol,QT 간격 연장,20250086,3
+phentermine hcl,selegiline,혈압상승 위험,20100125,1
+cyproheptadine orotate,selegiline,MAO 저해제의 효과를 증가시킬 수 있음,20240030,4
+platycodon root ext powder,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+dried ginseng ext,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+omega-3-acid ethyl esters 90,pibrentasvir,횡문근융해증을 포함한 근육병증 위험 가능,20230083,1
+plantago herb fluid extract,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+edetate,zinc histidine,아연 흡수를 저해하거나 배출을 증가시킴,20250086,3
+isavuconazonium,pyrazinamide,Isavuconazonium의 혈장농도를 유의미하게 감소시킬 수 있음,20250086,2
+glycyrrhiza dried extract,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+omega-3-acid ethyl ester 90,pibrentasvir,횡문근융해증을 포함한 근육병증 위험 가능,20230083,1
+benfotiamine,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+selegiline,valbenazine,모노아민 신경전달 물질의 증가로 인한 세로토닌 증후군 위험 증가,20250086,1
+omega-3-acid ethyl esters 90,sofosbuvir,횡문근융해증을 포함한 근육병증 위험 증가 가능,20230083,1
+ascorbic acid coated,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+glecaprevir,omega-3-acid ethyl ester 90,횡문근융해증을 포함한 근육병증 위험 가능,20230083,1
+powdered platycodon root,selegiline,"경련, 반사항진, 이상고열, 혼수 등",20250046,1
+ethambutol,midostaurin,Midostaurin과 활성 대사체의 혈중 농도 감소,20250086,1
+dapoxetine,itraconazole,"기립성 저혈압, 눈에 대한 영향 같은 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20190131,444
+chlorpheniramine,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,123
+dextromethorphan,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,216
+safinamide,triprolidine,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,29
+pseudoephedrine,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,96
+guaifenesin,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,155
+ethinyl estradiol,glecaprevir,ALT 상승 위험 증가,20250086,26
+cobicistat,tadalafil,"Tadalafil 혈중농도 증가, 병용투여 할 경우에는 Tadalafil의 투여용량이 10mg을 초과하지 않도록 하며, 72시간 내 재투여 금지",20190131,147
+elvitegravir,tadalafil,"Tadalafil 혈중농도 증가, 병용투여 할 경우에는 Tadalafil의 투여용량이 10mg을 초과하지 않도록 하며, 72시간 내 재투여 금지",20190131,147
+tadalafil,tenofovir alafenamide,"Tadalafil 혈중농도 증가, 병용투여 할 경우에는 Tadalafil의 투여용량이 10mg을 초과하지 않도록 하며, 72시간 내 재투여 금지",20190131,147
+itraconazole,vardenafil,"Vardenafil의 혈중농도 증가로 인한 약물이상반응 발생 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 권장하지 않음.",20110070,148
+ibuprofen arginine,ketorolac tromethamine,중증의 위장관계 이상반응,20080001,20
+ritonavir,tadalafil,"Tadalafil의 혈중농도를 증가시킬 수 있음. 폐고혈압 치료에 사용 시 병용투여 금기, 발기부전에 사용 시 Tadalafil의 용량조절이 권장됨",20250046,147
+clonixin lysinate,ketorolac tromethamine,중증의 위장관계 이상반응,20080068,240
+burosumab,sodium dihydrogen,고인산혈증 발생 가능,20250086,9
+diluted nitroglycerin solution,tadalafil,혈압강하작용 증강,20080056,147
+noscapine,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,28
+potassium guaiacolsulfonate,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,17
+dl-methylephedrine,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,149
+riboflavin,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,14
+acetaminophen,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,169
+levonorgestrel,pibrentasvir,ALT 상승 위험 증가,20250086,7
+ethinyl estradiol,pibrentasvir,ALT 상승 위험 증가,20250086,26
+sildenafil,tadalafil,동일계열 병용투여 금기,20100246,13377
+cimicifuga rhizome ext,ritonavir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 St. john’s wort 함유제제 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20210113,12
+nirmatrelvir,tadalafil,"Tadalafil의 혈중농도를 증가시킬 수 있음. 폐고혈압 치료에 사용 시 병용투여 금기, 발기부전에 사용 시 Tadalafil의 용량조절이 권장됨",20250046,147
+anastrozole,conjugated estrogens 4 29%,anastrozole의 약리작용 감소,20080056,4
+safinamide,thiamine,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,9
+ibuprofen lysine,ketorolac tromethamine,중증의 위장관계 이상반응,20080001,10
+methylephedrine,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,10
+emtricitabine,tadalafil,"Tadalafil 혈중농도 증가, 병용투여 할 경우에는 Tadalafil의 투여용량이 10mg을 초과하지 않도록 하며, 72시간 내 재투여 금지",20190131,147
+desogestrel,pibrentasvir,ALT 상승 위험 증가,20250086,5
+itraconazole,methylergometrine,"맥각독성(말초혈관 경련, 사지와 기타 조직의 허혈, 감각이상 등) 위험 증가, Itraconazole 투여 중 및 종료 후 2주 간 해당 성분 투여 금기",20070030,74
+flurbiprofen,ketorolac tromethamine,중증의 위장관계 이상반응,20050017,50
+d-chlorpheniramine,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,2
+safinamide,trimetoquinol,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,10
+aspirin lysine,ketorolac tromethamine,중증의 위장관계 이상반응,20080068,20
+diphenhydramine,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,5
+platycodon root ext powder,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+brompheniramine,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,4
+lysozyme,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,2
+glecaprevir,levonorgestrel,ALT 상승 위험 증가,20250086,7
+lorlatinib,mitotane,Lorlatinib의 혈중농도를 감소시킬 수 있음,20240030,2
+cinnamon bark powder,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+diluted nitroglycerin solution,udenafil,혈압강하작용 증강,20080056,4
+caffeine,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,31
+diluted nitroglycerin solution,vardenafil,혈압강하작용 증강,20080056,2
+drospirenone,glecaprevir,ALT 상승 위험 증가,20250086,7
+cimicifuga rhizome ext,nirmatrelvir,Nirmatrelvir+Ritonavir의 혈중농도가 현저히 감소하여 바이러스 반응의 손실 및 내성 발현의 잠재적인 가능성. CYP3A 유도제의 지연된 효과(offset)로 인해 St. john’s wort 함유제제 중단한 직후에는 Nirmatrelvir/Ritonavir 시작할 수 없음,20210113,12
+ammonium,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,5
+dexibuprofen d c,ketorolac tromethamine,중증의 위장관계 이상반응,20050017,10
+platycodon root 50% ethanol dried ext,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,2
+mirodenafil,sildenafil,동일계열 병용투여 금기,20100246,265
+sildenafil,udenafil,동일계열 병용투여 금기,20100246,364
+desogestrel,glecaprevir,ALT 상승 위험 증가,20250086,5
+bromhexine,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,4
+burosumab,sodium phosphate monobasic,고인산혈증 발생 가능,20250086,3
+platycodon root fluid extract,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+ibuprofen,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,4
+drospirenone,pibrentasvir,ALT 상승 위험 증가,20250086,7
+burosumab,dibasic,고인산혈증 발생 가능,20250086,6
+ephedrine,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+carbinoxamine,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,10
+sildenafil,vardenafil,동일계열 병용투여 금기,20100246,182
+doravirine,mitotane,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,2
+ascorbic acid,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,8
+doxylamine,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+phenylephrine,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,2
+ranolazine,ritonavir,중대한 및/또는 생명을 위협하는 반응의 가능성,20250046,3
+glycyrrhiza dried extract,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+isoproterenol,norepinephrine,"심부정맥, 경우에 따라 심정지",20090300,9
+cinnamon bark dried extract,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+methylergometrine,nirmatrelvir,사지 및 중추신경계를 포함하는 기타 조직의 혈관경련 및 허혈을 특징으로 하는 급성 맥각독성의 잠재적인 가능성,20250046,1
+letermovir,methylergometrine,"맥각독성(혈관경련, 말단 및 기타조직 허혈 등) 위험 증가",20200130,4
+plantago herb fluid extract,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+gestodene,glecaprevir,ALT 상승 위험 증가,20250086,7
+indomethacin,ketorolac tromethamine,중증의 위장관계 이상반응,20080068,10
+nirmatrelvir,ranolazine,중대한 및/또는 생명을 위협하는 반응의 가능성,20250046,3
+mitotane,tenofovir disoproxil,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,1
+clomipramine,nirmatrelvir,"시각 이상, 발기 시간 지연 및 실신을 포함한 실데나필 관련 이상반응의 가능성. 폐고혈압 치료에 사용 시 병용투여 금기, 발기부전에 사용 시 실데나필의 용량조절이 권장됨",20210113,2
+coptis rhizome ext powder,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,3
+gestodene,pibrentasvir,ALT 상승 위험 증가,20250086,7
+ethenzamide,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,4
+ascorbic acid granules 97%,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+platycodon root 50% ethanol dried extract,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+safinamide,갈근탕엑스,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,3
+dried ginseng ext,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+glycyrrhiza ext powder,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,2
+galgeun-tang ext,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+powdered glycyrrhizae,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+clomipramine,ritonavir,"시각 이상, 발기 시간 지연 및 실신을 포함한 실데나필 관련 이상반응의 가능성. 폐고혈압 치료에 사용 시 병용투여 금기, 발기부전에 사용 시 실데나필의 용량조절이 권장됨",20210113,2
+diprophylline,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+glycyrrhiza powder,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+methylephedrin,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+powdered cinnamon bark,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,2
+lamivudine,mitotane,Doravirine의 혈장 농도가 감소하여 Doravirine의 치료 효과가 줄어들 수 있음,20250086,1
+ascorbic acid coated,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+dl-methylephedrine hci,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+fursultiamine,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+benfotiamine,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+powdered platycodon root,safinamide,정신병 또는 기괴한 행동 등의 유발 보고됨,20250086,1
+diethylpropion,phentermine,판막심장병 위험,20100125,315
+bupropion,phendimetrazine,판막심장병 위험,20190131,24
+bupropion,phentermine,판막심장병 위험,20190131,35
+tadalafil,udenafil,동일계열 병용투여 금기,20100246,588
+tadalafil,vardenafil,동일계열 병용투여 금기,20100246,294
+mirodenafil,tadalafil,동일계열 병용투여 금기,20100246,441
+mirodenafil,udenafil,동일계열 병용투여 금기,20100246,12
+phendimetrazine,phentermine,판막심장병 위험,20100125,840
+phendimetrazine,phentermine hcl,판막심장병 위험,20100125,24
+phentermine,topiramate,판막심장병 위험,20250046,124
+phendimetrazine,topiramate,판막심장병 위험,20250046,96
+diethylpropion,topiramate,판막심장병 위험,20250046,36
+diethylpropion,phendimetrazine,판막심장병 위험,20100125,216
+diethylpropion,phentermine hcl,판막심장병 위험,20100125,9
+naltrexone,phentermine,판막심장병 위험,20190131,35
+bupropion,diethylpropion,판막심장병 위험,20190131,9
+udenafil,vardenafil,동일계열 병용투여 금기,20100246,8
+bupropion,topiramate,판막심장병 위험,20250046,4
+naltrexone,phendimetrazine,판막심장병 위험,20190131,24
+mirodenafil,vardenafil,동일계열 병용투여 금기,20100246,6
+diethylpropion,naltrexone,판막심장병 위험,20190131,9
+deutetrabenazine,valbenazine,두 약제는 동일 계열임,20230045,3
+naltrexone,topiramate,판막심장병 위험,20250046,4
+phentermine,phentermine hcl,판막심장병 위험,20250046,4
+bupropion,phentermine hcl,판막심장병 위험,20190131,1
+phentermine hcl,topiramate,판막심장병 위험,20250046,4
+naltrexone,phentermine hcl,판막심장병 위험,20190131,1
