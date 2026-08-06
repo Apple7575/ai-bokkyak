@@ -25,7 +25,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.modoobokyak.app",
-      "buildNumber": "13",
+      "buildNumber": "14",
       "bitcode": false,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "음성으로 복약 응답과 약 등록을 하기 위해 마이크를 사용합니다.",
@@ -97,7 +97,9 @@
         {
           "microphonePermission": "음성으로 복약 응답과 약 등록을 하기 위해 마이크를 사용합니다.",
           "speechRecognitionPermission": "음성을 글자로 바꾸기 위해 음성 인식을 사용합니다.",
-          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
         }
       ],
       "@config-plugins/react-native-webrtc"
