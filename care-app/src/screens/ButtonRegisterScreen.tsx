@@ -68,6 +68,13 @@ export function ButtonRegisterScreen() {
   async function save() {
     if (savingRef.current) return;
     if (!name.trim()) { Alert.alert("약 이름을 입력해 주세요"); return; }
+    // 새 등록은 여기서 저장하지 않는다. 이름만 받고 복용시점 등록(C-09)으로 넘긴다 —
+    // 모든 등록 경로(이름 검색·사진·직접 입력)가 같은 관문을 지나게 해야
+    // 복수 시간대·복용량 같은 항목이 경로마다 달라지지 않는다.
+    if (!editId) {
+      nav.navigate("DoseTime", { medicineName: name.trim() });
+      return;
+    }
     savingRef.current = true; // 첫 await 전에 동기 잠금
     setSaving(true);
     const pid = await getPatientId();
@@ -110,7 +117,7 @@ export function ButtonRegisterScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader title={editId ? "복약 수정" : "버튼으로 등록"} />
+      <ScreenHeader title={editId ? "복약 수정" : "약 이름 입력"} />
       <ScrollView contentContainerStyle={styles.c}>
         {/* 약 이름 */}
         <View style={styles.section}>
@@ -129,6 +136,11 @@ export function ButtonRegisterScreen() {
           </View>
         </View>
 
+        {/* 새로 등록할 때는 이름만 받고 복용시점은 공통 관문(C-09)에서 정한다.
+            수정할 때만 이 화면에서 시간까지 고친다 — 기존 일정의 시각·요일을
+            바꾸는 화면이 따로 필요하기 때문. */}
+        {editId ? (
+        <>
         {/* 언제 드시나요? — 시간대와 시각은 항상 서로 맞춘다.
             따로 고르게 두면 「점심 · 08:00」 같은 일정이 만들어져, 아침 8시에
             "점심 약 복용 시간입니다"가 울린다 (QA 2026-08-09). */}
@@ -160,11 +172,17 @@ export function ButtonRegisterScreen() {
             ))}
           </View>
         </View>
+        </>
+        ) : (
+          <Text style={styles.hint}>
+            약 이름을 적고 다음으로 넘어가면, 언제 드시는지와 복용량을 정할 수 있어요.
+          </Text>
+        )}
       </ScrollView>
 
       {/* 하단 저장 버튼 — 시스템 네비게이션 바와 겹치지 않게 하단 여백 확보 */}
       <View style={[styles.footer, { paddingBottom: spacing.lg + insets.bottom }]}>
-        <BigButton label={saving ? "저장 중…" : editId ? "수정 저장하기" : "저장하기"} onPress={save} />
+        <BigButton label={saving ? "저장 중…" : editId ? "수정 저장하기" : "다음"} onPress={save} />
       </View>
     </View>
   );

@@ -258,7 +258,7 @@ export function HomeScreen() {
             onPress={() => nav.navigate("Interaction")}
             style={({ pressed }) => [styles.warnBtn, pressed && { opacity: 0.9 }]}
           >
-            <Text style={styles.warnBtnText}>주의 내용 보기</Text>
+            <Text style={styles.warnBtnText}>약사에게 확인 요청</Text>
             <ChevronRight size={18} color="#fff" />
           </Pressable>
         </View>
