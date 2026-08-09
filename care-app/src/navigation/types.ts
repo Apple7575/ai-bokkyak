@@ -2,7 +2,6 @@ export type RootStackParamList = {
   Onboarding: undefined;
   RoleSelect: undefined;
   Tabs: undefined;
-  MedicineList: undefined;
   RegisterMethod: undefined;
   ButtonRegister: { editId?: string } | undefined;
   VoiceRegister: undefined;

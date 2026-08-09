@@ -1,4 +1,5 @@
 import "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import React, { useEffect } from "react";
 import { AppState } from "react-native";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
@@ -95,12 +96,16 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      {/* 흰 배경에서 시간·배터리 등 상태바 글씨가 보이도록 어두운 색으로 고정 */}
-      <StatusBar style="dark" />
-      <NavigationContainer ref={navRef}>
-        <RootNavigator />
-      </NavigationContainer>
-    </SafeAreaProvider>
+    // 내 약장의 스와이프(Swipeable)가 동작하려면 제스처 핸들러 루트가 필요하다.
+    // 없으면 Android에서 스와이프가 조용히 먹지 않는다.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        {/* 흰 배경에서 시간·배터리 등 상태바 글씨가 보이도록 어두운 색으로 고정 */}
+        <StatusBar style="dark" />
+        <NavigationContainer ref={navRef}>
+          <RootNavigator />
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

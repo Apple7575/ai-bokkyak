@@ -10,6 +10,7 @@ import { gptOcrPrescription } from "../lib/ocr";
 import { ParsedSchedule } from "../lib/parse";
 import { normalizeRepeatDays } from "../lib/schedule";
 import { TIME_OF_DAYS, timeOfDayForHour, hourForTimeOfDay } from "../lib/timeOfDay";
+import { searchProducts, ProductHit } from "../lib/drugData";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders } from "../lib/notifications";
@@ -17,7 +18,6 @@ import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { speak } from "../lib/tts";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
 
-const TODS = ["아침", "점심", "저녁", "취침"];
 const HOURS = [7, 8, 9, 12, 13, 18, 19, 20, 21];
 const MINUTES = [0, 15, 30, 45];
 const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -29,6 +29,23 @@ export function OcrRegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false); // 더블탭 동기 가드(state는 비동기라 레이스 가능)
+
+  // 인식된 이름 → 실제 제품 후보. 사진 글자는 흐리거나 일부만 찍히기 쉬워서,
+  // 공공데이터(drug_product)에서 비슷한 제품을 찾아 "혹시 이 약인가요?"로 확인받는다.
+  // 정확한 제품명이 있어야 나중에 성분 기반 병용금기 검사도 제대로 걸린다.
+  const [candidates, setCandidates] = useState<Record<number, ProductHit[]>>({});
+
+  async function findCandidates(list: ParsedSchedule[]): Promise<void> {
+    const next: Record<number, ProductHit[]> = {};
+    for (let i = 0; i < list.length; i++) {
+      const r = await searchProducts(list[i].medicine_name, 4);
+      if (!r.ready) return;                       // 참조 데이터 없음 — 조용히 생략
+      // 이미 정확히 같은 이름이면 물어볼 필요가 없다.
+      const hits = r.data.filter((h) => h.product_name !== list[i].medicine_name);
+      if (hits.length > 0) next[i] = hits;
+    }
+    setCandidates(next);
+  }
 
   function patch(i: number, p: Partial<ParsedSchedule>) {
     setItems((prev) => prev.map((it, idx) => (idx === i ? { ...it, ...p } : it)));
@@ -65,6 +82,9 @@ export function OcrRegisterScreen() {
       setScanned(true);
       const meds = await gptOcrPrescription(res.assets[0].base64);
       setItems(meds);
+      setCandidates({});
+      // 후보 조회는 부가 기능 — 실패해도 등록 흐름을 막지 않는다.
+      if (meds.length > 0) findCandidates(meds).catch(() => {});
       if (meds.length === 0) {
         Alert.alert("약을 찾지 못했어요", "글자가 잘 보이게 다시 촬영하거나, 버튼으로 직접 등록해 주세요.");
       }
@@ -149,6 +169,22 @@ export function OcrRegisterScreen() {
                   placeholderTextColor={colors.textSecondary}
                 />
 
+                {candidates[i]?.length ? (
+                  <View style={styles.candWrap}>
+                    <Text style={styles.candLabel}>혹시 이 약인가요? (누르면 이름이 바뀝니다)</Text>
+                    {candidates[i].map((h) => (
+                      <Pressable
+                        key={h.product_code}
+                        onPress={() => patch(i, { medicine_name: h.product_name })}
+                        style={({ pressed }) => [styles.candItem, pressed && { opacity: 0.9 }]}
+                      >
+                        <Text style={styles.candName} numberOfLines={2}>{h.product_name}</Text>
+                        {h.company ? <Text style={styles.candCompany}>{h.company}</Text> : null}
+                      </Pressable>
+                    ))}
+                  </View>
+                ) : null}
+
                 {/* 시간대와 시각은 항상 함께 움직인다 — 「점심 · 08:00」 같은
                     모순된 일정이 만들어지지 않게 (QA 2026-08-09). */}
                 <Text style={styles.cardLabel}>시간대</Text>
@@ -198,6 +234,17 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.cardBg },
   c: { padding: spacing.lg, paddingBottom: spacing.xl },
   guide: { fontSize: fontSizes.body, fontWeight: "600", color: colors.text, marginBottom: spacing.md },
+  candWrap: {
+    backgroundColor: colors.lightBlueBg, borderRadius: radii.button,
+    padding: spacing.sm, marginBottom: spacing.sm, gap: spacing.xs,
+  },
+  candLabel: { fontSize: 15, fontWeight: "700", color: colors.primaryNavy, marginBottom: 2 },
+  candItem: {
+    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
+    borderRadius: radii.button, paddingHorizontal: spacing.sm, paddingVertical: 10,
+  },
+  candName: { fontSize: 17, fontWeight: "600", color: colors.text },
+  candCompany: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
   loading: { alignItems: "center", paddingVertical: spacing.xl },
   loadingText: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: spacing.md },
   section: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text, marginTop: spacing.lg, marginBottom: spacing.sm },

@@ -1,12 +1,16 @@
-import React, { useCallback, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, Pressable } from "react-native";
+import React, { useCallback, useRef, useState } from "react";
+import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Pill, Leaf, FileText, HelpCircle, AlertTriangle, ChevronRight } from "lucide-react-native";
+import {
+  Pill, Leaf, FileText, HelpCircle, AlertTriangle, ChevronRight, Pencil, Trash2,
+} from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { supabase, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
+import { cancelSchedule } from "../lib/notifications";
 import { MedKind, groupByKind } from "../lib/medKind";
 import { getKindMap, resolveKind } from "../lib/medStore";
 import { lookupIngredients, fetchContraindications } from "../lib/drugData";
@@ -56,6 +60,55 @@ export function CabinetScreen() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  // 열려 있는 스와이프는 하나만 — 다음 행을 열면 이전 행이 닫힌다.
+  const rowRefs = useRef<Record<string, Swipeable>>({});
+  const openRef = useRef<Swipeable | null>(null);
+  function closeOpen(except?: Swipeable | null) {
+    if (openRef.current && openRef.current !== except) openRef.current.close();
+  }
+
+  function confirmDelete(s: Schedule) {
+    Alert.alert(`'${s.medicine_name}' 삭제`, "이 복약 일정과 알림을 삭제할까요?", [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제", style: "destructive",
+        onPress: async () => {
+          try {
+            // 하드 삭제하면 복약 기록이 cascade로 사라진다 — 비활성화로 목록에서만 뺀다.
+            const { error } = await supabase.from("schedules").update({ active: false }).eq("id", s.id);
+            if (error) throw error;
+            await cancelSchedule(s.id);
+            await load();
+          } catch {
+            Alert.alert("삭제에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
+          }
+        },
+      },
+    ]);
+  }
+
+  // 스와이프로 드러나는 수정·삭제 버튼. 어르신도 누를 수 있게 넉넉히 크게.
+  function renderActions(s: Schedule) {
+    return (
+      <View style={styles.actions}>
+        <Pressable
+          onPress={() => { closeOpen(); nav.navigate("ButtonRegister", { editId: s.id }); }}
+          style={[styles.actionBtn, { backgroundColor: colors.primaryBlue }]}
+        >
+          <Pencil size={22} color="#fff" />
+          <Text style={styles.actionText}>수정</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => { closeOpen(); confirmDelete(s); }}
+          style={[styles.actionBtn, { backgroundColor: colors.dangerRed }]}
+        >
+          <Trash2 size={22} color="#fff" />
+          <Text style={styles.actionText}>삭제</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   const groups = groupByKind(items, (s) => resolveKind(s.medicine_name, kinds));
 
   return (
@@ -78,7 +131,9 @@ export function CabinetScreen() {
 
         {items.length === 0 ? (
           <Text style={styles.empty}>약장이 비어 있어요.{"\n"}아래에서 약을 등록해 주세요.</Text>
-        ) : null}
+        ) : (
+          <Text style={styles.swipeHint}>약을 왼쪽으로 밀면 수정·삭제할 수 있어요.</Text>
+        )}
 
         {groups.map(({ kind, items: group }) => {
           const { Icon, color, desc } = KIND_META[kind];
@@ -91,23 +146,33 @@ export function CabinetScreen() {
               </View>
               <Text style={styles.groupDesc}>{desc}</Text>
               {group.map((s) => (
-                <Pressable
+                <Swipeable
                   key={s.id}
-                  onPress={() => nav.navigate("MedicineDetail", { scheduleId: s.id })}
-                  style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
+                  ref={(r) => { if (r) rowRefs.current[s.id] = r; }}
+                  renderRightActions={() => renderActions(s)}
+                  onSwipeableWillOpen={() => {
+                    closeOpen(rowRefs.current[s.id]);
+                    openRef.current = rowRefs.current[s.id] ?? null;
+                  }}
+                  overshootRight={false}
                 >
-                  <View style={[styles.iconBox, { backgroundColor: color + "1A" }]}>
-                    <Icon size={22} color={color} />
-                  </View>
-                  <View style={styles.info}>
-                    <Text style={styles.name}>{s.medicine_name}</Text>
-                    <Text style={styles.time}>
-                      {`${s.time_of_day} · ${String(s.hour).padStart(2, "0")}:${String(s.minute).padStart(2, "0")}`}
-                      {(s.repeat_days?.length ?? 0) > 0 ? "  (요일 반복)" : "  (매일)"}
-                    </Text>
-                  </View>
-                  <ChevronRight size={22} color={colors.textSecondary} />
-                </Pressable>
+                  <Pressable
+                    onPress={() => nav.navigate("MedicineDetail", { scheduleId: s.id })}
+                    style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
+                  >
+                    <View style={[styles.iconBox, { backgroundColor: color + "1A" }]}>
+                      <Icon size={22} color={color} />
+                    </View>
+                    <View style={styles.info}>
+                      <Text style={styles.name}>{s.medicine_name}</Text>
+                      <Text style={styles.time}>
+                        {`${s.time_of_day} · ${String(s.hour).padStart(2, "0")}:${String(s.minute).padStart(2, "0")}`}
+                        {(s.repeat_days?.length ?? 0) > 0 ? "  (요일 반복)" : "  (매일)"}
+                      </Text>
+                    </View>
+                    <ChevronRight size={22} color={colors.textSecondary} />
+                  </Pressable>
+                </Swipeable>
               ))}
             </View>
           );
@@ -151,4 +216,11 @@ const styles = StyleSheet.create({
     fontSize: 20, color: colors.textSecondary, textAlign: "center",
     marginTop: spacing.xl, lineHeight: 30,
   },
+  swipeHint: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: -spacing.xs },
+  actions: { flexDirection: "row", alignItems: "stretch" },
+  actionBtn: {
+    width: 84, alignItems: "center", justifyContent: "center", gap: 4,
+    marginLeft: spacing.sm, borderRadius: radii.card,
+  },
+  actionText: { color: "#fff", fontSize: 17, fontWeight: "800" },
 });

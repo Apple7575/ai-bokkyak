@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, Pressable } from "react-native";
 import notifee from "@notifee/react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Bell, Clock, Pencil, Mic, ChevronRight, AlertTriangle } from "lucide-react-native";
+import { Bell, User, Clock, Pencil, Mic, ChevronRight, AlertTriangle } from "lucide-react-native";
 import { Logo } from "../components/Logo";
 import { supabase, Schedule, IntakeRecord } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
@@ -134,6 +134,13 @@ export function HomeScreen() {
         <Logo size={40} />
         <View style={{ flex: 1 }} />
         <View style={styles.iconBtn}><Bell size={22} color={colors.primaryBlue} /></View>
+        <Pressable
+          onPress={() => nav.navigate("More")}
+          style={({ pressed }) => [styles.iconBtn, styles.iconBtnGap, pressed && { opacity: 0.85 }]}
+          hitSlop={6}
+        >
+          <User size={22} color={colors.primaryBlue} />
+        </Pressable>
       </View>
 
       <Text style={styles.greet}>안녕하세요!</Text>
@@ -190,7 +197,7 @@ export function HomeScreen() {
       <View style={styles.card}>
         <View style={styles.cardHead}>
           <Text style={styles.cardTitle}>오늘 복약 일정</Text>
-          <Pressable onPress={() => nav.navigate("MedicineList")} style={styles.moreBtn} hitSlop={8}>
+          <Pressable onPress={() => nav.navigate("Cabinet")} style={styles.moreBtn} hitSlop={8}>
             <Text style={styles.moreText}>전체 보기</Text>
             <ChevronRight size={18} color={colors.textSecondary} />
           </Pressable>
@@ -268,6 +275,7 @@ const styles = StyleSheet.create({
     width: 44, height: 44, borderRadius: 999, backgroundColor: colors.lightBlueBg,
     alignItems: "center", justifyContent: "center",
   },
+  iconBtnGap: { marginLeft: spacing.sm },
   greet: { fontSize: 30, fontWeight: "800", color: colors.primaryNavy, marginTop: -spacing.xs },
   greetSub: { fontSize: 19, color: colors.textSecondary, marginTop: -spacing.sm },
   warnPerm: {
