@@ -2,246 +2,342 @@ import React, { useCallback, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, Pressable } from "react-native";
 import notifee from "@notifee/react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { Bell, Phone, ChevronRight, Clock, AlertTriangle } from "lucide-react-native";
-import Svg, { Circle } from "react-native-svg";
-import { BigButton } from "../components/BigButton";
-import { ScheduleCard } from "../components/ScheduleCard";
-import { supabase, Schedule } from "../lib/supabase";
+import { Bell, Clock, Pencil, Mic, ChevronRight, AlertTriangle } from "lucide-react-native";
+import { Logo } from "../components/Logo";
+import { supabase, Schedule, IntakeRecord } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
-import { nextNotificationTime } from "../lib/schedule";
+import { nextNotificationTime, todaySlot } from "../lib/schedule";
 import { hasExactAlarm } from "../lib/alarmPermissions";
+import { MedKind } from "../lib/medKind";
+import { getKindMap, resolveKind } from "../lib/medStore";
+import { lookupIngredients, fetchContraindications } from "../lib/drugData";
+import { allIngredients, matchFindings, MedIngredients } from "../lib/interactions";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
 
+// B-01 홈 — 확정 시안 기준.
+// 위에서부터: 다음 복약 시간(음성 AI 진입 포함) → 오늘 복약 일정 → 내 약장 요약 → 주의.
+// 별도의 "AI 건강전화" 버튼은 두지 않는다. 음성 진입은 다음 복약 카드 안에 있다.
+
 function fmt(d: Date): string {
-  const h = d.getHours(); const m = d.getMinutes();
-  const ap = h < 12 ? "오전" : "오후"; const h12 = h % 12 === 0 ? 12 : h % 12;
+  const h = d.getHours(), m = d.getMinutes();
+  const ap = h < 12 ? "오전" : "오후";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
   return `${ap} ${h12}:${String(m).padStart(2, "0")}`;
 }
 
+// 화면에 쓰는 구분 라벨. 내부 값("건기식")보다 긴 이름을 쓴다.
+const KIND_LABEL: Record<MedKind | "미분류", string> = {
+  처방약: "처방약", 일반약: "일반약", 건기식: "건강기능식품", 미분류: "미분류",
+};
+const KIND_COLOR: Record<MedKind | "미분류", string> = {
+  처방약: colors.primaryBlue,
+  일반약: colors.secondaryBlue,
+  건기식: colors.successGreen,
+  미분류: colors.textSecondary,
+};
+
+type Row = { s: Schedule; at: Date; kind: MedKind | "미분류"; status: "완료" | "건너뜀" | "미룸" | "예정" };
+
 export function HomeScreen() {
   const nav = useNavigation<any>();
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [alarmOk, setAlarmOk] = useState(true);
-
-  useFocusEffect(useCallback(() => {
-    (async () => {
-      const pid = await getPatientId(); if (!pid) return;
-      const { data } = await supabase.from("schedules").select("*")
-        .eq("patient_id", pid).eq("active", true).order("hour");
-      setSchedules(data ?? []);
-    })();
-    hasExactAlarm().then(setAlarmOk);
-  }, []));
-
-  const now = new Date();
-  const next = schedules.length
-    ? schedules.map((s) => ({ s, t: nextNotificationTime(s, now) }))
-        .sort((a, b) => a.t.getTime() - b.t.getTime())[0]
-    : null;
-
-  // "오늘 복약 일정"은 오늘 요일에 해당하는 약만(빈 repeat_days=매일, 설계 결정 #1).
-  // 요일 반복이 생기면서 월요일 약이 금요일 목록에 뜨던 문제 방지.
-  const dueToday = schedules.filter((s) => {
-    const days = s.repeat_days ?? [];
-    return days.length === 0 || days.includes(now.getDay());
+  const [rows, setRows] = useState<Row[]>([]);
+  const [next, setNext] = useState<{ s: Schedule; at: Date; kind: MedKind | "미분류" } | null>(null);
+  const [counts, setCounts] = useState<Record<MedKind | "미분류", number>>({
+    처방약: 0, 일반약: 0, 건기식: 0, 미분류: 0,
   });
+  const [total, setTotal] = useState(0);
+  const [alarmOk, setAlarmOk] = useState(true);
+  const [warnCount, setWarnCount] = useState(0);
 
-  // Visual donut driven only by today's due schedules (no extra query):
-  // shows how full today's plan is, capped so the ring stays readable.
-  const total = dueToday.length;
-  const ringPct = total === 0 ? 0 : Math.min(100, Math.round((total / 4) * 100));
-  const R = 36;
-  const C = 2 * Math.PI * R;
+  const load = useCallback(async () => {
+    const pid = await getPatientId();
+    if (!pid) return;
+    const { data } = await supabase.from("schedules").select("*")
+      .eq("patient_id", pid).eq("active", true).order("hour");
+    const all = (data ?? []) as Schedule[];
+    const kinds = await getKindMap();
+    const now = new Date();
+
+    // 내 약장 요약 — 같은 약이 여러 시간대로 등록돼 있어도 1종으로 센다.
+    const byName = new Map<string, MedKind | "미분류">();
+    for (const s of all) {
+      if (byName.has(s.medicine_name)) continue;
+      byName.set(s.medicine_name, resolveKind(s.medicine_name, kinds) ?? "미분류");
+    }
+    const c: Record<MedKind | "미분류", number> = { 처방약: 0, 일반약: 0, 건기식: 0, 미분류: 0 };
+    for (const k of byName.values()) c[k]++;
+    setCounts(c);
+    setTotal(byName.size);
+
+    // 오늘 요일에 해당하는 약만 (빈 repeat_days=매일, 설계 결정 #1)
+    const due = all.filter((s) => {
+      const d = s.repeat_days ?? [];
+      return d.length === 0 || d.includes(now.getDay());
+    });
+
+    // 오늘 기록 — 완료/건너뜀/미룸 배지
+    const dayStart = new Date(now); dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+    const { data: recs } = await supabase.from("intake_records").select("*")
+      .eq("patient_id", pid)
+      .gte("scheduled_for", dayStart.toISOString())
+      .lt("scheduled_for", dayEnd.toISOString());
+    const statusBy = new Map<string, IntakeRecord["status"]>();
+    for (const r of (recs ?? []) as IntakeRecord[]) statusBy.set(r.schedule_id, r.status);
+
+    const list: Row[] = due.map((s): Row => {
+      const st = statusBy.get(s.id);
+      const status: Row["status"] =
+        st === "completed" ? "완료" : st === "skipped" ? "건너뜀" : st === "snoozed" ? "미룸" : "예정";
+      return {
+        s,
+        at: todaySlot(s.hour, s.minute, now),
+        kind: resolveKind(s.medicine_name, kinds) ?? "미분류",
+        status,
+      };
+    }).sort((a, b) => a.at.getTime() - b.at.getTime());
+    setRows(list);
+
+    // 다음 복약 — 아직 응답하지 않은 것 중 가장 이른 것
+    const pending = all.filter((s) => statusBy.get(s.id) !== "completed");
+    const nx = pending
+      .map((s) => ({ s, at: nextNotificationTime(s, now) }))
+      .sort((a, b) => a.at.getTime() - b.at.getTime())[0];
+    setNext(nx ? { ...nx, kind: resolveKind(nx.s.medicine_name, kinds) ?? "미분류" } : null);
+
+    hasExactAlarm().then(setAlarmOk);
+
+    // 주의 조합 — 참조 데이터가 없으면 조용히 0으로 두고 배너를 숨긴다.
+    const names = [...byName.keys()];
+    if (names.length < 2) { setWarnCount(0); return; }
+    const ing = await lookupIngredients(names);
+    if (!ing.ready) { setWarnCount(0); return; }
+    const meds: MedIngredients[] = names.map((n) => ({ scheduleId: n, name: n, ingredients: ing.data[n] ?? [] }));
+    const rules = await fetchContraindications(allIngredients(meds));
+    if (!rules.ready) { setWarnCount(0); return; }
+    setWarnCount(matchFindings(meds, rules.data).length);
+  }, []);
+
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.c}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerText}>
-          <Text style={styles.greet}>안녕하세요!</Text>
-          <Text style={styles.greetSub}>오늘도 건강한 하루 보내세요.</Text>
-        </View>
-        <View style={styles.headerIcons}>
-          {/* 보호자 아이콘(UserCheck)은 보호자 기능 제거(B-01)와 함께 뺐다. */}
-          <View style={[styles.iconBtn, { backgroundColor: colors.lightBlueBg }]}>
-            <Bell size={22} color={colors.primaryBlue} />
-          </View>
-        </View>
+      {/* 브랜드 헤더 */}
+      <View style={styles.brandRow}>
+        <Logo size={40} />
+        <View style={{ flex: 1 }} />
+        <View style={styles.iconBtn}><Bell size={22} color={colors.primaryBlue} /></View>
       </View>
 
-      {/* 정확알람 권한 꺼짐 경고 배너 */}
+      <Text style={styles.greet}>안녕하세요!</Text>
+      <Text style={styles.greetSub}>오늘도 건강한 하루 보내세요.</Text>
+
+      {/* 정확알람 권한 경고 */}
       {!alarmOk ? (
-        <Pressable style={styles.warn} onPress={() => notifee.openAlarmPermissionSettings()}>
+        <Pressable style={styles.warnPerm} onPress={() => notifee.openAlarmPermissionSettings()}>
           <AlertTriangle size={20} color={colors.dangerRed} />
-          <Text style={styles.warnText}>
-            정확한 복약 알람을 위해 '알람 및 리마인더' 권한이 필요해요. 이 권한이 꺼져 있으면 알람이 늦게 울릴 수 있습니다. 눌러서 설정 열기
+          <Text style={styles.warnPermText}>
+            정확한 복약 알람을 위해 '알람 및 리마인더' 권한이 필요해요. 눌러서 설정 열기
           </Text>
         </Pressable>
       ) : null}
 
-      {/* 음성 AI가 이 앱의 핵심이라, 홈 최상단에 가장 크게 둔다 (B-01 확정).
-          기존에는 화면 중간의 일반 버튼 하나여서 눈에 띄지 않았다. */}
-      <Pressable
-        onPress={() => nav.navigate("Call")}
-        style={({ pressed }) => [styles.callCard, pressed && { opacity: 0.92 }]}
-      >
-        <View style={styles.callIcon}>
-          <Phone size={34} color="#fff" strokeWidth={2} />
-        </View>
-        <View style={styles.callTextWrap}>
-          <Text style={styles.callTitle}>AI 건강전화</Text>
-          <Text style={styles.callSub}>눌러서 통화하고 약을 확인하세요</Text>
-        </View>
-        <ChevronRight size={26} color="#fff" />
-      </Pressable>
-
-      {/* Next medicine hero card */}
+      {/* ① 다음 복약 시간 + ② 음성 AI 진입 */}
       <View style={styles.hero}>
-        <View style={styles.heroLabelRow}>
-          <Clock size={16} color="#fff" />
-          <Text style={styles.heroLabel}>다음 복약 시간</Text>
+        <View style={styles.heroTop}>
+          <View style={styles.heroChip}>
+            <Clock size={15} color="#fff" />
+            <Text style={styles.heroChipText}>다음 복약 시간</Text>
+          </View>
+          {next ? (
+            <Pressable
+              onPress={() => nav.navigate("ButtonRegister", { editId: next.s.id })}
+              style={styles.heroEdit}
+              hitSlop={10}
+            >
+              <Pencil size={20} color="#fff" />
+            </Pressable>
+          ) : null}
         </View>
-        <Text style={styles.heroTime}>{next ? fmt(next.t) : "등록된 약이 없어요"}</Text>
-        {next ? <Text style={styles.heroMed}>{next.s.medicine_name}</Text> : null}
-        <Pressable style={styles.heroBtn} onPress={() => nav.navigate("MedicineList")}>
-          <Text style={styles.heroBtnText}>복약 일정 보기</Text>
-          <ChevronRight size={16} color="#fff" />
+
+        <Text style={styles.heroTime}>{next ? fmt(next.at) : "등록된 약이 없어요"}</Text>
+        {next ? (
+          <View style={styles.heroMedRow}>
+            <Text style={styles.heroMed}>{next.s.medicine_name}</Text>
+            <View style={styles.heroBadge}>
+              <Text style={styles.heroBadgeText}>{KIND_LABEL[next.kind]}</Text>
+            </View>
+          </View>
+        ) : null}
+
+        <Pressable
+          onPress={() => nav.navigate("Call")}
+          style={({ pressed }) => [styles.voiceBtn, pressed && { opacity: 0.9 }]}
+        >
+          <Mic size={22} color="#fff" />
+          <Text style={styles.voiceBtnText}>음성 AI로 복약 알림 변경하기</Text>
         </Pressable>
       </View>
 
-      {/* AI 건강전화는 위 카드로 올렸으므로 여기서는 중복 제거 */}
-      <BigButton label="약 등록 / 복약 관리" onPress={() => nav.navigate("MedicineList")} />
+      {/* 오늘 복약 일정 */}
+      <View style={styles.card}>
+        <View style={styles.cardHead}>
+          <Text style={styles.cardTitle}>오늘 복약 일정</Text>
+          <Pressable onPress={() => nav.navigate("MedicineList")} style={styles.moreBtn} hitSlop={8}>
+            <Text style={styles.moreText}>전체 보기</Text>
+            <ChevronRight size={18} color={colors.textSecondary} />
+          </Pressable>
+        </View>
+        {rows.length === 0 ? (
+          <Text style={styles.empty}>오늘 드실 약이 없어요.</Text>
+        ) : (
+          rows.map((r) => (
+            <Pressable
+              key={r.s.id}
+              onPress={() => nav.navigate("MedicineDetail", { scheduleId: r.s.id })}
+              style={({ pressed }) => [styles.doseRow, pressed && { opacity: 0.9 }]}
+            >
+              <Text style={styles.doseTime}>{fmt(r.at)}</Text>
+              <Text style={styles.doseName} numberOfLines={1}>{r.s.medicine_name}</Text>
+              <View style={[styles.kindBadge, { backgroundColor: KIND_COLOR[r.kind] + "1A" }]}>
+                <Text style={[styles.kindBadgeText, { color: KIND_COLOR[r.kind] }]}>{KIND_LABEL[r.kind]}</Text>
+              </View>
+              <View style={[styles.statusBadge, r.status === "완료" && styles.statusDone]}>
+                <Text style={[styles.statusText, r.status === "완료" && styles.statusDoneText]}>{r.status}</Text>
+              </View>
+            </Pressable>
+          ))
+        )}
+      </View>
 
-      {/* Today's schedule */}
-      <Text style={styles.section}>오늘 복약 일정</Text>
-      {dueToday.map((s) => (
-        <ScheduleCard key={s.id} name={s.medicine_name} time={fmt(nextNotificationTime(s, now))} />
-      ))}
-
-      {/* Progress / status card */}
-      <View style={styles.statusCard}>
-        <Text style={styles.statusTitle}>오늘의 복약 현황</Text>
-        <View style={styles.statusRow}>
-          <Svg width={88} height={88} viewBox="0 0 88 88">
-            <Circle cx={44} cy={44} r={R} fill="none" stroke={colors.lightBlueBg} strokeWidth={10} />
-            <Circle
-              cx={44}
-              cy={44}
-              r={R}
-              fill="none"
-              stroke={colors.primaryBlue}
-              strokeWidth={10}
-              strokeDasharray={C}
-              strokeDashoffset={C * (1 - ringPct / 100)}
-              strokeLinecap="round"
-              transform="rotate(-90 44 44)"
-            />
-          </Svg>
-          <View style={styles.statusTextWrap}>
-            <Text style={styles.statusCount}>{total}개</Text>
-            <Text style={styles.statusDesc}>오늘 등록된 복약 일정</Text>
+      {/* 내 약장 요약 */}
+      <Pressable
+        onPress={() => nav.navigate("Cabinet")}
+        style={({ pressed }) => [styles.card, pressed && { opacity: 0.95 }]}
+      >
+        <View style={styles.cardHead}>
+          <Text style={styles.cardTitle}>내 약장</Text>
+          <View style={styles.moreBtn}>
+            <Text style={styles.moreText}>총 {total}종 관리 중</Text>
+            <ChevronRight size={18} color={colors.textSecondary} />
           </View>
         </View>
-      </View>
+        <View style={styles.tileRow}>
+          {(["처방약", "일반약", "건기식"] as const).map((k) => (
+            <View key={k} style={[styles.tile, { backgroundColor: KIND_COLOR[k] + "12" }]}>
+              <Text style={[styles.tileLabel, { color: KIND_COLOR[k] }]}>{KIND_LABEL[k]}</Text>
+              <Text style={styles.tileCount}>{counts[k]}</Text>
+            </View>
+          ))}
+        </View>
+      </Pressable>
+
+      {/* ③ 주의 조합 */}
+      {warnCount > 0 ? (
+        <View style={styles.warnCard}>
+          <View style={styles.warnHead}>
+            <AlertTriangle size={22} color={colors.warningOrange} />
+            <Text style={styles.warnTitle}>주의가 필요한 조합 {warnCount}건</Text>
+          </View>
+          <Text style={styles.warnDesc}>성분 중복 가능성 · 약사 확인 권장</Text>
+          <Pressable
+            onPress={() => nav.navigate("Interaction")}
+            style={({ pressed }) => [styles.warnBtn, pressed && { opacity: 0.9 }]}
+          >
+            <Text style={styles.warnBtnText}>주의 내용 보기</Text>
+            <ChevronRight size={18} color="#fff" />
+          </Pressable>
+        </View>
+      ) : null}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F7FAFF" },
-  c: { padding: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.xl },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.lg,
-  },
-  headerText: { flexShrink: 1 },
-  // 고령층 대상 — 홈 글자를 전반적으로 키웠다 (B-01 "텍스트 더 키워야 함").
-  greet: { fontSize: 30, fontWeight: "800", color: colors.primaryNavy },
-  greetSub: { fontSize: 20, color: colors.textSecondary, marginTop: spacing.xs },
-  headerIcons: { flexDirection: "row", gap: spacing.sm },
-  iconBtn: { width: 48, height: 48, borderRadius: 999, alignItems: "center", justifyContent: "center" },
-  callCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    backgroundColor: colors.primaryBlue,
-    borderRadius: 20,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    minHeight: 108, // BigButton(56)의 약 2배 — 홈에서 가장 큰 요소
-    shadowColor: colors.primaryBlue,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.32,
-    shadowRadius: 18,
-    elevation: 6,
-  },
-  callIcon: {
-    width: 64, height: 64, borderRadius: 999,
+  c: { padding: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.xl, gap: spacing.md },
+  brandRow: { flexDirection: "row", alignItems: "center" },
+  iconBtn: {
+    width: 44, height: 44, borderRadius: 999, backgroundColor: colors.lightBlueBg,
     alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.22)",
   },
-  callTextWrap: { flex: 1 },
-  callTitle: { fontSize: 30, fontWeight: "800", color: "#fff" },
-  callSub: { fontSize: 19, color: "rgba(255,255,255,0.9)", marginTop: 4 },
+  greet: { fontSize: 30, fontWeight: "800", color: colors.primaryNavy, marginTop: -spacing.xs },
+  greetSub: { fontSize: 19, color: colors.textSecondary, marginTop: -spacing.sm },
+  warnPerm: {
+    flexDirection: "row", gap: spacing.sm, alignItems: "center",
+    backgroundColor: "#FFF0F0", borderColor: colors.dangerRed, borderWidth: 1,
+    borderRadius: radii.card, padding: spacing.md,
+  },
+  warnPermText: { flex: 1, fontSize: fontSizes.body, color: colors.dangerRed, fontWeight: "700" },
+
   hero: {
-    backgroundColor: colors.primaryBlue,
-    borderRadius: 20,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    shadowColor: colors.primaryBlue,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 14,
-    elevation: 4,
+    backgroundColor: colors.primaryBlue, borderRadius: 20, padding: spacing.lg,
+    shadowColor: colors.primaryBlue, shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25, shadowRadius: 14, elevation: 4,
   },
-  heroLabelRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm },
-  heroLabel: { color: "#cfe0ff", fontSize: 20 },
-  heroTime: { color: "#fff", fontSize: fontSizes.hero, fontWeight: "800", marginVertical: spacing.xs },
-  heroMed: { color: "#fff", fontSize: 26, fontWeight: "700" },
-  heroBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: radii.button,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginTop: spacing.md,
+  heroTop: { flexDirection: "row", alignItems: "center" },
+  heroChip: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "rgba(255,255,255,0.2)", borderRadius: radii.pill,
+    paddingHorizontal: spacing.sm + 2, paddingVertical: 5,
   },
-  heroBtnText: { color: "#fff", fontSize: 20, fontWeight: "700" },
-  section: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: colors.text,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
+  heroChipText: { color: "#fff", fontSize: 15, fontWeight: "600" },
+  heroEdit: {
+    marginLeft: "auto", width: 44, height: 44, borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center",
   },
-  warn: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    alignItems: "center",
-    backgroundColor: "#FFF0F0",
-    borderColor: colors.dangerRed,
-    borderWidth: 1,
-    borderRadius: radii.card,
-    padding: spacing.md,
-    marginBottom: spacing.md,
+  heroTime: { color: "#fff", fontSize: fontSizes.hero, fontWeight: "800", marginTop: spacing.sm },
+  heroMedRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: 2 },
+  heroMed: { color: "#fff", fontSize: 22, fontWeight: "700", flexShrink: 1 },
+  heroBadge: { backgroundColor: "rgba(255,255,255,0.25)", borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 3 },
+  heroBadgeText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  voiceBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
+    minHeight: 60, borderRadius: radii.button, marginTop: spacing.md,
+    backgroundColor: "rgba(255,255,255,0.22)", borderWidth: 1, borderColor: "rgba(255,255,255,0.45)",
   },
-  warnText: { flex: 1, fontSize: fontSizes.body, color: colors.dangerRed, fontWeight: "700" },
-  statusCard: {
-    backgroundColor: colors.cardBg,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radii.card,
-    padding: spacing.lg,
-    marginTop: spacing.md,
+  voiceBtnText: { color: "#fff", fontSize: 20, fontWeight: "800" },
+
+  card: {
+    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
+    borderRadius: radii.card, padding: spacing.md,
   },
-  statusTitle: { fontSize: 26, fontWeight: "700", color: colors.text, marginBottom: spacing.md },
-  statusRow: { flexDirection: "row", alignItems: "center", gap: spacing.lg },
-  statusTextWrap: { flexShrink: 1 },
-  statusCount: { fontSize: 36, fontWeight: "800", color: colors.primaryNavy },
-  statusDesc: { fontSize: 20, color: colors.textSecondary, marginTop: spacing.xs },
+  cardHead: { flexDirection: "row", alignItems: "center", marginBottom: spacing.sm },
+  cardTitle: { fontSize: 24, fontWeight: "800", color: colors.primaryNavy, flex: 1 },
+  moreBtn: { flexDirection: "row", alignItems: "center", gap: 2 },
+  moreText: { fontSize: fontSizes.body, color: colors.textSecondary, fontWeight: "600" },
+  empty: { fontSize: 19, color: colors.textSecondary, paddingVertical: spacing.md },
+  doseRow: {
+    flexDirection: "row", alignItems: "center", gap: spacing.sm,
+    paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.border,
+  },
+  doseTime: { fontSize: 19, fontWeight: "700", color: colors.text, width: 96 },
+  doseName: { fontSize: 19, color: colors.text, flexShrink: 1 },
+  kindBadge: { borderRadius: radii.pill, paddingHorizontal: 9, paddingVertical: 3 },
+  kindBadgeText: { fontSize: 14, fontWeight: "700" },
+  statusBadge: {
+    marginLeft: "auto", borderRadius: radii.pill, paddingHorizontal: 12, paddingVertical: 5,
+    backgroundColor: colors.lightBlueBg,
+  },
+  statusDone: { backgroundColor: colors.primaryBlue },
+  statusText: { fontSize: 15, fontWeight: "700", color: colors.textSecondary },
+  statusDoneText: { color: "#fff" },
+
+  tileRow: { flexDirection: "row", gap: spacing.sm },
+  tile: { flex: 1, borderRadius: radii.card, paddingVertical: spacing.md, paddingHorizontal: spacing.sm },
+  tileLabel: { fontSize: 15, fontWeight: "700" },
+  tileCount: { fontSize: 30, fontWeight: "800", color: colors.primaryNavy, marginTop: 2 },
+
+  warnCard: {
+    backgroundColor: "#FFF8EC", borderColor: colors.warningOrange, borderWidth: 1,
+    borderRadius: radii.card, padding: spacing.md,
+  },
+  warnHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  warnTitle: { fontSize: 21, fontWeight: "800", color: "#8A5A00", flex: 1 },
+  warnDesc: { fontSize: fontSizes.body, color: "#8A5A00", marginTop: 4, marginBottom: spacing.md },
+  warnBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4,
+    minHeight: 56, borderRadius: radii.button, backgroundColor: colors.warningOrange,
+  },
+  warnBtnText: { color: "#fff", fontSize: 19, fontWeight: "800" },
 });
