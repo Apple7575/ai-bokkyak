@@ -12,6 +12,7 @@ export type RootStackParamList = {
   SnoozeCountdown: { scheduleId: string; fireAt: string; hour: number; minute: number };
   Call: { setup?: boolean } | undefined;
   AlarmSound: undefined;
+  VoiceSpeed: undefined;
   Privacy: undefined;
   MedicineDetail: { scheduleId: string };
   Interaction: undefined;

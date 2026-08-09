@@ -13,8 +13,10 @@ type MenuItem = { Icon: IconType; label: string; color: string; sub?: string; ro
 
 const menuItems: MenuItem[] = [
   { Icon: Volume2, label: "알림 소리 설정", color: colors.primaryBlue, route: "AlarmSound" },
-  { Icon: Mic2, label: "음성 안내 속도", color: colors.primaryBlue, sub: "기본값: 느리게" },
-  { Icon: Type, label: "큰 글씨 모드", color: colors.primaryBlue },
+  { Icon: Mic2, label: "음성 안내 속도", color: colors.primaryBlue, route: "VoiceSpeed" },
+  // 아직 만들지 않은 기능은 눌러도 아무 일이 없는 대신 "준비 중"이라고 밝힌다
+  // (QA에서 "버튼이 안 눌림"으로 보고됨).
+  { Icon: Type, label: "큰 글씨 모드", color: colors.textSecondary, sub: "준비 중이에요" },
   { Icon: Shield, label: "개인정보 설정", color: colors.textSecondary, route: "Privacy" },
 ];
 
@@ -42,10 +44,10 @@ export function SettingsScreen() {
                   <Text style={styles.rowLabel}>{label}</Text>
                   {sub ? <Text style={styles.rowSub}>{sub}</Text> : null}
                 </View>
-                <ChevronRight size={18} color={colors.textSecondary} />
+                {route ? <ChevronRight size={18} color={colors.textSecondary} /> : null}
               </>
             );
-            // route 없는 항목(음성 안내 속도·큰 글씨 모드)은 아직 시각용이라 누를 수 없게 둔다.
+            // route가 없으면 준비 중인 항목 — 화살표를 빼서 누를 수 없음을 드러낸다.
             return route ? (
               <Pressable
                 key={label}

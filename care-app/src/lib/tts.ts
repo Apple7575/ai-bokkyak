@@ -2,6 +2,7 @@ import Constants from "expo-constants";
 import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system/legacy";
 import { ttsCacheKey } from "./ttsCache";
+import { currentSpeed } from "./voiceSettings";
 
 const extra = Constants.expoConfig?.extra ?? {};
 const SUPABASE_URL = (extra.supabaseUrl as string) ?? "";
@@ -75,7 +76,8 @@ function bufToBase64(buf: ArrayBuffer): string {
 
 // 성공 시 true. 호출부에서 실패 시 번들 음성 등으로 폴백할 수 있게 결과를 돌려준다.
 export async function speak(text: string, opts?: { speed?: number }): Promise<boolean> {
-  const speed = opts?.speed ?? 0.95;
+  // 속도를 명시하지 않으면 사용자가 설정한 '음성 안내 속도'를 쓴다.
+  const speed = opts?.speed ?? (await currentSpeed());
   await stopSpeaking();          // 진행 중인 음성 정지 + in-flight 요청 무효화
   const myToken = ++playToken;   // 이 요청을 최신으로 등록
   try {

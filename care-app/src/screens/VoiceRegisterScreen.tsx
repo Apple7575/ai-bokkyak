@@ -71,7 +71,8 @@ export function VoiceRegisterScreen() {
       Alert.alert("알람 설정 실패", "약은 등록됐지만 알림 예약에 실패했어요. 설정에서 알림 권한을 확인하고 다시 등록해 주세요.");
     }
     await speak("복약 일정을 등록했습니다.");
-    nav.navigate("Tabs");
+    // 다른 등록 경로와 같이 '내 약장' 탭으로 (QA 2026-08-09).
+    nav.reset({ index: 0, routes: [{ name: "Tabs", params: { screen: "Cabinet" } }] });
   }
 
   return (

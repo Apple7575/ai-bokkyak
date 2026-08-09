@@ -2,6 +2,7 @@ import React, { useCallback, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, Pressable } from "react-native";
 import notifee from "@notifee/react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Bell, Clock, Pencil, Mic, ChevronRight, AlertTriangle } from "lucide-react-native";
 import { Logo } from "../components/Logo";
 import { supabase, Schedule, IntakeRecord } from "../lib/supabase";
@@ -40,6 +41,9 @@ type Row = { s: Schedule; at: Date; kind: MedKind | "미분류"; status: "완료
 
 export function HomeScreen() {
   const nav = useNavigation<any>();
+  // 홈은 ScreenHeader가 없어 직접 상태바 높이를 피해야 한다.
+  // (없으면 시각·통신사 표시와 인사말이 겹친다 — QA 2026-08-09)
+  const insets = useSafeAreaInsets();
   const [rows, setRows] = useState<Row[]>([]);
   const [next, setNext] = useState<{ s: Schedule; at: Date; kind: MedKind | "미분류" } | null>(null);
   const [counts, setCounts] = useState<Record<MedKind | "미분류", number>>({
@@ -121,7 +125,10 @@ export function HomeScreen() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.c}>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={[styles.c, { paddingTop: insets.top + spacing.md }]}
+    >
       {/* 브랜드 헤더 */}
       <View style={styles.brandRow}>
         <Logo size={40} />
@@ -255,7 +262,7 @@ export function HomeScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F7FAFF" },
-  c: { padding: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.xl, gap: spacing.md },
+  c: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
   brandRow: { flexDirection: "row", alignItems: "center" },
   iconBtn: {
     width: 44, height: 44, borderRadius: 999, backgroundColor: colors.lightBlueBg,

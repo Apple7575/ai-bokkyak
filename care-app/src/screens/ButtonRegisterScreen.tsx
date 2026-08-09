@@ -12,9 +12,11 @@ import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders, cancelSchedule } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { normalizeRepeatDays } from "../lib/schedule";
+import {
+  TimeOfDay, TIME_OF_DAYS, isTimeOfDay, timeOfDayForHour, hourForTimeOfDay,
+} from "../lib/timeOfDay";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
 
-const TODS = ["아침", "점심", "저녁", "취침"];
 const HOUR_VALUES = Array.from({ length: 24 }, (_, i) => i);   // 0~23시 전부 스크롤로 선택
 const MINUTE_VALUES = Array.from({ length: 60 }, (_, i) => i); // 0~59분 전부 스크롤로 선택
 const DAYS = ["일", "월", "화", "수", "목", "금", "토"]; // index 0=일 … 6=토
@@ -24,7 +26,7 @@ export function ButtonRegisterScreen() {
   const insets = useSafeAreaInsets();
   const editId: string | undefined = useRoute<any>().params?.editId;
   const [name, setName] = useState("");
-  const [tod, setTod] = useState("아침");
+  const [tod, setTod] = useState<TimeOfDay>("아침");
   const [hour, setHour] = useState(8);
   const [minute, setMinute] = useState(0);
   // 빈 배열 = 매일(설계 결정 #1). 요일 칩을 토글하면 해당 요일만 반복.
@@ -38,11 +40,25 @@ export function ButtonRegisterScreen() {
     (async () => {
       const { data } = await supabase.from("schedules").select("*").eq("id", editId).single();
       if (data) {
-        setName(data.medicine_name); setTod(data.time_of_day);
+        setName(data.medicine_name);
         setHour(data.hour); setMinute(data.minute); setRepeatDays(data.repeat_days ?? []);
+        // 기존에 저장된 시간대가 시각과 어긋나 있으면(구버전 데이터) 시각 기준으로 바로잡는다.
+        const saved = data.time_of_day;
+        setTod(isTimeOfDay(saved) && saved === timeOfDayForHour(data.hour) ? saved : timeOfDayForHour(data.hour));
       }
     })();
   }, [editId]);
+
+  // 시간대 칩 → 그 시간대에 맞는 시각으로. 이미 그 시간대 안이면 시각을 건드리지 않는다.
+  function pickTod(t: TimeOfDay) {
+    setTod(t);
+    setHour((h) => hourForTimeOfDay(t, h));
+  }
+  // 시각을 바꾸면 시간대가 따라온다. 8시를 고르면 "점심"이 남아 있을 수 없다.
+  function pickHour(h: number) {
+    setHour(h);
+    setTod(timeOfDayForHour(h));
+  }
 
   function toggleDay(d: number) {
     setRepeatDays((prev) =>
@@ -82,9 +98,10 @@ export function ButtonRegisterScreen() {
         try { if (await ensurePermission()) await scheduleReminders(data.id, data.medicine_name, hour, minute, days, data.time_of_day); } catch {}
         Alert.alert("복약 일정을 등록했습니다.");
       }
-      // 저장하면 홈이 아니라 약 목록으로 바로 보낸다 (C-04 확정 "저장하면 바로 약장 등록").
-      // 방금 등록한 약이 목록에 들어간 걸 그 자리에서 확인할 수 있어야 한다.
-      nav.navigate("MedicineList");
+      // 저장하면 '내 약장' 탭으로 (C-04 확정 "저장하면 바로 약장 등록").
+      // reset으로 스택을 비운다 — navigate만 하면 하단 탭이 사라지고 뒤로가기가
+      // 방금 저장한 등록 화면으로 되돌아간다 (QA 2026-08-09).
+      nav.reset({ index: 0, routes: [{ name: "Tabs", params: { screen: "Cabinet" } }] });
     } catch (e: any) {
       Alert.alert("저장 실패", e?.message ?? "다시 시도해 주세요.");
       savingRef.current = false; setSaving(false);
@@ -112,11 +129,13 @@ export function ButtonRegisterScreen() {
           </View>
         </View>
 
-        {/* 언제 드시나요? */}
+        {/* 언제 드시나요? — 시간대와 시각은 항상 서로 맞춘다.
+            따로 고르게 두면 「점심 · 08:00」 같은 일정이 만들어져, 아침 8시에
+            "점심 약 복용 시간입니다"가 울린다 (QA 2026-08-09). */}
         <View style={styles.section}>
           <Text style={styles.label}>언제 드시나요?</Text>
-          <View style={styles.row}>{TODS.map((t) => (
-            <TimeChip key={t} label={t} selected={tod === t} onPress={() => setTod(t)} />
+          <View style={styles.row}>{TIME_OF_DAYS.map((t) => (
+            <TimeChip key={t} label={t} selected={tod === t} onPress={() => pickTod(t)} />
           ))}</View>
         </View>
 
@@ -124,9 +143,10 @@ export function ButtonRegisterScreen() {
         <View style={styles.section}>
           <Text style={styles.label}>몇 시 몇 분</Text>
           <View style={styles.wheelRow}>
-            <WheelPicker values={HOUR_VALUES} value={hour} onChange={setHour} suffix="시" />
+            <WheelPicker values={HOUR_VALUES} value={hour} onChange={pickHour} suffix="시" />
             <WheelPicker values={MINUTE_VALUES} value={minute} onChange={setMinute} suffix="분" />
           </View>
+          <Text style={styles.hint}>{`${tod} 시간대로 ${hour}시 ${minute}분에 알려드려요.`}</Text>
         </View>
 
         {/* 반복 요일 — 선택 안 하면 매일 */}

@@ -9,6 +9,7 @@ import { TimeChip } from "../components/TimeChip";
 import { gptOcrPrescription } from "../lib/ocr";
 import { ParsedSchedule } from "../lib/parse";
 import { normalizeRepeatDays } from "../lib/schedule";
+import { TIME_OF_DAYS, timeOfDayForHour, hourForTimeOfDay } from "../lib/timeOfDay";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders } from "../lib/notifications";
@@ -101,8 +102,9 @@ export function OcrRegisterScreen() {
         if (granted) { try { await scheduleReminders(data.id, data.medicine_name, it.hour, it.minute, days, it.time_of_day); } catch {} }
       }
       await speak("복약 일정을 등록했습니다.");
-      // 사진 인식 → 확인 화면(아래 인식 결과 목록) → 등록 → 약 목록. (C-05 확정)
-      nav.navigate("MedicineList");
+      // 사진 인식 → 확인 화면 → 등록 → '내 약장' 탭 (C-05 확정).
+      // reset으로 스택을 비워 하단 탭이 유지되고 뒤로가기가 등록 화면으로 안 돌아가게.
+      nav.reset({ index: 0, routes: [{ name: "Tabs", params: { screen: "Cabinet" } }] });
     } catch {
       setItems(remaining); // 아직 저장 안 된 항목만 남겨 재시도 중복 방지
       Alert.alert("일부만 저장됐어요", "남은 약만 다시 등록해 주세요. 인터넷 연결을 확인해 주세요.");
@@ -147,14 +149,26 @@ export function OcrRegisterScreen() {
                   placeholderTextColor={colors.textSecondary}
                 />
 
+                {/* 시간대와 시각은 항상 함께 움직인다 — 「점심 · 08:00」 같은
+                    모순된 일정이 만들어지지 않게 (QA 2026-08-09). */}
                 <Text style={styles.cardLabel}>시간대</Text>
-                <View style={styles.row}>{TODS.map((t) => (
-                  <TimeChip key={t} label={t} selected={it.time_of_day === t} onPress={() => patch(i, { time_of_day: t })} />
+                <View style={styles.row}>{TIME_OF_DAYS.map((t) => (
+                  <TimeChip
+                    key={t}
+                    label={t}
+                    selected={it.time_of_day === t}
+                    onPress={() => patch(i, { time_of_day: t, hour: hourForTimeOfDay(t, it.hour) })}
+                  />
                 ))}</View>
 
                 <Text style={styles.cardLabel}>몇 시</Text>
                 <View style={styles.row}>{HOURS.map((h) => (
-                  <TimeChip key={h} label={`${h}시`} selected={it.hour === h} onPress={() => patch(i, { hour: h })} />
+                  <TimeChip
+                    key={h}
+                    label={`${h}시`}
+                    selected={it.hour === h}
+                    onPress={() => patch(i, { hour: h, time_of_day: timeOfDayForHour(h) })}
+                  />
                 ))}</View>
 
                 <Text style={styles.cardLabel}>몇 분</Text>
