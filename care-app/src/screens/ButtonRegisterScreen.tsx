@@ -94,7 +94,7 @@ export function ButtonRegisterScreen() {
         const { error: deactErr } = await supabase.from("schedules").update({ active: false }).eq("id", editId);
         if (deactErr) {
           // 새 일정은 등록됐지만 기존 행 비활성화 실패 → 둘 다 활성으로 남을 수 있음. 정직하게 안내.
-          Alert.alert("수정은 저장됐어요", "이전 일정 정리에 실패했어요. '복약 관리'에서 이전 항목을 삭제해 주세요.");
+          Alert.alert("수정은 저장됐어요", "이전 일정 정리에 실패했어요. '내 약장'에서 이전 항목을 삭제해 주세요.");
         } else {
           Alert.alert("복약 일정을 수정했습니다.");
         }

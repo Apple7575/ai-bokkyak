@@ -188,7 +188,7 @@ export function CallScreen() {
       if (error || !data) {
         handle.sendToolResult(e.callId, '{"ok":false,"reason":"저장 실패"}');
         if (sessionRef.current === session) {
-          setNotice({ text: "약 수정에 실패했어요. 통화 후 복약 관리에서 확인해 주세요.", kind: "error" });
+          setNotice({ text: "약 수정에 실패했어요. 통화 후 내 약장에서 확인해 주세요.", kind: "error" });
         }
         return;
       }
