@@ -20,6 +20,7 @@ create table schedules (
   minute int not null default 0 check (minute between 0 and 59),
   repeat_days int[] not null default '{}',
   active boolean not null default true,
+  dose_amount text,                       -- 1회 복용량 표시 문자열("1정"/"1포")
   created_at timestamptz not null default now()
 );
 

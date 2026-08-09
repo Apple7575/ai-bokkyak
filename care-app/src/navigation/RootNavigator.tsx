@@ -13,6 +13,8 @@ import { RegisterMethodScreen } from "../screens/RegisterMethodScreen";
 import { ButtonRegisterScreen } from "../screens/ButtonRegisterScreen";
 import { VoiceRegisterScreen } from "../screens/VoiceRegisterScreen";
 import { OcrRegisterScreen } from "../screens/OcrRegisterScreen";
+import { MedicineSearchScreen } from "../screens/MedicineSearchScreen";
+import { DoseTimeScreen } from "../screens/DoseTimeScreen";
 import { AlarmScreen } from "../screens/AlarmScreen";
 import { SnoozePickerScreen } from "../screens/SnoozePickerScreen";
 import { SnoozeCountdownScreen } from "../screens/SnoozeCountdownScreen";
@@ -121,6 +123,8 @@ export function RootNavigator() {
       <Stack.Screen name="ButtonRegister" component={ButtonRegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="VoiceRegister" component={VoiceRegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="OcrRegister" component={OcrRegisterScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="MedicineSearch" component={MedicineSearchScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="DoseTime" component={DoseTimeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Alarm" component={AlarmScreen} initialParams={alarmSid ? { scheduleId: alarmSid } : undefined} />
       <Stack.Screen
         name="SnoozePicker"

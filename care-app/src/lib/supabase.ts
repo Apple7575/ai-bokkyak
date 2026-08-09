@@ -28,6 +28,7 @@ export type Schedule = {
   id: string; patient_id: string; medicine_name: string;
   time_of_day: string; hour: number; minute: number;
   repeat_days: number[]; active: boolean; created_at: string;
+  dose_amount?: string | null;   // "1정" / "1포" 등 표시 문자열 (없을 수 있음)
 };
 export type IntakeRecord = {
   id: string; patient_id: string; schedule_id: string;
