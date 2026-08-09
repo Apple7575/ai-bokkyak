@@ -27,3 +27,9 @@ pnpm-debug.log*
 
 # transient codex review logs
 harness/reviews/
+
+# 액세스 토큰 등 비밀값 — 저장소 안에 두더라도 절대 커밋되지 않게
+supabase.txt
+sb_token.txt
+*token*.txt
+*.secret
