@@ -5,6 +5,7 @@ import { Volume2, Mic2, Type, Shield, LogOut, ChevronRight } from "lucide-react-
 import notifee from "@notifee/react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { clearAll } from "../lib/storage";
+import { signOutKakao } from "../lib/kakaoAuth";
 import { colors, fontSizes, radii, spacing } from "../theme/tokens";
 
 type IconType = React.ComponentType<{ size?: number; color?: string }>;
@@ -24,6 +25,9 @@ export function SettingsScreen() {
   const nav = useNavigation<any>();
   const onLogout = async () => {
     await notifee.cancelAllNotifications().catch(() => {});
+    // 카카오로 로그인한 경우 세션도 함께 끊는다. 안 그러면 로그아웃 후에도
+    // 같은 계정으로 자동 복귀해 "처음으로"가 되지 않는다.
+    await signOutKakao();
     await clearAll();
     nav.reset({ index: 0, routes: [{ name: "RoleSelect" }] });
   };

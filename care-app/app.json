@@ -3,6 +3,7 @@
     "name": "모두의 복약",
     "slug": "care-app",
     "owner": "shawn777",
+    "scheme": "modubokyak",
     "version": "1.1.0",
     "runtimeVersion": {
       "policy": "appVersion"
@@ -25,7 +26,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.modoobokyak.app",
-      "buildNumber": "17",
+      "buildNumber": "18",
       "bitcode": false,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "음성으로 복약 응답과 약 등록을 하기 위해 마이크를 사용합니다.",
@@ -102,7 +103,8 @@
           ]
         }
       ],
-      "@config-plugins/react-native-webrtc"
+      "@config-plugins/react-native-webrtc",
+      "expo-web-browser"
     ],
     "extra": {
       "supabaseUrl": "https://atzosfqrzsfrveympcfj.supabase.co",

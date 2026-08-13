@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, Alert, ScrollView, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Pill, User, Eye } from "lucide-react-native";
+import { Pill, User, Eye, MessageCircle } from "lucide-react-native";
 import { setRole, setPatient } from "../lib/storage";
 import { supabase } from "../lib/supabase";
 import { enterDemo } from "../lib/demo";
+import { signInWithKakao } from "../lib/kakaoAuth";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 
 function makeCode(): string {
@@ -23,6 +24,7 @@ export function RoleSelectScreen() {
   const [gender, setGender] = useState<"남" | "여" | null>(null);
   const [saving, setSaving] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
+  const [kakaoBusy, setKakaoBusy] = useState(false);
 
   async function startAsPatient() {
     if (saving) return;
@@ -46,6 +48,55 @@ export function RoleSelectScreen() {
       setSaving(false);
     }
   }
+  // 카카오로 시작하기 — 기존 방식을 대체하지 않고 나란히 둔다.
+  // 이미 이 계정으로 만든 약장이 있으면 그대로 되살리고(기기 교체 대응),
+  // 처음이면 카카오 닉네임을 이름 기본값으로 채워 가입시킨다.
+  async function startWithKakao() {
+    if (kakaoBusy || saving) return;
+    setKakaoBusy(true);
+    try {
+      const r = await signInWithKakao();
+      if (!r.ok) {
+        if (!r.canceled) Alert.alert("카카오 로그인", r.message);
+        setKakaoBusy(false);
+        return;
+      }
+
+      // 이 계정으로 만든 환자 정보가 이미 있나?
+      const { data: found, error: findErr } = await supabase
+        .from("patients").select("*").eq("auth_user_id", r.userId).maybeSingle();
+      if (findErr) throw findErr;
+
+      if (found) {
+        // 기기를 바꿔도 약과 기록이 따라온다.
+        await setPatient(found.id, found.patient_code);
+        await setRole("patient");
+        nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
+        return;
+      }
+
+      // 처음이면 새로 만든다. 이름은 화면에 적으신 값 > 카카오 닉네임 순으로 쓴다.
+      const finalName = name.trim() || r.profile.nickname || "";
+      if (!finalName) {
+        Alert.alert("이름을 입력해 주세요", "카카오에서 이름을 받지 못했어요. 직접 적어 주세요.");
+        setKakaoBusy(false);
+        return;
+      }
+      const { data, error } = await supabase.from("patients")
+        .insert({
+          name: finalName, patient_code: makeCode(),
+          gender: gender ?? null, auth_user_id: r.userId,
+        }).select().single();
+      if (error || !data) throw error ?? new Error("insert 실패");
+      await setPatient(data.id, data.patient_code);
+      await setRole("patient");
+      nav.reset({ index: 0, routes: [{ name: "Tabs" }, { name: "Call", params: { setup: true } }] });
+    } catch {
+      Alert.alert("가입에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
+      setKakaoBusy(false);
+    }
+  }
+
   async function startDemo() {
     if (demoLoading) return;
     setDemoLoading(true);
@@ -97,6 +148,23 @@ export function RoleSelectScreen() {
           생년월일과 드시는 약은 가입 후 AI 건강전화로 편하게 말씀해 주시면 돼요.
         </Text>
       </View>
+
+      {/* 카카오로 시작하기 — 기기를 바꿔도 약이 따라오는 유일한 경로라 위에 둔다 */}
+      <Pressable
+        onPress={startWithKakao}
+        disabled={kakaoBusy}
+        style={({ pressed }) => [styles.kakaoBtn, (pressed || kakaoBusy) && { opacity: 0.85 }]}
+      >
+        <View style={styles.kakaoIcon}>
+          <MessageCircle size={22} color="#3C1E1E" fill="#3C1E1E" />
+        </View>
+        <Text style={styles.kakaoText}>
+          {kakaoBusy ? "카카오 로그인 중…" : "카카오로 시작하기"}
+        </Text>
+      </Pressable>
+      <Text style={styles.kakaoHint}>
+        카카오로 시작하면 휴대폰을 바꾸셔도 등록한 약이 그대로 남아요.
+      </Text>
 
       {/* Sign up */}
       <Pressable
@@ -173,4 +241,17 @@ const styles = StyleSheet.create({
     marginTop: spacing.md, paddingVertical: spacing.sm,
   },
   demoText: { fontSize: fontSizes.body, color: colors.textSecondary, fontWeight: "600" },
+  kakaoBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
+    minHeight: minTouch, borderRadius: radii.button, backgroundColor: "#FEE500",
+    marginBottom: spacing.sm,
+    shadowColor: "#B9A100", shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2, shadowRadius: 10, elevation: 3,
+  },
+  kakaoIcon: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
+  kakaoText: { fontSize: fontSizes.emphasis, fontWeight: "800", color: "#3C1E1E" },
+  kakaoHint: {
+    fontSize: fontSizes.body, color: colors.textSecondary,
+    textAlign: "center", marginBottom: spacing.md, lineHeight: 24,
+  },
 });

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>개인정보처리방침 — 모두의 복약</title>
+<meta name="description" content="모두의 복약 개인정보처리방침">
+<link rel="icon" href="/logo.png">
+<style>
+  :root{
+    --navy:#102A5E; --blue:#2563EB; --bg:#EEF5FF; --card:#FFFFFF; --border:#D8E5F6;
+    --text:#1F2937; --muted:#64748B; --orange:#F5A623;
+    --font:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);color:var(--text);background:#F7FAFF;line-height:1.8;
+       -webkit-font-smoothing:antialiased}
+  .wrap{max-width:800px;margin:0 auto;padding:0 24px}
+  header{background:var(--card);border-bottom:1px solid var(--border)}
+  .nav{display:flex;align-items:center;gap:12px;height:68px}
+  .nav img{width:40px;height:40px}
+  .nav .name{font-weight:800;font-size:20px;color:var(--navy)}
+  .nav .sp{flex:1}
+  .nav a{color:var(--muted);text-decoration:none;font-weight:600;font-size:15px}
+  .nav a:hover{color:var(--blue)}
+  main{padding:56px 0 72px}
+  h1{font-size:clamp(26px,4vw,36px);font-weight:800;color:var(--navy)}
+  .updated{color:var(--muted);font-size:15px;margin-top:10px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;
+        padding:32px 28px;margin-top:32px}
+  h2{font-size:20px;font-weight:800;color:var(--navy);margin-top:36px}
+  h2:first-of-type{margin-top:0}
+  p{margin-top:12px;font-size:16.5px}
+  ul{margin:12px 0 0 22px;font-size:16.5px}
+  li{margin-top:6px}
+  .muted{color:var(--muted)}
+  .warn{background:#FFF8EC;border:1px solid var(--orange);border-radius:14px;
+        padding:22px;margin-top:32px;color:#8A5A00;font-size:16px}
+  .warn strong{font-weight:800}
+  table{width:100%;border-collapse:collapse;margin-top:14px;font-size:16px}
+  th,td{border:1px solid var(--border);padding:10px 12px;text-align:left;vertical-align:top}
+  th{background:var(--bg);color:var(--navy);font-weight:700;white-space:nowrap}
+  footer{background:var(--navy);color:#93A9CE;padding:40px 0;font-size:14px}
+  footer a{color:#C7D6F2;text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <img src="/logo.png" alt="모두의 복약 로고">
+    <span class="name">모두의 복약</span>
+    <span class="sp"></span>
+    <a href="/">홈으로</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>개인정보처리방침</h1>
+  <p class="updated">최종 수정 2026년 8월 9일 · 알파 테스트 버전</p>
+
+  <div class="warn">
+    <strong>알파 테스트 안내</strong><br>
+    모두의 복약은 현재 시험(알파 테스트) 단계의 서비스입니다.
+    의료기기가 아니며 진단·처방을 대신하지 않습니다.
+    약에 대한 상담은 약사나 의사와 상의해 주세요.
+  </div>
+
+  <div class="card">
+    <h2>1. 수집하는 정보</h2>
+    <table>
+      <tr><th>항목</th><th>수집 방법</th></tr>
+      <tr><td>이름, 성별</td><td>가입 시 직접 입력</td></tr>
+      <tr><td>생년월일</td><td>가입 직후 AI 음성 통화에서 답변</td></tr>
+      <tr><td>복약 일정<br><span class="muted">약 이름, 시간대, 복용 시각, 반복 요일, 1회 복용량</span></td><td>직접 입력 · 음성 · 약봉투 사진</td></tr>
+      <tr><td>복약 기록<br><span class="muted">복용 완료 · 미루기 · 건너뜀과 그 시각</span></td><td>알람 응답 시 자동 기록</td></tr>
+      <tr><td>AI 통화 중 말씀하신 복약 관련 내용</td><td>통화 중 음성</td></tr>
+      <tr><td>약봉투 사진</td><td>사진으로 등록할 때 촬영·선택</td></tr>
+    </table>
+    <p class="muted">주민등록번호, 계좌번호, 전화번호는 수집하지 않습니다.</p>
+
+    <h2>2. 이용 목적</h2>
+    <p>
+      수집한 정보는 복약 알람을 정확한 시각에 보내 드리고, 복약 현황과 이행률을 보여 드리는 데에만
+      사용합니다. 광고나 마케팅에는 사용하지 않습니다.
+    </p>
+
+    <h2>3. 음성과 사진의 처리</h2>
+    <p>
+      AI 통화의 음성과 약봉투 사진은 내용을 알아듣기 위해 OpenAI의 음성·이미지 인식 서비스로
+      전송됩니다. 전송된 음성과 사진은 이 서비스의 서버에 따로 저장하지 않으며,
+      인식 결과로 만들어진 복약 일정·기록만 저장됩니다.
+    </p>
+
+    <h2>4. 보관과 파기</h2>
+    <p>
+      정보는 서비스를 이용하시는 동안 보관합니다. 앱의 <strong>더보기 → 개인정보 설정 →
+      모든 데이터 삭제</strong>를 누르시면 등록하신 정보와 기록이 즉시 삭제되며, 삭제된 정보는
+      복구할 수 없습니다.
+    </p>
+
+    <h2>5. 제3자 제공</h2>
+    <p>
+      위 3항의 음성·이미지 인식을 위한 처리를 제외하고, 어떤 정보도 제3자에게 제공하거나
+      판매하지 않습니다.
+    </p>
+    <p class="muted">
+      보호자·돌봄기관에 복약 보고서를 제공하는 기능은 현재 서비스에 <strong>포함되어 있지
+      않습니다.</strong> 추후 도입할 경우 별도 동의를 받고 이 방침을 먼저 갱신합니다.
+    </p>
+
+    <h2>6. 앱이 사용하는 권한</h2>
+    <ul>
+      <li><strong>알림 · 알람 및 리마인더</strong> — 복약 알람을 정확한 시각에 보내기 위해</li>
+      <li><strong>마이크</strong> — AI 통화와 음성 등록을 위해</li>
+      <li><strong>카메라 · 사진</strong> — 약봉투를 촬영해 복약 정보를 읽기 위해</li>
+    </ul>
+    <p class="muted">각 권한은 위에 적은 용도 외에는 사용하지 않습니다.</p>
+
+    <h2>7. 이용자의 권리</h2>
+    <p>
+      본인의 정보에 대해 열람·정정·삭제를 요청하실 수 있습니다. 앱 안에서 직접 수정하거나
+      전체 삭제할 수 있고, 아래 연락처로 요청하셔도 됩니다.
+    </p>
+
+    <h2>8. 문의</h2>
+    <p>
+      개인정보 관련 문의는 <a href="mailto:superstarrypassion@gmail.com">superstarrypassion@gmail.com</a>
+      으로 보내주세요.
+    </p>
+
+    <h2>9. 방침 변경</h2>
+    <p>
+      이 방침이 바뀌면 앱과 이 페이지에 변경 내용을 알립니다. 알파 테스트 기간에는 기능 변경에
+      따라 수집 항목이 조정될 수 있습니다.
+    </p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    © 2026 모두의 복약 · <a href="/">홈으로</a> · <a href="mailto:superstarrypassion@gmail.com">문의</a>
+  </div>
+</footer>
+
+</body>
+</html>

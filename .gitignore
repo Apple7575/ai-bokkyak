@@ -33,3 +33,5 @@ supabase.txt
 sb_token.txt
 *token*.txt
 *.secret
+kakao_secret.txt
+key.txt
