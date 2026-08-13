@@ -8,7 +8,7 @@ create table patients (
   birth_date date,
   region text,
   phone text,
-  auth_user_id uuid,                      -- 카카오 로그인 계정 연결 (null=무인증 사용자)
+  kakao_id text,                          -- 카카오 회원번호 (null=카카오 없이 가입)
   created_at timestamptz not null default now()
 );
 

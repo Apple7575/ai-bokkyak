@@ -64,7 +64,7 @@ export function RoleSelectScreen() {
 
       // 이 계정으로 만든 환자 정보가 이미 있나?
       const { data: found, error: findErr } = await supabase
-        .from("patients").select("*").eq("auth_user_id", r.userId).maybeSingle();
+        .from("patients").select("*").eq("kakao_id", r.kakaoId).maybeSingle();
       if (findErr) throw findErr;
 
       if (found) {
@@ -76,7 +76,7 @@ export function RoleSelectScreen() {
       }
 
       // 처음이면 새로 만든다. 이름은 화면에 적으신 값 > 카카오 닉네임 순으로 쓴다.
-      const finalName = name.trim() || r.profile.nickname || "";
+      const finalName = name.trim() || r.nickname || "";
       if (!finalName) {
         Alert.alert("이름을 입력해 주세요", "카카오에서 이름을 받지 못했어요. 직접 적어 주세요.");
         setKakaoBusy(false);
@@ -85,7 +85,7 @@ export function RoleSelectScreen() {
       const { data, error } = await supabase.from("patients")
         .insert({
           name: finalName, patient_code: makeCode(),
-          gender: gender ?? null, auth_user_id: r.userId,
+          gender: gender ?? null, kakao_id: r.kakaoId,
         }).select().single();
       if (error || !data) throw error ?? new Error("insert 실패");
       await setPatient(data.id, data.patient_code);

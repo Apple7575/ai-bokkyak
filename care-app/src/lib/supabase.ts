@@ -18,25 +18,15 @@ export const isSupabaseConfigured =
 export const supabase = createClient(
   isSupabaseConfigured ? url : "https://placeholder.supabase.co",
   isSupabaseConfigured ? anonKey : "placeholder-anon-key",
-  {
-    auth: {
-      // 카카오 로그인 세션을 기기에 남긴다 — 앱을 껐다 켜도 로그인이 유지돼야
-      // 기기를 바꿔도 약이 따라온다는 약속을 지킬 수 있다.
-      storage: AsyncStorage,
-      persistSession: true,
-      autoRefreshToken: true,
-      // RN에는 주소창이 없다. 딥링크로 돌아온 code는 우리가 직접 교환한다(kakaoAuth.ts).
-      detectSessionInUrl: false,
-      // 모바일 앱에는 PKCE가 표준. 콜백으로 code만 오고 토큰은 직접 교환한다.
-      flowType: "pkce",
-    },
-  }
+  // 카카오 로그인은 Supabase Auth를 쓰지 않는다(kakaoAuth.ts 주석 참고).
+  // 인증 세션을 만들지 않으므로 저장할 것도 없다.
+  { auth: { persistSession: false } }
 );
 
 export type Patient = {
   id: string; name: string; patient_code: string; created_at: string;
   gender?: string | null; birth_date?: string | null; region?: string | null; phone?: string | null;
-  auth_user_id?: string | null;   // 카카오 로그인 계정과의 연결 (없으면 무인증 사용자)
+  kakao_id?: string | null;       // 카카오 회원번호 (없으면 카카오 없이 가입한 사용자)
 };
 export type Schedule = {
   id: string; patient_id: string; medicine_name: string;

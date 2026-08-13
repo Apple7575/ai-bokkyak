@@ -26,7 +26,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.modoobokyak.app",
-      "buildNumber": "18",
+      "buildNumber": "19",
       "bitcode": false,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "음성으로 복약 응답과 약 등록을 하기 위해 마이크를 사용합니다.",
@@ -46,7 +46,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "versionCode": 5,
+      "versionCode": 6,
       "permissions": [
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.BLUETOOTH",
@@ -112,7 +112,8 @@
       "openaiApiKey": "",
       "eas": {
         "projectId": "248ad789-5d52-4843-a401-20c7a22afc9e"
-      }
+      },
+      "kakaoRestKey": "c607f25720afc2405b4c885b5800f10f"
     }
   }
 }

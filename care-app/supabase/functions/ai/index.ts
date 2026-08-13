@@ -14,6 +14,9 @@
 // 시크릿: supabase secrets set OPENAI_API_KEY=<키> --project-ref <ref>
 
 const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
+// 카카오 로그인 토큰 교환용 — 앱에 두면 APK에서 꺼낼 수 있으므로 서버 시크릿으로만 둔다.
+const KAKAO_REST_KEY = Deno.env.get("KAKAO_REST_KEY") ?? "";
+const KAKAO_CLIENT_SECRET = Deno.env.get("KAKAO_CLIENT_SECRET") ?? "";
 
 const CORS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -243,9 +246,11 @@ function buildCallInstructions(patientName: string, meds: CallMed[]): string {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
-  if (!OPENAI_KEY) return json({ error: "server missing OPENAI_API_KEY" }, 500);
-
   const op = new URL(req.url).searchParams.get("op");
+  // 카카오 로그인은 OpenAI를 쓰지 않는다 — OpenAI 키가 없어도 막지 않는다.
+  if (!OPENAI_KEY && op !== "kakao-login") {
+    return json({ error: "server missing OPENAI_API_KEY" }, 500);
+  }
   try {
     if (op === "tts") {
       const { text, speed, voice, model } = await req.json().catch(() => ({ text: "" }));
@@ -283,6 +288,67 @@ Deno.serve(async (req: Request) => {
       const j = await r.json();
       if (!r.ok) return json({ error: "gpt failed", detail: j }, 502);
       return json({ content: j.choices?.[0]?.message?.content ?? "{}" });
+    }
+
+    if (op === "kakao-login") {
+      // 카카오 인가 코드 → (서버에서) 토큰 교환 → 회원번호·닉네임만 돌려준다.
+      //
+      // 왜 서버에서 하나: 토큰 교환에는 클라이언트 시크릿이 필요하다. 앱에 넣으면
+      // APK를 뜯어 꺼낼 수 있으므로 OpenAI 키와 같은 원칙으로 서버 뒤에 둔다.
+      //
+      // 왜 Supabase Auth를 쓰지 않나: Supabase의 카카오 커넥터는 account_email을
+      // 하드코딩해 요청하는데, 그 항목은 비즈 앱(사업자등록)이 없으면 켤 수 없어
+      // 카카오가 KOE205로 거부한다. 우리는 이메일을 쓰지 않으므로 직접 연동한다.
+      if (!KAKAO_REST_KEY || !KAKAO_CLIENT_SECRET) {
+        return json({ error: "server missing kakao keys" }, 500);
+      }
+      const { code, redirect_uri } = await req.json().catch(() => ({}));
+      if (typeof code !== "string" || !code) return json({ error: "no code" }, 400);
+      if (typeof redirect_uri !== "string" || !redirect_uri) {
+        return json({ error: "no redirect_uri" }, 400);
+      }
+
+      const form = new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: KAKAO_REST_KEY,
+        client_secret: KAKAO_CLIENT_SECRET,
+        redirect_uri,
+        code,
+      });
+      const tokenRes = await fetch("https://kauth.kakao.com/oauth/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=utf-8" },
+        body: form.toString(),
+      });
+      const tokenJson = await tokenRes.json().catch(() => ({}));
+      if (!tokenRes.ok || typeof tokenJson.access_token !== "string") {
+        // 카카오 오류 코드를 그대로 노출하지 않고 진단용으로만 담는다.
+        return json({ error: "kakao token failed", detail: tokenJson }, 502);
+      }
+
+      // 닉네임만 읽는다. 이메일·프로필 사진은 요청하지도, 저장하지도 않는다.
+      const meRes = await fetch("https://kapi.kakao.com/v2/user/me", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${tokenJson.access_token}`,
+          "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
+        },
+        body: new URLSearchParams({
+          property_keys: JSON.stringify(["properties.nickname"]),
+        }).toString(),
+      });
+      const me = await meRes.json().catch(() => ({}));
+      if (!meRes.ok || me.id === undefined || me.id === null) {
+        return json({ error: "kakao user failed", detail: me }, 502);
+      }
+      const nickname =
+        (me.properties && typeof me.properties.nickname === "string" ? me.properties.nickname : "") ||
+        (me.kakao_account && me.kakao_account.profile &&
+          typeof me.kakao_account.profile.nickname === "string"
+          ? me.kakao_account.profile.nickname
+          : "");
+      // 회원번호는 숫자로 오므로 문자열로 고정한다(자리수가 커서 정밀도 문제를 피한다).
+      return json({ kakaoId: String(me.id), nickname });
     }
 
     if (op === "druginfo") {
@@ -387,7 +453,7 @@ Deno.serve(async (req: Request) => {
     }
 
     return json(
-      { error: "unknown op (use ?op=tts, ?op=parse, ?op=ocr, ?op=druginfo, or ?op=realtime-token)" },
+      { error: "unknown op (use ?op=tts, ?op=parse, ?op=ocr, ?op=druginfo, ?op=kakao-login, or ?op=realtime-token)" },
       400
     );
   } catch (e) {
