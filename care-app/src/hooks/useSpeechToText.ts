@@ -10,7 +10,12 @@ export type SpeechController = {
   reset: () => void;
 };
 
-export function useSpeechToText(onFinal?: (text: string) => void): SpeechController {
+// contextualStrings: 인식 대상 어휘를 미리 알려 정확도를 올린다(문맥 바이어싱).
+// 이 앱의 음성 가이드는 숫자·시간대·긍정/부정 중심의 제한 어휘만 쓴다.
+export function useSpeechToText(
+  onFinal?: (text: string) => void,
+  contextualStrings?: readonly string[]
+): SpeechController {
   const [transcript, setTranscript] = useState("");
   const [listening, setListening] = useState(false);
   const onFinalRef = useRef(onFinal);
@@ -56,7 +61,12 @@ export function useSpeechToText(onFinal?: (text: string) => void): SpeechControl
     setTranscript("");
     listeningRef.current = true;
     setListening(true);
-    ExpoSpeechRecognitionModule.start({ lang: "ko-KR", interimResults: true, continuous: false });
+    ExpoSpeechRecognitionModule.start({
+      lang: "ko-KR", interimResults: true, continuous: false,
+      ...(contextualStrings && contextualStrings.length > 0
+        ? { contextualStrings: [...contextualStrings] }
+        : {}),
+    });
   }, []);
 
   const stop = useCallback(() => {

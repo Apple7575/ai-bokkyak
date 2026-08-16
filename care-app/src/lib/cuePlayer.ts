@@ -32,6 +32,14 @@ let current: Audio.Sound | null = null;
 // (사용자가 답을 먼저 해버렸는데 지나간 안내가 계속 나오면 안 된다).
 let token = 0;
 
+// 지금 재생 중인 멘트. 화면이 에코 판정에 쓴다 —
+// 마이크가 들은 말이 "지금 스피커로 나가는 그 말"인지 대조해야 하기 때문이다.
+let playingId: CueId | null = null;
+
+export function currentCueId(): CueId | null {
+  return playingId;
+}
+
 async function unload(): Promise<void> {
   const s = current;
   current = null;
@@ -41,6 +49,7 @@ async function unload(): Promise<void> {
 
 export async function stopCues(): Promise<void> {
   token++;
+  playingId = null;
   await unload();
 }
 
@@ -48,6 +57,7 @@ export async function stopCues(): Promise<void> {
 // 소리가 안 나더라도 화면 버튼으로 진행할 수 있어야 한다(문서 §2 음성·터치 병행).
 async function playOne(id: CueId, mine: number): Promise<void> {
   if (mine !== token) return;
+  playingId = id;
   try {
     await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, shouldDuckAndroid: true });
     const { sound } = await Audio.Sound.createAsync(FILES[id]);
@@ -66,6 +76,8 @@ async function playOne(id: CueId, mine: number): Promise<void> {
     try { await sound.unloadAsync(); } catch {}
   } catch {
     // 재생 실패는 흐름을 막지 않는다.
+  } finally {
+    if (playingId === id && mine === token) playingId = null;
   }
 }
 
@@ -81,4 +93,5 @@ export async function playCues(ids: CueId[]): Promise<void> {
       await new Promise((r) => setTimeout(r, GAP_MS));
     }
   }
+  if (mine === token) playingId = null;
 }

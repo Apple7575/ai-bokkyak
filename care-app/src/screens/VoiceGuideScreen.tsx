@@ -2,19 +2,21 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Mic, Check, ChevronRight, Clock } from "lucide-react-native";
+import { Mic, Check, ChevronRight, Clock, Hand } from "lucide-react-native";
+import InCallManager from "react-native-incall-manager";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { useSpeechToText } from "../hooks/useSpeechToText";
-import { playCues, stopCues } from "../lib/cuePlayer";
+import { playCues, stopCues, currentCueId } from "../lib/cuePlayer";
 import { CUES, CueId, DISCLAIMER } from "../lib/voiceScript";
 import { DoseTime, Slot, SLOTS, parseUtterance, afterMealTimes, CONTEXT_WORDS } from "../lib/voiceParse";
 import {
   GuideState, INITIAL_STATE, cuesForStep, onUtterance, onNoReply,
   onPickCount, onPickTimes, onConfirm, onSkip,
 } from "../lib/voiceGuideFlow";
+import { isLikelyEcho, isLongCue } from "../lib/voiceEcho";
 import { logGuideEvent } from "../lib/analytics";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 
@@ -40,28 +42,40 @@ export function VoiceGuideScreen() {
   const [state, setState] = useState<GuideState>(INITIAL_STATE);
   const [caption, setCaption] = useState<string>(CUES.V01.text);
   const [saving, setSaving] = useState(false);
+  const [tapHint, setTapHint] = useState(false);
 
   const stateRef = useRef(state);
   stateRef.current = state;
   const noReplyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 로그: 버튼으로 넘어간 단계 수 / 무응답·실패 횟수 (문서 §7)
-  const stats = useRef({ noReply: 0, fail: 0, buttonFallback: 0 });
+  const stats = useRef({ noReply: 0, fail: 0, buttonFallback: 0, echoFiltered: 0, tapInterrupt: 0 });
 
   function clearNoReply(): void {
     if (noReplyTimer.current) { clearTimeout(noReplyTimer.current); noReplyTimer.current = null; }
   }
 
-  // 멘트를 재생하고, 끝난 뒤에 마이크를 연다.
-  // 재생 중에 들으면 자기 목소리를 사용자 발화로 인식한다.
+  // 멘트를 재생하면서 동시에 마이크를 연다 (barge-in).
+  //
+  // 스피커 소리가 마이크로 되돌아오는 문제는 두 겹으로 막는다:
+  //   ① InCallManager 통신 모드 — 기기 AEC가 걸리길 기대한다(기기마다 다름)
+  //   ② 대본 대조 필터 — 인식 결과가 지금 나가는 멘트와 겹치면 버린다
+  // 그래도 새는 경우를 대비해 화면 탭으로 즉시 끊을 수 있게 해 둔다(③).
   const runCues = useCallback(async (ids: CueId[], listenAfter: boolean) => {
     clearNoReply();
+    const s0 = stateRef.current;
+    const canListen = listenAfter && !s0.voiceOff && s0.step !== "done" && s0.step !== "skipped";
     if (ids.length > 0) {
       setCaption(CUES[ids[ids.length - 1]].text);
+      setTapHint(ids.some((id) => isLongCue(CUES[id].text)));
+      // 재생을 기다리지 않고 마이크를 먼저 연다 — 그래야 말을 끊을 수 있다.
+      if (canListen) { try { await speech.start(); } catch {} }
       await playCues(ids);
+      setTapHint(false);
     }
     const s = stateRef.current;
-    if (!listenAfter || s.voiceOff || s.step === "done" || s.step === "skipped") return;
+    if (!canListen || s.voiceOff || s.step === "done" || s.step === "skipped") return;
     try {
+      // 재생 중 인식이 끝나 마이크가 닫혔을 수 있으니 다시 연다.
       await speech.start();
       // 5초 무응답 → V11 (단계마다 1회)
       noReplyTimer.current = setTimeout(() => {
@@ -78,6 +92,17 @@ export function VoiceGuideScreen() {
 
   // 발화가 끝나면 상태머신에 넘긴다.
   const onSpeechFinal = useCallback((text: string) => {
+    // ② 대본 대조 필터: 지금 나가는 멘트가 되돌아온 것이면 버리고 계속 듣는다.
+    //    짧은 답("네", "세 번")은 필터를 타지 않는다 — voiceEcho.ts 참고.
+    const playing = currentCueId();
+    if (playing && isLikelyEcho(text, CUES[playing].text)) {
+      stats.current.echoFiltered++;
+      speech.start().catch(() => {});
+      return;
+    }
+    // 사용자가 말했다 → 나가던 안내를 즉시 멈춘다 (barge-in).
+    void stopCues();
+    setTapHint(false);
     clearNoReply();
     const before = stateRef.current;
     const t = onUtterance(before, parseUtterance(text));
@@ -87,14 +112,35 @@ export function VoiceGuideScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runCues]);
 
-  const speech = useSpeechToText(onSpeechFinal);
+    // 제한 어휘를 인식기에 미리 알려 준다 (문서 §7 문맥 바이어싱)
+  const speech = useSpeechToText(onSpeechFinal, CONTEXT_WORDS);
 
-  // 첫 진입: V01 재생 후 듣기 시작
+  // 첫 진입: 통신 모드를 켜고(기기 AEC 기대) V01 재생 + 듣기 시작
   useEffect(() => {
+    // ① 통신 모드 + 스피커. 어르신이 폰을 귀에 대지 않아도 들리게 하면서
+    //    기기 에코 제거가 걸리길 기대한다. 되는지는 기기마다 다르다.
+    try {
+      InCallManager.start({ media: "audio" });
+      InCallManager.setSpeakerphoneOn(true);
+    } catch {}
     void runCues(cuesForStep("count"), true);
-    return () => { clearNoReply(); void stopCues(); };
+    return () => {
+      clearNoReply(); void stopCues();
+      try { InCallManager.stop(); } catch {}
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ③ 화면 탭으로 즉시 끊기. 에코 필터가 새거나 AEC가 안 걸리는 기기를 위한 확실한 길.
+  function tapToSpeak() {
+    if (!currentCueId()) return;
+    void stopCues();
+    setTapHint(false);
+    stats.current.tapInterrupt++;
+    const s = stateRef.current;
+    if (s.voiceOff || s.step === "done" || s.step === "skipped") return;
+    speech.start().catch(() => {});
+  }
 
   // 버튼 입력 — 음성과 같은 상태머신을 지난다.
   function pickCount(n: number) {
@@ -179,7 +225,7 @@ export function VoiceGuideScreen() {
   const listening = speech.listening;
 
   return (
-    <View style={styles.screen}>
+    <Pressable style={styles.screen} onPress={tapToSpeak} accessibilityRole="button">
       <ScrollView contentContainerStyle={[styles.c, { paddingTop: insets.top + spacing.md, paddingBottom: spacing.xl + insets.bottom }]}>
         {/* 우상단 건너뛰기 — 단계 1~3 어디서든 (문서 §4) */}
         {state.step !== "done" && state.step !== "skipped" ? (
@@ -202,6 +248,12 @@ export function VoiceGuideScreen() {
         </View>
 
         <Text style={styles.caption}>{caption}</Text>
+        {tapHint ? (
+          <View style={styles.tapHint}>
+            <Hand size={20} color={colors.primaryBlue} />
+            <Text style={styles.tapHintText}>말씀하시려면 화면을 눌러 주세요</Text>
+          </View>
+        ) : null}
         {speech.transcript ? <Text style={styles.heard}>{speech.transcript}</Text> : null}
 
         {/* 단계 1 — 횟수 버튼 2x2 (문서 §4) */}
@@ -301,7 +353,7 @@ export function VoiceGuideScreen() {
           </>
         ) : null}
       </ScrollView>
-    </View>
+    </Pressable>
   );
 }
 
@@ -327,6 +379,12 @@ const styles = StyleSheet.create({
     borderRadius: radii.card, padding: spacing.md,
   },
   heard: { fontSize: 19, color: colors.primaryBlue, textAlign: "center", fontWeight: "700" },
+  tapHint: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
+    backgroundColor: colors.lightBlueBg, borderRadius: radii.pill,
+    paddingVertical: 10, paddingHorizontal: spacing.md,
+  },
+  tapHintText: { fontSize: 17, fontWeight: "700", color: colors.primaryBlue },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   gridBtn: {
     width: "48%", minHeight: 88, alignItems: "center", justifyContent: "center",

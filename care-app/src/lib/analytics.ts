@@ -34,12 +34,20 @@ export async function logAlarmEvent(args: {
 //   · noReply         : 무응답 5초 발생 횟수
 //   · fail            : 인식 실패 횟수
 //   · buttonFallback  : 음성 대신 버튼으로 넘어간 횟수
+//   · echoFiltered    : 스피커 소리를 발화로 잘못 들어 걸러낸 횟수
+//                       (많으면 기기 AEC가 안 걸린다는 뜻 — 대책을 바꿔야 한다)
+//   · tapInterrupt    : 화면을 눌러 안내를 끊은 횟수
+//                       (많으면 음성 barge-in이 실패하고 있다는 뜻)
 // 베스트에포트 — 실패해도 온보딩 흐름을 막지 않는다.
 export async function logGuideEvent(args: {
   step: string;
   noReply: number;
   fail: number;
   buttonFallback: number;
+  /** 스피커 소리를 사용자 발화로 잘못 들어 걸러낸 횟수 */
+  echoFiltered: number;
+  /** 화면을 눌러 안내를 끊은 횟수 */
+  tapInterrupt: number;
 }): Promise<void> {
   try {
     await supabase.from("voice_guide_events").insert({
@@ -47,6 +55,8 @@ export async function logGuideEvent(args: {
       no_reply_count: args.noReply,
       fail_count: args.fail,
       button_fallback_count: args.buttonFallback,
+      echo_filtered_count: args.echoFiltered,
+      tap_interrupt_count: args.tapInterrupt,
     });
   } catch {
     // 무시 — 지표 수집 실패가 앱 동작에 영향 주지 않게.
