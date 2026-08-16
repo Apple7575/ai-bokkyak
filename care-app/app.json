@@ -104,7 +104,8 @@
         }
       ],
       "@config-plugins/react-native-webrtc",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-font"
     ],
     "extra": {
       "supabaseUrl": "https://atzosfqrzsfrveympcfj.supabase.co",

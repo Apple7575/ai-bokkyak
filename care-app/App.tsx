@@ -5,6 +5,8 @@ import { AppState } from "react-native";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { useFonts } from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
 import notifee, { EventType } from "@notifee/react-native";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { RootStackParamList } from "./src/navigation/types";
@@ -14,6 +16,9 @@ import { ensureIOSCategory, stopAlarm, scheduleSnooze, rescheduleNext } from "./
 import { doseSlot } from "./src/lib/schedule";
 import { supabase } from "./src/lib/supabase";
 import { resyncAllAlarms } from "./src/lib/alarmSync";
+import { applyPretendard } from "./src/theme/applyPretendard";
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export const navRef = createNavigationContainerRef<RootStackParamList>();
 
@@ -26,6 +31,21 @@ function navigateToAlarm(scheduleId: string | undefined, attempt = 0) {
 }
 
 export default function App() {
+  const [fontsReady] = useFonts({
+    "Pretendard-Regular": require("./assets/fonts/Pretendard-Regular.otf"),
+    "Pretendard-SemiBold": require("./assets/fonts/Pretendard-SemiBold.otf"),
+    "Pretendard-Bold": require("./assets/fonts/Pretendard-Bold.otf"),
+    "Pretendard-ExtraBold": require("./assets/fonts/Pretendard-ExtraBold.otf"),
+  });
+
+  // 폰트가 준비된 뒤에야 네이티브 스플래시를 내린다. 시스템 폰트로 한 번 그렸다가
+  // 바뀌면 글자 폭이 달라져 화면이 눈에 띄게 튄다.
+  useEffect(() => {
+    if (!fontsReady) return;
+    applyPretendard();
+    SplashScreen.hideAsync().catch(() => {});
+  }, [fontsReady]);
+
   useEffect(() => {
     ensureIOSCategory().catch(() => {});
     const consumePending = async () => {
@@ -94,6 +114,10 @@ export default function App() {
     });
     return () => { appSub.remove(); unsub(); };
   }, []);
+
+  // 폰트 로딩이 실패해도 앱이 영영 안 뜨지는 않는다 — useFonts는 실패해도
+  // 결국 true를 돌려주고, 그때는 시스템 폰트로 그려진다.
+  if (!fontsReady) return null;
 
   return (
     // 내 약장의 스와이프(Swipeable)가 동작하려면 제스처 핸들러 루트가 필요하다.

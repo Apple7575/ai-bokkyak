@@ -35,3 +35,7 @@ sb_token.txt
 *.secret
 kakao_secret.txt
 key.txt
+
+# 빌드 산출물 — GitHub 100MB 제한에 걸린다
+*.apk
+*.aab
