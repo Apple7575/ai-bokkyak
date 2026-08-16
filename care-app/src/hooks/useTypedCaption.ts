@@ -9,8 +9,6 @@ import { planTyping, splitSentences } from "../lib/voiceTyping";
 //
 // 배분은 mount 시점이 아니라 begin() 호출마다 다시 계산한다 — 멘트마다 길이가 다르다.
 
-type Options = { dropExample?: boolean };
-
 export function useTypedCaption() {
   const [display, setDisplay] = useState("");
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -22,10 +20,10 @@ export function useTypedCaption() {
   }, []);
 
   // 타이핑을 시작한다. durationMs가 null이면(길이를 못 읽는 기기) 시안 기본 속도.
-  const begin = useCallback((text: string, durationMs: number | null, opts?: Options) => {
+  const begin = useCallback((text: string, durationMs: number | null) => {
     clear();
     const mine = ++runId.current;
-    const sentences = splitSentences(text, { dropExample: opts?.dropExample });
+    const sentences = splitSentences(text);
     if (sentences.length === 0) { setDisplay(""); return; }
 
     const plan = planTyping(sentences, durationMs);
@@ -45,11 +43,11 @@ export function useTypedCaption() {
     });
   }, [clear]);
 
-  // 즉시 전문을 보여준다. barge-in으로 멘트를 끊었을 때 반쯤 친 자막이 남지 않게.
-  const finish = useCallback((text: string, opts?: Options) => {
+  // 즉시 전문을 보여준다. 화면을 눌러 안내를 끊었을 때 반쯤 친 자막이 남지 않게.
+  const finish = useCallback((text: string) => {
     clear();
     runId.current++;
-    setDisplay(splitSentences(text, { dropExample: opts?.dropExample }).join("\n"));
+    setDisplay(splitSentences(text).join("\n"));
   }, [clear]);
 
   useEffect(() => clear, [clear]);

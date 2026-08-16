@@ -2,36 +2,33 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Mic, Check, ChevronRight, ChevronLeft, Clock, Hand } from "lucide-react-native";
-import InCallManager from "react-native-incall-manager";
+import { Volume2, Check, ChevronRight, ChevronLeft, Clock } from "lucide-react-native";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
-import { useSpeechToText } from "../hooks/useSpeechToText";
 import { playCues, stopCues, currentCueId } from "../lib/cuePlayer";
 import { useTypedCaption } from "../hooks/useTypedCaption";
 import { CUES, CueId, DISCLAIMER } from "../lib/voiceScript";
-import { DoseTime, Slot, SLOTS, parseUtterance, afterMealTimes, CONTEXT_WORDS } from "../lib/voiceParse";
+import { DoseTime, Slot, SLOTS, afterMealTimes } from "../lib/voiceParse";
 import { slotLabel } from "../lib/timeOfDay";
 import {
-  GuideState, INITIAL_STATE, cuesForStep, onUtterance, onNoReply,
-  onPickCount, onPickTimes, onConfirm, onSkip,
+  GuideState, INITIAL_STATE, cuesForStep,
+  onPickCount, onPickTimes, onAcceptDefaults, onConfirm, onSkip,
   stepIndex, GUIDE_TOTAL_STEPS,
 } from "../lib/voiceGuideFlow";
-import { isLikelyEcho, isLongCue } from "../lib/voiceEcho";
 import { logGuideEvent } from "../lib/analytics";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 
-// 음성으로 복용 알람을 설정하는 온보딩 (문서 §4).
+// 복용 알람 설정 온보딩 (문서 §4).
+//
+// 안내는 음성으로, 대답은 화면 터치로 받는다. 음성 입력(STT)은 뺐다 —
+// 인식 실패·에코·마이크 권한이라는 실패 지점이 셋이나 되는데, 온보딩은
+// 여기서 막히면 앱 자체를 못 쓰는 자리라 확실한 길 하나만 남겼다.
+// 그래서 멘트도 "말씀해 주세요"가 아니라 "아래에서 골라 주세요"라고 한다.
 //
 // 온보딩에서는 약 이름을 받지 않는다 — 횟수와 시간만 정한다(문서 §1).
 // 약 이름은 완료 후 "1분 복용 위험 분석"에서 간편 등록으로 받는다.
-//
-// 음성·터치 병행(문서 §2): 모든 음성 질문의 선택지를 화면 버튼으로 동시 노출한다.
-// 발화가 어려운 어르신은 처음부터 끝까지 터치만으로 진행할 수 있다.
-
-const NO_REPLY_MS = 5000; // 문서 §5 무응답 5초
 
 function ampm(h: number, m: number): string {
   const ap = h < 12 ? "오전" : "오후";
@@ -43,154 +40,104 @@ export function VoiceGuideScreen() {
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [state, setState] = useState<GuideState>(INITIAL_STATE);
-  // 자막은 음성 길이에 맞춰 타이핑된다 (useTypedCaption). caption은 원문 —
-  // 에코 필터·접근성용으로 항상 전문을 들고 있는다.
+  // caption은 멘트 원문(접근성·폴백용), typed는 음성 길이에 맞춰 타이핑되는 표시본.
   const [caption, setCaption] = useState<string>(CUES.V01.text);
   const typed = useTypedCaption();
   const [saving, setSaving] = useState(false);
-  const [tapHint, setTapHint] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  // 지금 시각을 조정 중인 시간 카드. 시안대로 고른 카드에만 −/+ 를 띄운다.
+  const [editing, setEditing] = useState<number | null>(null);
 
   const stateRef = useRef(state);
   stateRef.current = state;
-  const noReplyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // 로그: 버튼으로 넘어간 단계 수 / 무응답·실패 횟수 (문서 §7)
-  const stats = useRef({ noReply: 0, fail: 0, buttonFallback: 0, echoFiltered: 0, tapInterrupt: 0 });
+  // 로그 (문서 §7): 어디서 막히는지 보려면 진행 방식과 안내를 끊은 횟수가 필요하다.
+  const stats = useRef({ buttonFallback: 0, tapInterrupt: 0 });
 
-  function clearNoReply(): void {
-    if (noReplyTimer.current) { clearTimeout(noReplyTimer.current); noReplyTimer.current = null; }
-  }
-
-  // 멘트를 재생하면서 동시에 마이크를 연다 (barge-in).
-  //
-  // 스피커 소리가 마이크로 되돌아오는 문제는 두 겹으로 막는다:
-  //   ① InCallManager 통신 모드 — 기기 AEC가 걸리길 기대한다(기기마다 다름)
-  //   ② 대본 대조 필터 — 인식 결과가 지금 나가는 멘트와 겹치면 버린다
-  // 그래도 새는 경우를 대비해 화면 탭으로 즉시 끊을 수 있게 해 둔다(③).
-  const runCues = useCallback(async (ids: CueId[], listenAfter: boolean) => {
-    clearNoReply();
-    const s0 = stateRef.current;
-    const canListen = listenAfter && !s0.voiceOff && s0.step !== "done" && s0.step !== "skipped";
-    if (ids.length > 0) {
-      setCaption(CUES[ids[ids.length - 1]].text);
-      setTapHint(ids.some((id) => isLongCue(CUES[id].text)));
-      // 재생을 기다리지 않고 마이크를 먼저 연다 — 그래야 말을 끊을 수 있다.
-      if (canListen) { try { await speech.start(); } catch {} }
-      // 멘트가 실제로 시작될 때 그 파일의 길이를 받아, 자막을 그 길이에 맞춰 친다.
-      await playCues(ids, (id, durationMs) => {
-        setCaption(CUES[id].text);
-        typed.begin(CUES[id].text, durationMs, { dropExample: true });
-      });
-      setTapHint(false);
-    }
-    const s = stateRef.current;
-    if (!canListen || s.voiceOff || s.step === "done" || s.step === "skipped") return;
-    try {
-      // 재생 중 인식이 끝나 마이크가 닫혔을 수 있으니 다시 연다.
-      await speech.start();
-      // 5초 무응답 → V11 (단계마다 1회)
-      noReplyTimer.current = setTimeout(() => {
-        stats.current.noReply++;
-        const t = onNoReply(stateRef.current);
-        setState(t.state);
-        if (t.play.length > 0) { speech.stop(); void runCues(t.play, true); }
-      }, NO_REPLY_MS);
-    } catch {
-      // 마이크 권한 거부 등 — 버튼으로 계속 진행할 수 있으므로 막지 않는다.
-    }
+  // 멘트를 재생하고 자막을 그 길이에 맞춰 친다.
+  const runCues = useCallback(async (ids: CueId[]) => {
+    if (ids.length === 0) return;
+    setCaption(CUES[ids[ids.length - 1]].text);
+    setSpeaking(true);
+    await playCues(ids, (id, durationMs) => {
+      setCaption(CUES[id].text);
+      typed.begin(CUES[id].text, durationMs);
+    });
+    setSpeaking(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 발화가 끝나면 상태머신에 넘긴다.
-  const onSpeechFinal = useCallback((text: string) => {
-    // ② 대본 대조 필터: 지금 나가는 멘트가 되돌아온 것이면 버리고 계속 듣는다.
-    //    짧은 답("네", "세 번")은 필터를 타지 않는다 — voiceEcho.ts 참고.
-    const playing = currentCueId();
-    if (playing && isLikelyEcho(text, CUES[playing].text)) {
-      stats.current.echoFiltered++;
-      speech.start().catch(() => {});
-      return;
-    }
-    // 사용자가 말했다 → 나가던 안내를 즉시 멈춘다 (barge-in).
-    void stopCues();
-    typed.finish(CUES[playing ?? "V01"].text, { dropExample: true });
-    setTapHint(false);
-    clearNoReply();
-    const before = stateRef.current;
-    const t = onUtterance(before, parseUtterance(text));
-    if (t.state.failCount > before.failCount) stats.current.fail++;
-    setState(t.state);
-    void runCues(t.play, t.state.step !== "done" && t.state.step !== "skipped");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runCues]);
-
-    // 제한 어휘를 인식기에 미리 알려 준다 (문서 §7 문맥 바이어싱)
-  const speech = useSpeechToText(onSpeechFinal, CONTEXT_WORDS);
-
-  // 첫 진입: 통신 모드를 켜고(기기 AEC 기대) V01 재생 + 듣기 시작
+  // 첫 진입: V01 재생
   useEffect(() => {
-    // ① 통신 모드 + 스피커. 어르신이 폰을 귀에 대지 않아도 들리게 하면서
-    //    기기 에코 제거가 걸리길 기대한다. 되는지는 기기마다 다르다.
-    try {
-      InCallManager.start({ media: "audio" });
-      InCallManager.setSpeakerphoneOn(true);
-    } catch {}
-    void runCues(cuesForStep("count"), true);
-    return () => {
-      clearNoReply(); void stopCues();
-      try { InCallManager.stop(); } catch {}
-    };
+    void runCues(cuesForStep("count"));
+    return () => { void stopCues(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ③ 화면 탭으로 즉시 끊기. 에코 필터가 새거나 AEC가 안 걸리는 기기를 위한 확실한 길.
-  function tapToSpeak() {
+  // 화면 탭 = 안내 건너뛰기. 이미 아는 내용을 끝까지 듣고 있을 필요는 없다.
+  // 끊더라도 자막은 전문으로 채워 둔다 — 반쯤 친 문장이 남으면 읽을 수가 없다.
+  function skipNarration() {
     const playing = currentCueId();
     if (!playing) return;
     void stopCues();
-    typed.finish(CUES[playing].text, { dropExample: true }); // 끊겨도 문장은 다 보이게
-    setTapHint(false);
+    typed.finish(CUES[playing].text);
+    setSpeaking(false);
     stats.current.tapInterrupt++;
-    const s = stateRef.current;
-    if (s.voiceOff || s.step === "done" || s.step === "skipped") return;
-    speech.start().catch(() => {});
   }
 
-  // 버튼 입력 — 음성과 같은 상태머신을 지난다.
   function pickCount(n: number) {
     stats.current.buttonFallback++;
-    speech.stop(); clearNoReply();
     const t = onPickCount(stateRef.current, n);
     setState(t.state);
-    void runCues(t.play, true);
+    setEditing(null);
+    void runCues(t.play);
+  }
+
+  // 시간대 칩 탭 — 그 시간대의 카드를 조정 대상으로 고른다 (시안).
+  function selectSlot(slot: Slot) {
+    const i = stateRef.current.times.findIndex((t) => t.slot === slot);
+    setEditing((prev) => (i < 0 || prev === i ? null : i));
   }
 
   function useAfterMealDefaults() {
     stats.current.buttonFallback++;
-    speech.stop(); clearNoReply();
     const s = stateRef.current;
-    const t = onPickTimes(s, afterMealTimes(s.slots));
+    // 시각이 아직 없으면 식후 기본값을 제안(V03)하고, 있으면 그대로 확정한다.
+    if (s.times.length === 0) {
+      const times = afterMealTimes(s.slots);
+      setState({ ...s, times, proposedDefaults: true });
+      void runCues(["V03"]);
+      return;
+    }
+    const t = onPickTimes(s, s.times);
     setState(t.state);
-    void runCues(t.play, true);
+    void runCues(t.play);
+  }
+
+  // V03(식후 기본값 제안)에 대한 응답.
+  function acceptDefaults(ok: boolean) {
+    stats.current.buttonFallback++;
+    const t = onAcceptDefaults(stateRef.current, ok);
+    setState(t.state);
+    void runCues(t.play);
   }
 
   function confirm(ok: boolean) {
     stats.current.buttonFallback++;
-    speech.stop(); clearNoReply();
     const t = onConfirm(stateRef.current, ok);
     setState(t.state);
-    void runCues(t.play, !ok);
+    setEditing(null);
+    void runCues(t.play);
   }
 
   function skip() {
-    speech.stop(); clearNoReply();
     const t = onSkip(stateRef.current);
     setState(t.state);
-    void runCues(t.play, false);
+    void runCues(t.play);
     void logGuideEvent({ step: "skipped", ...stats.current });
     setTimeout(() => nav.reset({ index: 0, routes: [{ name: "Tabs" }] }), 1500);
   }
 
-  // 시간 카드 탭 — 시각을 30분 단위로 조정한다(문서 §4 "탭 수정 가능").
+  // 시각을 30분 단위로 조정한다 (문서 §4 "탭 수정 가능").
   function bumpTime(i: number, deltaMin: number) {
     setState((prev) => {
       const times = [...prev.times];
@@ -235,21 +182,30 @@ export function VoiceGuideScreen() {
     }
   }
 
-  const listening = speech.listening;
   const progress = stepIndex(state.step);
 
   // 뒤로: 한 단계 되돌린다. 첫 단계에서 누르면 안내를 그만두고 앞 화면으로.
   // 되돌아간 단계의 멘트를 다시 재생해 어디로 왔는지 소리로도 알려 준다.
   function goBack() {
-    speech.stop(); clearNoReply(); void stopCues();
+    void stopCues();
+    setEditing(null);
     const s = stateRef.current;
-    if (s.step === "time") { setState({ ...s, step: "count" }); void runCues(cuesForStep("count"), true); return; }
-    if (s.step === "confirm") { setState({ ...s, step: "time" }); void runCues(cuesForStep("time"), true); return; }
+    if (s.step === "time") {
+      setState({ ...s, step: "count", proposedDefaults: false });
+      void runCues(cuesForStep("count"));
+      return;
+    }
+    if (s.step === "confirm") {
+      setState({ ...s, step: "time" });
+      void runCues(cuesForStep("time"));
+      return;
+    }
     if (nav.canGoBack()) nav.goBack();
   }
 
   return (
-    <Pressable style={styles.screen} onPress={tapToSpeak} accessibilityRole="button">
+    <Pressable style={styles.screen} onPress={skipNarration} accessibilityRole="button"
+      accessibilityLabel="안내 건너뛰기">
       <ScrollView contentContainerStyle={[styles.c, { paddingTop: insets.top + spacing.md, paddingBottom: spacing.xl + insets.bottom }]}>
         {/* 헤더 — 뒤로가기 · 진행 표시(4칸) · 건너뛰기 (시안 + 문서 §4) */}
         <View style={styles.header}>
@@ -276,67 +232,97 @@ export function VoiceGuideScreen() {
           ) : <View style={styles.skipBtn} />}
         </View>
 
-        {/* 음성 인디케이터 + 자막 */}
+        {/* 안내 음성 인디케이터 — 마이크가 아니라 스피커다. 듣는 게 아니라 말하는 중이라는 뜻. */}
         <View style={styles.micWrap}>
-          <View style={[styles.micHalo, listening && styles.micHaloOn]}>
+          <View style={[styles.micHalo, speaking && styles.micHaloOn]}>
             <View style={styles.micCircle}>
-              <Mic size={40} color={listening ? colors.primaryBlue : colors.textSecondary} />
+              <Volume2 size={40} color={speaking ? colors.primaryBlue : colors.textSecondary} />
             </View>
           </View>
           <Text style={styles.listenLabel}>
-            {state.voiceOff ? "아래 버튼으로 골라 주세요"
-              : listening ? "듣고 있어요" : "잠시만요…"}
+            {speaking ? "안내해 드리고 있어요" : "아래에서 골라 주세요"}
           </Text>
         </View>
 
         <Text style={styles.caption}>{typed.display || caption}</Text>
-        {tapHint ? (
-          <View style={styles.tapHint}>
-            <Hand size={20} color={colors.primaryBlue} />
-            <Text style={styles.tapHintText}>말씀하시려면 화면을 눌러 주세요</Text>
-          </View>
-        ) : null}
-        {speech.transcript ? <Text style={styles.heard}>{speech.transcript}</Text> : null}
 
         {/* 단계 1 — 횟수 버튼 2x2 (문서 §4) */}
         {state.step === "count" ? (
           <View style={styles.grid}>
             {[1, 2, 3, 4].map((n) => (
               <Pressable key={n} onPress={() => pickCount(n)}
-                style={({ pressed }) => [styles.gridBtn, pressed && { opacity: 0.9 }]}>
+                style={({ pressed }) => [styles.gridBtn, pressed && styles.pressedCard]}>
                 <Text style={styles.gridText}>{n === 4 ? "4번 이상" : `${n}번`}</Text>
               </Pressable>
             ))}
           </View>
         ) : null}
 
-        {/* 단계 2 — 시간대 칩 + 시간 카드 */}
+        {/* 단계 2 — 시간대 칩 + 시간 카드. 칩을 누르면 그 카드만 −/+ 가 열린다 (시안) */}
         {state.step === "time" ? (
           <>
             <View style={styles.chipRow}>
-              {SLOTS.filter((s) => state.slots.includes(s)).map((s: Slot) => (
-                <View key={s} style={styles.chip}><Text style={styles.chipText}>{slotLabel(s)}</Text></View>
-              ))}
+              {SLOTS.filter((s) => state.slots.includes(s)).map((s: Slot) => {
+                const i = state.times.findIndex((t) => t.slot === s);
+                const on = editing !== null && editing === i;
+                return (
+                  <Pressable key={s} onPress={() => selectSlot(s)} hitSlop={6}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: on }}
+                    style={({ pressed }) => [styles.chip, on && styles.chipOn, pressed && { opacity: 0.9 }]}>
+                    <Text style={[styles.chipText, on && styles.chipTextOn]}>{slotLabel(s)}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
-            {state.times.map((t: DoseTime, i: number) => (
-              <View key={`${t.slot}-${i}`} style={styles.timeCard}>
-                <Clock size={20} color={colors.primaryBlue} />
-                <Text style={styles.timeSlot}>{slotLabel(t.slot)}</Text>
-                <Pressable onPress={() => bumpTime(i, -30)} style={styles.bump} hitSlop={8}>
-                  <Text style={styles.bumpText}>−30분</Text>
+
+            {state.times.map((t: DoseTime, i: number) => {
+              const open = editing === i;
+              return (
+                <Pressable key={`${t.slot}-${i}`} onPress={() => setEditing(open ? null : i)}
+                  style={[styles.timeCard, open && styles.timeCardOn]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${slotLabel(t.slot)} ${ampm(t.hour, t.minute)}, 눌러서 시간 조정`}>
+                  <Clock size={20} color={open ? colors.primaryBlue : colors.textSecondary} />
+                  <Text style={styles.timeSlot}>{slotLabel(t.slot)}</Text>
+                  {open ? (
+                    <Pressable onPress={() => bumpTime(i, -30)} style={styles.bump} hitSlop={8}
+                      accessibilityLabel="30분 앞으로">
+                      <Text style={styles.bumpText}>−30분</Text>
+                    </Pressable>
+                  ) : null}
+                  <Text style={styles.timeValue}>{ampm(t.hour, t.minute)}</Text>
+                  {open ? (
+                    <Pressable onPress={() => bumpTime(i, 30)} style={styles.bump} hitSlop={8}
+                      accessibilityLabel="30분 뒤로">
+                      <Text style={styles.bumpText}>+30분</Text>
+                    </Pressable>
+                  ) : null}
                 </Pressable>
-                <Text style={styles.timeValue}>{ampm(t.hour, t.minute)}</Text>
-                <Pressable onPress={() => bumpTime(i, 30)} style={styles.bump} hitSlop={8}>
-                  <Text style={styles.bumpText}>+30분</Text>
+              );
+            })}
+
+            {/* 식후 기본값을 제안한 상태(V03)면 네/다시로 받는다 */}
+            {state.proposedDefaults ? (
+              <>
+                <Pressable onPress={() => acceptDefaults(true)}
+                  style={({ pressed }) => [styles.wideBtn, pressed && { opacity: 0.9 }]}>
+                  <Check size={22} color="#fff" />
+                  <Text style={styles.wideText}>네, 이 시간으로 할게요</Text>
                 </Pressable>
-              </View>
-            ))}
-            <Pressable onPress={useAfterMealDefaults}
-              style={({ pressed }) => [styles.wideBtn, pressed && { opacity: 0.9 }]}>
-              <Text style={styles.wideText}>
-                {state.times.length > 0 ? "이 시간으로 할게요" : "식사 후로 맞춰 주세요"}
-              </Text>
-            </Pressable>
+                <Pressable onPress={() => acceptDefaults(false)}
+                  style={({ pressed }) => [styles.wideBtnGhost, pressed && { opacity: 0.9 }]}>
+                  <Text style={styles.wideTextGhost}>다시 고를게요</Text>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable onPress={useAfterMealDefaults}
+                style={({ pressed }) => [styles.wideBtn, pressed && { opacity: 0.9 }]}>
+                <Text style={styles.wideText}>
+                  {state.times.length > 0 ? "이 시간으로 할게요" : "식사 후로 맞춰 주세요"}
+                </Text>
+              </Pressable>
+            )}
           </>
         ) : null}
 
@@ -410,9 +396,7 @@ const styles = StyleSheet.create({
   skipBtn: { width: 60, height: 44, alignItems: "flex-end", justifyContent: "center" },
   progressWrap: { flex: 1, alignItems: "center" },
   segRow: { flexDirection: "row", gap: 6 },
-  seg: {
-    width: 26, height: 5, borderRadius: 3, backgroundColor: "#DCE4EF",
-  },
+  seg: { width: 26, height: 5, borderRadius: 3, backgroundColor: "#DCE4EF" },
   segOn: { backgroundColor: colors.primaryBlue },
   progressText: {
     marginTop: 6, fontSize: 13, fontWeight: "700", color: colors.textSecondary,
@@ -434,31 +418,29 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.md,
   },
-  heard: { fontSize: 19, color: colors.primaryBlue, textAlign: "center", fontWeight: "700" },
-  tapHint: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
-    backgroundColor: colors.lightBlueBg, borderRadius: radii.pill,
-    paddingVertical: 10, paddingHorizontal: spacing.md,
-  },
-  tapHintText: { fontSize: 17, fontWeight: "700", color: colors.primaryBlue },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   gridBtn: {
     width: "48%", minHeight: 88, alignItems: "center", justifyContent: "center",
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.card,
   },
+  pressedCard: { opacity: 0.9, borderColor: colors.primaryBlue },
   gridText: { fontSize: 26, fontWeight: "800", color: colors.primaryNavy },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, justifyContent: "center" },
   chip: {
-    paddingHorizontal: spacing.md, paddingVertical: 10, borderRadius: radii.pill,
-    backgroundColor: colors.primaryBlue,
+    minHeight: 44, paddingHorizontal: spacing.md, paddingVertical: 10, borderRadius: radii.pill,
+    justifyContent: "center",
+    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
   },
-  chipText: { fontSize: 19, fontWeight: "800", color: "#fff" },
+  chipOn: { backgroundColor: colors.primaryBlue, borderColor: colors.primaryBlue },
+  chipText: { fontSize: 19, fontWeight: "800", color: colors.textSecondary },
+  chipTextOn: { color: "#fff" },
   timeCard: {
     flexDirection: "row", alignItems: "center", gap: spacing.sm,
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.md, minHeight: minTouch,
   },
+  timeCardOn: { borderColor: colors.primaryBlue, borderWidth: 2 },
   timeSlot: { fontSize: 19, fontWeight: "800", color: colors.text, width: 52 },
   timeValue: { flex: 1, fontSize: 21, fontWeight: "800", color: colors.primaryBlue, textAlign: "center" },
   bump: {

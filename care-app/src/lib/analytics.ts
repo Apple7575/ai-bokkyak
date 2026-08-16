@@ -31,31 +31,31 @@ export async function logAlarmEvent(args: {
 // 음성 가이드 온보딩 지표 (음성 대본 문서 §7 로그 항목).
 // 알파 테스트에서 "어디서 막히는가"를 보려면 단계별 이탈과 폴백 비율이 필요하다.
 //   · step            : 어느 단계에서 끝났나 (done / skipped)
-//   · noReply         : 무응답 5초 발생 횟수
-//   · fail            : 인식 실패 횟수
-//   · buttonFallback  : 음성 대신 버튼으로 넘어간 횟수
-//   · echoFiltered    : 스피커 소리를 발화로 잘못 들어 걸러낸 횟수
-//                       (많으면 기기 AEC가 안 걸린다는 뜻 — 대책을 바꿔야 한다)
-//   · tapInterrupt    : 화면을 눌러 안내를 끊은 횟수
-//                       (많으면 음성 barge-in이 실패하고 있다는 뜻)
+//   · buttonFallback  : 버튼으로 진행한 횟수
+//   · tapInterrupt    : 화면을 눌러 안내 음성을 끊은 횟수
+//                       (많으면 멘트가 길어 답답하다는 뜻)
+//
+// noReply / fail / echoFiltered 는 음성 입력이 있던 시절의 지표라 지금은 항상 0이다.
+// 컬럼을 지우지 않고 남겨 둔 것은 음성 입력을 되살릴 때 마이그레이션 없이 돌아오기
+// 위해서다. 집계할 때 0만 나오는 것이 정상이다.
+//
 // 베스트에포트 — 실패해도 온보딩 흐름을 막지 않는다.
 export async function logGuideEvent(args: {
   step: string;
-  noReply: number;
-  fail: number;
   buttonFallback: number;
-  /** 스피커 소리를 사용자 발화로 잘못 들어 걸러낸 횟수 */
-  echoFiltered: number;
   /** 화면을 눌러 안내를 끊은 횟수 */
   tapInterrupt: number;
+  noReply?: number;
+  fail?: number;
+  echoFiltered?: number;
 }): Promise<void> {
   try {
     await supabase.from("voice_guide_events").insert({
       step: args.step,
-      no_reply_count: args.noReply,
-      fail_count: args.fail,
+      no_reply_count: args.noReply ?? 0,
+      fail_count: args.fail ?? 0,
       button_fallback_count: args.buttonFallback,
-      echo_filtered_count: args.echoFiltered,
+      echo_filtered_count: args.echoFiltered ?? 0,
       tap_interrupt_count: args.tapInterrupt,
     });
   } catch {

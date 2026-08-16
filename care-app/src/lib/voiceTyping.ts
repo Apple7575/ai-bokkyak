@@ -55,17 +55,9 @@ export function planTyping(sentences: string[], totalMs?: number | null): Typing
   });
 }
 
-// 멘트를 화면에 띄울 문장 단위로 쪼갠다.
-//
-// 시안은 V01을 3문장으로 나눠 순차 표시한다. 마지막의 예시 문장
-// ("…와 같이 말씀해 주세요")은 타이핑이 끝난 뒤 별도 힌트로 보여주므로 제외한다.
-export function splitSentences(text: string, opts?: { dropExample?: boolean }): string[] {
-  let t = String(text ?? "").trim();
-  if (opts?.dropExample) {
-    // 예시를 안내하는 마지막 문장을 떼어낸다.
-    t = t.replace(/[^.!?]*와 같이 말씀해 주세요\.?\s*$/u, "").trim();
-  }
-  const parts = t
+// 멘트를 화면에 띄울 문장 단위로 쪼갠다. 시안처럼 한 문장씩 순차로 나타난다.
+export function splitSentences(text: string): string[] {
+  const parts = String(text ?? "").trim()
     .split(/(?<=[.!?])\s+/u)
     .map((s) => s.trim())
     .filter((s) => s.length > 0);

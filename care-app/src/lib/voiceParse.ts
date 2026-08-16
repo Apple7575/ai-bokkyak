@@ -6,6 +6,12 @@
 // 문서 §2 "한 질문 한 정보": 단계마다 하나만 물어보되, 자연 발화에 여러 정보가
 //          담기면 모두 흡수하고 해당 단계를 건너뛴다(§5 멀티 정보 발화).
 
+//
+// ⚠️ 온보딩에서 음성 입력을 뺀 뒤로 발화 파싱(parseUtterance·parseCount·parseYesNo·
+//    CONTEXT_WORDS)은 아무도 부르지 않는다. 지우지 않고 둔 것은 음성 입력을 되살릴
+//    때 그대로 쓰기 위해서다. 지금 실제로 쓰이는 것은 SLOTS / Slot / DoseTime /
+//    afterMealTimes / defaultSlotsFor 다.
+
 import { AFTER_MEAL_DEFAULTS } from "./voiceScript";
 
 export type Slot = "아침" | "점심" | "저녁" | "취침";

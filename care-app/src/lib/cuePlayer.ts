@@ -21,9 +21,6 @@ const FILES: Record<CueId, number> = {
   V06: require("../../assets/voice/V06.mp3"),
   V07: require("../../assets/voice/V07.mp3"),
   V08: require("../../assets/voice/V08.mp3"),
-  V11: require("../../assets/voice/V11.mp3"),
-  V12: require("../../assets/voice/V12.mp3"),
-  V13: require("../../assets/voice/V13.mp3"),
   V14: require("../../assets/voice/V14.mp3"),
 };
 

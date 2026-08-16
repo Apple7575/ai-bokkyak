@@ -2,27 +2,21 @@ import { planTyping, splitSentences, DEFAULT_PER_CHAR_MS } from "../lib/voiceTyp
 import { CUES } from "../lib/voiceScript";
 
 describe("splitSentences", () => {
-  it("V01을 문장 단위로 쪼개고 마지막은 질문으로 끝난다", () => {
-    const s = splitSentences(CUES.V01.text, { dropExample: true });
+  it("V01을 문장 단위로 쪼갠다", () => {
+    const s = splitSentences(CUES.V01.text);
     expect(s.length).toBeGreaterThanOrEqual(3);
-    expect(s[0]).toContain("모두의 복약입니다");
-    expect(s[s.length - 1]).toBe("하루에 몇 번 약과 영양제를 드시나요?");
+    expect(s[s.length - 1]).toBe("아래에서 골라 주세요.");
   });
 
-  it("시안대로 3줄 — '안녕하세요.'가 혼자 떨어지지 않는다", () => {
-    const s = splitSentences(CUES.V01.text, { dropExample: true });
-    expect(s).toHaveLength(3);
+  it("'안녕하세요.'가 혼자 떨어지지 않는다 — 짧은 조각은 다음 문장에 붙인다", () => {
+    const s = splitSentences(CUES.V01.text);
     expect(s[0]).toBe("안녕하세요. 여러분의 복용 비서, 모두의 복약입니다.");
   });
 
-  it("예시 문장을 떼어낸다", () => {
-    const s = splitSentences(CUES.V01.text, { dropExample: true });
-    expect(s.join(" ")).not.toContain("와 같이 말씀해 주세요");
-  });
-
-  it("떼지 않으면 그대로 남는다", () => {
-    const s = splitSentences(CUES.V01.text);
-    expect(s.join(" ")).toContain("와 같이 말씀해 주세요");
+  it("음성 입력을 뺐으므로 어떤 멘트도 발화를 요구하지 않는다", () => {
+    for (const cue of Object.values(CUES)) {
+      expect(cue.text).not.toContain("말씀해 주세요");
+    }
   });
 
   it("빈 문자열", () => {
