@@ -43,8 +43,8 @@ describe("단계 1 — 횟수", () => {
     expect(t.play).toEqual(["V07", "V03"]);
     expect(t.state.times).toEqual([
       { slot: "아침", hour: 8, minute: 0 },
-      { slot: "점심", hour: 12, minute: 30 },
-      { slot: "저녁", hour: 18, minute: 30 },
+      { slot: "점심", hour: 12, minute: 0 },
+      { slot: "저녁", hour: 18, minute: 0 },
     ]);
   });
 

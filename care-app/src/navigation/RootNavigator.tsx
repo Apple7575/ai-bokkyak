@@ -6,6 +6,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { RootStackParamList, TabParamList } from "./types";
 import { getRole, getOnboarded, Role } from "../lib/storage";
 import { OnboardingScreen } from "../screens/OnboardingScreen";
+import { SplashScreen } from "../screens/SplashScreen";
 import { RoleSelectScreen } from "../screens/RoleSelectScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { RecordScreen } from "../screens/RecordScreen";
@@ -112,11 +113,12 @@ export function RootNavigator() {
   // 첫 실행(가입 전 + 온보딩 미완료)이면 안내 화면부터, 그다음 가입 화면.
   const initialRouteName: keyof RootStackParamList =
     alarmSid ? "Alarm"
-      : !init.role && !init.onboarded ? "Onboarding"
+      : !init.role && !init.onboarded ? "Splash"
         : !init.role ? "RoleSelect"
           : "Tabs";
   return (
     <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
       <Stack.Screen name="Tabs" component={PatientTabs} />

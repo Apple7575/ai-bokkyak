@@ -120,12 +120,13 @@ describe("defaultSlotsFor / afterMealTimes", () => {
     expect(defaultSlotsFor(3)).toEqual(["아침", "점심", "저녁"]);
     expect(defaultSlotsFor(4)).toEqual(["아침", "점심", "저녁", "취침"]);
   });
-  it("식후 기본값은 문서 §4 값과 일치한다", () => {
-    // 이 값이 바뀌면 V03 녹음도 다시 해야 한다.
+  it("식후 기본값은 V03 녹음 문구와 일치한다", () => {
+    // V03: "그럼 아침 8시, 점심 12시, 저녁 6시로 맞춰서 화면에 보여드릴게요."
+    // 음성과 화면이 다른 값을 말하면 안 된다 — 이 값을 바꾸면 V03도 재녹음해야 한다.
     expect(afterMealTimes(["아침", "점심", "저녁"])).toEqual([
       { slot: "아침", hour: 8, minute: 0 },
-      { slot: "점심", hour: 12, minute: 30 },
-      { slot: "저녁", hour: 18, minute: 30 },
+      { slot: "점심", hour: 12, minute: 0 },
+      { slot: "저녁", hour: 18, minute: 0 },
     ]);
   });
 });

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { slotLabel } from "../lib/timeOfDay";
 import { View, Text, ScrollView, StyleSheet, Pressable, Alert, ActivityIndicator } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -108,7 +109,7 @@ export function MedicineDetailScreen() {
     );
   }
 
-  const timeText = `${sched.time_of_day} · ${String(sched.hour).padStart(2, "0")}:${String(sched.minute).padStart(2, "0")}`;
+  const timeText = `${slotLabel(sched.time_of_day)} · ${String(sched.hour).padStart(2, "0")}:${String(sched.minute).padStart(2, "0")}`;
   const repeatText = (sched.repeat_days?.length ?? 0) > 0 ? "요일 반복" : "매일";
 
   return (

@@ -1,5 +1,5 @@
 import {
-  timeOfDayForHour, defaultHourFor, hourForTimeOfDay, isTimeOfDay, TIME_OF_DAYS,
+  timeOfDayForHour, defaultHourFor, hourForTimeOfDay, isTimeOfDay, TIME_OF_DAYS, slotLabel,
 } from "../lib/timeOfDay";
 
 describe("timeOfDayForHour", () => {
@@ -71,5 +71,19 @@ describe("isTimeOfDay", () => {
     expect(isTimeOfDay("아침")).toBe(true);
     expect(isTimeOfDay("새벽")).toBe(false);
     expect(isTimeOfDay(null)).toBe(false);
+  });
+});
+
+describe("slotLabel — 저장값과 표시 이름을 분리한다", () => {
+  it("'취침'은 화면에 '자기 전'", () => {
+    expect(slotLabel("취침")).toBe("자기 전");
+  });
+  it("나머지는 그대로", () => {
+    expect(slotLabel("아침")).toBe("아침");
+    expect(slotLabel("점심")).toBe("점심");
+    expect(slotLabel("저녁")).toBe("저녁");
+  });
+  it("알 수 없는 값은 건드리지 않는다", () => {
+    expect(slotLabel("새벽")).toBe("새벽");
   });
 });

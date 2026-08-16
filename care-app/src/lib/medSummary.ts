@@ -3,7 +3,7 @@
 // 같은 약이 시간대별로 여러 행(schedule)으로 저장된다(아침·저녁 = 2행).
 // 화면에서는 약 한 장의 카드로 묶어 "1일 2회 · 아침 08:00, 저녁 20:00"처럼 보여준다.
 
-import { TimeOfDay, TIME_OF_DAYS } from "./timeOfDay";
+import { TimeOfDay, TIME_OF_DAYS, slotLabel } from "./timeOfDay";
 
 export type DoseLike = {
   id: string;
@@ -60,7 +60,7 @@ export function groupByMedicine<T extends DoseLike>(items: T[]): MedGroup<T>[] {
 // 시간대가 많으면 뒤를 줄여 "외 N개"로 접는다(카드가 두 줄 넘게 늘어나지 않게).
 export function describeDoses<T extends DoseLike>(g: MedGroup<T>, maxShown = 2): string {
   const shown = g.doses.slice(0, maxShown)
-    .map((d) => `${d.time_of_day} ${hhmm(d.hour, d.minute)}`)
+    .map((d) => `${slotLabel(d.time_of_day)} ${hhmm(d.hour, d.minute)}`)
     .join(", ");
   const rest = g.doses.length - Math.min(maxShown, g.doses.length);
   const tail = rest > 0 ? ` 외 ${rest}개` : "";

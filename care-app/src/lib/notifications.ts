@@ -7,6 +7,7 @@ import { nextDoseAt, dosesWithin } from "./doseTimes";
 import { SnoozeSpec, nextSnoozeFire } from "./snooze";
 import { supabase } from "./supabase";
 import { alarmChannelId } from "./alarmSound";
+import { slotLabel } from "./timeOfDay";
 import { getAlarmSoundSettings } from "./alarmSettings";
 
 // 정확 알람(SCHEDULE_EXACT_ALARM)이 허용된 경우에만 alarmManager 옵션을 켠다.
@@ -34,13 +35,13 @@ const STRONG_VIBRATION = [800, 400, 800, 400, 800, 400];
 async function ensureChannel(tod: TOD, silent: boolean): Promise<string> {
   if (silent) {
     return notifee.createChannel({
-      id: alarmChannelId(SOUND[tod], true), name: `복약 알람(${tod}, 진동만)`,
+      id: alarmChannelId(SOUND[tod], true), name: `복약 알람(${slotLabel(tod)}, 진동만)`,
       importance: AndroidImportance.HIGH, vibration: true, vibrationPattern: STRONG_VIBRATION,
       visibility: AndroidVisibility.PUBLIC,
     });
   }
   return notifee.createChannel({
-    id: CH[tod], name: `복약 알람(${tod})`,
+    id: CH[tod], name: `복약 알람(${slotLabel(tod)})`,
     importance: AndroidImportance.HIGH, sound: SOUND[tod], vibration: true,
     visibility: AndroidVisibility.PUBLIC,
   });
@@ -93,7 +94,7 @@ function alarmNotification(
   scheduleId: string, tod: TOD, ch: string, hour: number, minute: number, seq: number, silent: boolean
 ) {
   return {
-    title: `${tod} 약 복용 시간입니다`,
+    title: `${slotLabel(tod)} 약 복용 시간입니다`,
     body: "약을 드신 후 복용 완료를 눌러주세요.",
     data: { scheduleId, hour: String(hour), minute: String(minute), tod, seq: String(seq) },
     android: androidAlarm(scheduleId, ch, SOUND[tod], silent),
@@ -149,7 +150,7 @@ export async function scheduleIosWindow(
       // (도즈별 b=0부터 예약하므로 한도에 닿아도 기본 알람이 우선 등록된다.)
       try {
         await notifee.createTriggerNotification(
-          { id: `alarm-${scheduleId}-win-${di}-${b}`, title: `${tod} 약 복용 시간입니다`,
+          { id: `alarm-${scheduleId}-win-${di}-${b}`, title: `${slotLabel(tod)} 약 복용 시간입니다`,
             body: "약을 드신 후 '지금 약 먹기'를 눌러주세요.",
             data: { scheduleId, hour: String(hour), minute: String(minute), tod, seq: String(b) },
             ios: {

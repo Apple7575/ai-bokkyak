@@ -39,3 +39,16 @@ export function defaultHourFor(tod: TimeOfDay): number {
 export function hourForTimeOfDay(tod: TimeOfDay, currentHour: number): number {
   return timeOfDayForHour(currentHour) === tod ? currentHour : DEFAULT_HOUR[tod];
 }
+
+// 화면에 보여줄 이름. 저장값과 다르다.
+//
+// 저장은 "취침"으로 한다 — 알람 소리(night.mp3)·알림 채널(care-night) 키이고
+// 이미 저장된 행도 그 값이다. 저장값을 바꾸면 기존 사용자의 알람이 깨진다.
+// 화면에는 디자인 시안대로 "자기 전"을 보여준다(어르신에게 더 자연스럽다).
+const DISPLAY: Record<TimeOfDay, string> = {
+  아침: "아침", 점심: "점심", 저녁: "저녁", 취침: "자기 전",
+};
+
+export function slotLabel(tod: string): string {
+  return isTimeOfDay(tod) ? DISPLAY[tod] : tod;
+}

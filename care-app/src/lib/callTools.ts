@@ -47,17 +47,12 @@ export function parseRecordMedicationArgs(json: string): RecordMedicationArgs | 
 
 // ── 가입 직후 setup 통화 도구 파싱 (순수 로직) ─────────────────────────────
 
-// set_birth_date 인자(year/month/day) 검증 → "YYYY-MM-DD" 또는 null.
+// year/month/day → "YYYY-MM-DD" 또는 null.
 // 정수 아님 / 범위 밖 / 존재하지 않는 날짜(2월 30일 등)는 null.
-export function parseBirthDateArgs(json: string): string | null {
-  let raw: unknown;
-  try {
-    raw = JSON.parse(json);
-  } catch {
-    return null;
-  }
-  if (!raw || typeof raw !== "object") return null;
-  const { year, month, day } = raw as Record<string, unknown>;
+//
+// 음성 통화(set_birth_date)와 가입 화면의 직접 입력이 같은 검증을 쓰도록 분리했다.
+// 한쪽만 느슨하면 2월 30일 같은 값이 DB에 들어간다.
+export function buildBirthDate(year: unknown, month: unknown, day: unknown): string | null {
   if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
   const y = year as number, mo = month as number, d = day as number;
   if (y < 1900 || y > 2100 || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
@@ -69,6 +64,19 @@ export function parseBirthDateArgs(json: string): string | null {
     return null;
   }
   return `${y}-${mm}-${dd}`;
+}
+
+// set_birth_date 도구 인자 검증 → "YYYY-MM-DD" 또는 null.
+export function parseBirthDateArgs(json: string): string | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(json);
+  } catch {
+    return null;
+  }
+  if (!raw || typeof raw !== "object") return null;
+  const { year, month, day } = raw as Record<string, unknown>;
+  return buildBirthDate(year, month, day);
 }
 
 export type AddMedicationArgs = {

@@ -7,6 +7,7 @@ import { setRole, setPatient } from "../lib/storage";
 import { supabase } from "../lib/supabase";
 import { enterDemo } from "../lib/demo";
 import { signInWithKakao } from "../lib/kakaoAuth";
+import { buildBirthDate } from "../lib/callTools";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 
 function makeCode(): string {
@@ -25,10 +26,29 @@ export function RoleSelectScreen() {
   const [saving, setSaving] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const [kakaoBusy, setKakaoBusy] = useState(false);
+  // 생년월일은 직접 입력으로 받는다(디자인 시안 결정). 약은 여전히 통화로 받는다.
+  const [birthY, setBirthY] = useState("");
+  const [birthM, setBirthM] = useState("");
+  const [birthD, setBirthD] = useState("");
+
+  // 입력한 생년월일을 검증해 "YYYY-MM-DD"로. 비어 있으면 null(선택 입력).
+  // 적었는데 형식이 틀리면 undefined를 돌려 저장을 막는다 — 조용히 버리면
+  // 어르신은 입력했다고 생각하는데 저장이 안 된 상태가 된다.
+  function resolveBirth(): string | null | undefined {
+    const y = birthY.trim(), m = birthM.trim(), d = birthD.trim();
+    if (!y && !m && !d) return null;
+    const built = buildBirthDate(Number(y), Number(m), Number(d));
+    return built ?? undefined;
+  }
 
   async function startAsPatient() {
     if (saving) return;
     if (!name.trim()) { Alert.alert("이름을 입력해 주세요"); return; }
+    const birth = resolveBirth();
+    if (birth === undefined) {
+      Alert.alert("생년월일을 확인해 주세요", "예: 1954년 3월 1일");
+      return;
+    }
     setSaving(true);
     try {
       const code = makeCode();
@@ -37,6 +57,7 @@ export function RoleSelectScreen() {
           name: name.trim(),
           patient_code: code,
           gender: gender ?? null,
+          birth_date: birth,
         }).select().single();
       if (error || !data) { Alert.alert("등록 실패", error?.message ?? ""); setSaving(false); return; }
       await setPatient(data.id, data.patient_code);
@@ -83,10 +104,16 @@ export function RoleSelectScreen() {
         setKakaoBusy(false);
         return;
       }
+      const birth = resolveBirth();
+      if (birth === undefined) {
+        Alert.alert("생년월일을 확인해 주세요", "예: 1954년 3월 1일");
+        setKakaoBusy(false);
+        return;
+      }
       const { data, error } = await supabase.from("patients")
         .insert({
           name: finalName, patient_code: makeCode(),
-          gender: gender ?? null, kakao_id: r.kakaoId,
+          gender: gender ?? null, kakao_id: r.kakaoId, birth_date: birth,
         }).select().single();
       if (error || !data) throw error ?? new Error("insert 실패");
       await setPatient(data.id, data.patient_code);
@@ -121,7 +148,7 @@ export function RoleSelectScreen() {
           <Pill size={40} color={colors.primaryBlue} strokeWidth={1.8} />
         </View>
         <Text style={styles.title}>모두의 복약</Text>
-        <Text style={styles.sub}>이름과 성별만 알려주세요</Text>
+        <Text style={styles.sub}>이름, 성별, 생년월일만 알려주세요</Text>
       </View>
 
       {/* Profile input card */}
@@ -145,8 +172,33 @@ export function RoleSelectScreen() {
           </Pressable>
         </View>
 
+        <Text style={[styles.label, { marginTop: spacing.lg }]}>생년월일</Text>
+        <View style={styles.birthRow}>
+          <TextInput
+            style={[styles.input, styles.birthInput, { flex: 1.5 }]}
+            value={birthY} onChangeText={setBirthY}
+            placeholder="1954" placeholderTextColor={colors.textSecondary}
+            keyboardType="number-pad" maxLength={4}
+          />
+          <Text style={styles.birthUnit}>년</Text>
+          <TextInput
+            style={[styles.input, styles.birthInput]}
+            value={birthM} onChangeText={setBirthM}
+            placeholder="3" placeholderTextColor={colors.textSecondary}
+            keyboardType="number-pad" maxLength={2}
+          />
+          <Text style={styles.birthUnit}>월</Text>
+          <TextInput
+            style={[styles.input, styles.birthInput]}
+            value={birthD} onChangeText={setBirthD}
+            placeholder="1" placeholderTextColor={colors.textSecondary}
+            keyboardType="number-pad" maxLength={2}
+          />
+          <Text style={styles.birthUnit}>일</Text>
+        </View>
+
         <Text style={styles.hint}>
-          생년월일과 드시는 약은 가입 후 AI 건강전화로 편하게 말씀해 주시면 돼요.
+          드시는 약은 가입 후 AI 건강전화로 편하게 말씀해 주시면 돼요.
         </Text>
       </View>
 
@@ -213,6 +265,9 @@ const styles = StyleSheet.create({
     borderRadius: radii.button, fontSize: fontSizes.body, padding: 14,
   },
   genderRow: { flexDirection: "row", gap: spacing.md },
+  birthRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  birthInput: { flex: 1, minWidth: 0, textAlign: "center", paddingHorizontal: 0 },
+  birthUnit: { fontSize: fontSizes.body, fontWeight: "600", color: colors.textSecondary },
   genderChip: {
     flex: 1, minHeight: minTouch, alignItems: "center", justifyContent: "center",
     backgroundColor: colors.lightBlueBg, borderColor: colors.border, borderWidth: 1,

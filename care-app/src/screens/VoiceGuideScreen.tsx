@@ -12,6 +12,7 @@ import { useSpeechToText } from "../hooks/useSpeechToText";
 import { playCues, stopCues, currentCueId } from "../lib/cuePlayer";
 import { CUES, CueId, DISCLAIMER } from "../lib/voiceScript";
 import { DoseTime, Slot, SLOTS, parseUtterance, afterMealTimes, CONTEXT_WORDS } from "../lib/voiceParse";
+import { slotLabel } from "../lib/timeOfDay";
 import {
   GuideState, INITIAL_STATE, cuesForStep, onUtterance, onNoReply,
   onPickCount, onPickTimes, onConfirm, onSkip,
@@ -273,13 +274,13 @@ export function VoiceGuideScreen() {
           <>
             <View style={styles.chipRow}>
               {SLOTS.filter((s) => state.slots.includes(s)).map((s: Slot) => (
-                <View key={s} style={styles.chip}><Text style={styles.chipText}>{s}</Text></View>
+                <View key={s} style={styles.chip}><Text style={styles.chipText}>{slotLabel(s)}</Text></View>
               ))}
             </View>
             {state.times.map((t: DoseTime, i: number) => (
               <View key={`${t.slot}-${i}`} style={styles.timeCard}>
                 <Clock size={20} color={colors.primaryBlue} />
-                <Text style={styles.timeSlot}>{t.slot}</Text>
+                <Text style={styles.timeSlot}>{slotLabel(t.slot)}</Text>
                 <Pressable onPress={() => bumpTime(i, -30)} style={styles.bump} hitSlop={8}>
                   <Text style={styles.bumpText}>−30분</Text>
                 </Pressable>
@@ -304,7 +305,7 @@ export function VoiceGuideScreen() {
             <View style={styles.summary}>
               <Text style={styles.summaryTitle}>하루 {state.times.length}번 알림을 드릴게요</Text>
               {state.times.map((t, i) => (
-                <Text key={i} style={styles.summaryLine}>{`${t.slot} · ${ampm(t.hour, t.minute)}`}</Text>
+                <Text key={i} style={styles.summaryLine}>{`${slotLabel(t.slot)} · ${ampm(t.hour, t.minute)}`}</Text>
               ))}
             </View>
             <Pressable onPress={() => confirm(true)}
@@ -326,7 +327,7 @@ export function VoiceGuideScreen() {
               <Check size={36} color={colors.successGreen} />
               <Text style={styles.doneTitle}>복용 알람 설정이 끝났어요</Text>
               {state.times.map((t, i) => (
-                <Text key={i} style={styles.summaryLine}>{`${t.slot} · ${ampm(t.hour, t.minute)}`}</Text>
+                <Text key={i} style={styles.summaryLine}>{`${slotLabel(t.slot)} · ${ampm(t.hour, t.minute)}`}</Text>
               ))}
             </View>
 

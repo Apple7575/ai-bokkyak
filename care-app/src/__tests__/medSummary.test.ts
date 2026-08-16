@@ -40,6 +40,13 @@ describe("groupByMedicine", () => {
 });
 
 describe("describeDoses", () => {
+  it("'취침'은 화면에 '자기 전'으로 보인다 — 저장값은 그대로 '취침'", () => {
+    // 저장값을 바꾸면 알람 소리(night.mp3)·채널 키와 기존 행이 깨진다.
+    const g = groupByMedicine([d("1", "약", "취침", 22)])[0];
+    expect(g.doses[0].time_of_day).toBe("취침");
+    expect(describeDoses(g)).toBe("1일 1회 · 자기 전 22:00");
+  });
+
   it("1일 N회 · 시간대 시각", () => {
     const g = groupByMedicine([d("1", "약", "아침", 8), d("2", "약", "저녁", 20)])[0];
     expect(describeDoses(g)).toBe("1일 2회 · 아침 08:00, 저녁 20:00");

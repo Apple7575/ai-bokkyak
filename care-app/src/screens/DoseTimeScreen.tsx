@@ -10,7 +10,7 @@ import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { normalizeRepeatDays } from "../lib/schedule";
-import { TimeOfDay, TIME_OF_DAYS, defaultHourFor, timeOfDayForHour } from "../lib/timeOfDay";
+import { TimeOfDay, TIME_OF_DAYS, defaultHourFor, timeOfDayForHour, slotLabel } from "../lib/timeOfDay";
 import { buildDoseRows } from "../lib/medSummary";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 
@@ -135,7 +135,7 @@ export function DoseTimeScreen() {
                 style={[styles.todChip, on && styles.todChipOn]}
               >
                 <Icon size={18} color={on ? "#fff" : colors.textSecondary} />
-                <Text style={[styles.todText, on && styles.todTextOn]}>{t}</Text>
+                <Text style={[styles.todText, on && styles.todTextOn]}>{slotLabel(t)}</Text>
               </Pressable>
             );
           })}
@@ -149,7 +149,7 @@ export function DoseTimeScreen() {
               style={({ pressed }) => [styles.timeRow, pressed && { opacity: 0.9 }]}
             >
               <Clock size={20} color={colors.primaryBlue} />
-              <Text style={styles.timeLabel}>{t}</Text>
+              <Text style={styles.timeLabel}>{slotLabel(t)}</Text>
               <Text style={styles.timeValue}>{ampm(timeBy[t].hour, timeBy[t].minute)}</Text>
             </Pressable>
             {editing === t ? (
@@ -171,7 +171,7 @@ export function DoseTimeScreen() {
             {/* 고른 시각이 그 시간대와 많이 어긋나면 알려준다(알람 제목이 이상해지지 않게) */}
             {timeOfDayForHour(timeBy[t].hour) !== t ? (
               <Text style={styles.mismatch}>
-                {`${timeBy[t].hour}시는 보통 '${timeOfDayForHour(timeBy[t].hour)}'이에요. 이대로 두면 '${t}' 알람으로 울립니다.`}
+                {`${timeBy[t].hour}시는 보통 '${slotLabel(timeOfDayForHour(timeBy[t].hour))}'이에요. 이대로 두면 '${slotLabel(t)}' 알람으로 울립니다.`}
               </Text>
             ) : null}
           </View>
