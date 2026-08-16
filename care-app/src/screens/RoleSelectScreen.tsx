@@ -41,8 +41,9 @@ export function RoleSelectScreen() {
       if (error || !data) { Alert.alert("등록 실패", error?.message ?? ""); setSaving(false); return; }
       await setPatient(data.id, data.patient_code);
       await setRole("patient");
-      // 가입 직후 AI 건강전화로 생년월일·복약 정보를 음성으로 받는다(setup 모드).
-      nav.reset({ index: 0, routes: [{ name: "Tabs" }, { name: "Call", params: { setup: true } }] });
+      // 가입 직후 음성 가이드로 복용 알람을 설정한다(사전 녹음 인출 방식).
+      // 기존 Realtime 통화(setup)는 main 브랜치에 그대로 있다.
+      nav.reset({ index: 0, routes: [{ name: "Tabs" }, { name: "VoiceGuide" }] });
     } catch {
       Alert.alert("등록 실패", "인터넷 연결을 확인해 주세요.");
       setSaving(false);
@@ -90,7 +91,7 @@ export function RoleSelectScreen() {
       if (error || !data) throw error ?? new Error("insert 실패");
       await setPatient(data.id, data.patient_code);
       await setRole("patient");
-      nav.reset({ index: 0, routes: [{ name: "Tabs" }, { name: "Call", params: { setup: true } }] });
+      nav.reset({ index: 0, routes: [{ name: "Tabs" }, { name: "VoiceGuide" }] });
     } catch {
       Alert.alert("가입에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
       setKakaoBusy(false);

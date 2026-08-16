@@ -10,6 +10,7 @@ import { RoleSelectScreen } from "../screens/RoleSelectScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { RecordScreen } from "../screens/RecordScreen";
 import { RegisterMethodScreen } from "../screens/RegisterMethodScreen";
+import { VoiceGuideScreen } from "../screens/VoiceGuideScreen";
 import { ButtonRegisterScreen } from "../screens/ButtonRegisterScreen";
 import { VoiceRegisterScreen } from "../screens/VoiceRegisterScreen";
 import { OcrRegisterScreen } from "../screens/OcrRegisterScreen";
@@ -119,6 +120,7 @@ export function RootNavigator() {
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
       <Stack.Screen name="Tabs" component={PatientTabs} />
+      <Stack.Screen name="VoiceGuide" component={VoiceGuideScreen} options={{ headerShown: false }} />
       <Stack.Screen name="RegisterMethod" component={RegisterMethodScreen} options={{ headerShown: false }} />
       <Stack.Screen name="ButtonRegister" component={ButtonRegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="VoiceRegister" component={VoiceRegisterScreen} options={{ headerShown: false }} />

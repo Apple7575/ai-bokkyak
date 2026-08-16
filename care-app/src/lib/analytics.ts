@@ -27,3 +27,28 @@ export async function logAlarmEvent(args: {
     // 무시 — 지표 로그 실패가 앱 동작에 영향 주지 않게.
   }
 }
+
+// 음성 가이드 온보딩 지표 (음성 대본 문서 §7 로그 항목).
+// 알파 테스트에서 "어디서 막히는가"를 보려면 단계별 이탈과 폴백 비율이 필요하다.
+//   · step            : 어느 단계에서 끝났나 (done / skipped)
+//   · noReply         : 무응답 5초 발생 횟수
+//   · fail            : 인식 실패 횟수
+//   · buttonFallback  : 음성 대신 버튼으로 넘어간 횟수
+// 베스트에포트 — 실패해도 온보딩 흐름을 막지 않는다.
+export async function logGuideEvent(args: {
+  step: string;
+  noReply: number;
+  fail: number;
+  buttonFallback: number;
+}): Promise<void> {
+  try {
+    await supabase.from("voice_guide_events").insert({
+      step: args.step,
+      no_reply_count: args.noReply,
+      fail_count: args.fail,
+      button_fallback_count: args.buttonFallback,
+    });
+  } catch {
+    // 무시 — 지표 수집 실패가 앱 동작에 영향 주지 않게.
+  }
+}
