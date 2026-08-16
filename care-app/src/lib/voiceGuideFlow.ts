@@ -176,3 +176,21 @@ export function cuesForResume(step: Step): CueId[] {
 export function isComplete(state: GuideState): boolean {
   return state.step === "done" && state.times.length > 0;
 }
+
+// ── 진행 표시 (시안: 상단 4칸 + "1/4") ─────────────────────────────────────
+//
+// 화면 단계와 별개로 두는 이유: "skipped"는 중간에 빠져나온 것이라
+// 진행도가 없고, "done"은 마지막 칸을 채운 상태다.
+
+export const GUIDE_TOTAL_STEPS = 4;
+
+// 1-based 진행 번호. 진행 표시를 숨겨야 하면 null.
+export function stepIndex(step: Step): number | null {
+  switch (step) {
+    case "count": return 1;
+    case "time": return 2;
+    case "confirm": return 3;
+    case "done": return 4;
+    case "skipped": return null;
+  }
+}

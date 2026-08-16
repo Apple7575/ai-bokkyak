@@ -1,6 +1,7 @@
 import {
   INITIAL_STATE, cuesForStep, cuesForResume, onUtterance, onNoReply,
   onRecognizeFail, onPickCount, onPickTimes, onConfirm, onSkip, isComplete,
+  stepIndex, GUIDE_TOTAL_STEPS,
 } from "../lib/voiceGuideFlow";
 import { parseUtterance } from "../lib/voiceParse";
 
@@ -160,5 +161,20 @@ describe("isComplete", () => {
     const done = say(say(INITIAL_STATE, "하루 1번 아침 8시").state, "네");
     expect(done.state.step).toBe("done");
     expect(isComplete(done.state)).toBe(true);
+  });
+});
+
+describe("stepIndex — 진행 표시", () => {
+  it("단계 순서대로 1~4", () => {
+    expect(stepIndex("count")).toBe(1);
+    expect(stepIndex("time")).toBe(2);
+    expect(stepIndex("confirm")).toBe(3);
+    expect(stepIndex("done")).toBe(4);
+  });
+  it("건너뛰면 진행도가 없다", () => {
+    expect(stepIndex("skipped")).toBeNull();
+  });
+  it("총 단계 수와 마지막 번호가 맞는다", () => {
+    expect(stepIndex("done")).toBe(GUIDE_TOTAL_STEPS);
   });
 });

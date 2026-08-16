@@ -55,14 +55,20 @@ export async function stopCues(): Promise<void> {
 
 // 멘트 하나를 끝까지 재생한다. 실패해도 throw하지 않는다 —
 // 소리가 안 나더라도 화면 버튼으로 진행할 수 있어야 한다(문서 §2 음성·터치 병행).
-async function playOne(id: CueId, mine: number): Promise<void> {
+export type CueStart = (id: CueId, durationMs: number | null) => void;
+
+async function playOne(id: CueId, mine: number, onStart?: CueStart): Promise<void> {
   if (mine !== token) return;
   playingId = id;
   try {
     await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, shouldDuckAndroid: true });
-    const { sound } = await Audio.Sound.createAsync(FILES[id]);
+    const { sound, status } = await Audio.Sound.createAsync(FILES[id]);
     if (mine !== token) { try { await sound.unloadAsync(); } catch {} return; }
     current = sound;
+    // 길이를 못 읽는 기기가 있어 null을 허용한다. 화면은 그때 기본 속도로 돌아간다.
+    const durationMs = status.isLoaded && typeof status.durationMillis === "number"
+      ? status.durationMillis : null;
+    try { onStart?.(id, durationMs); } catch {}
     await new Promise<void>((resolve) => {
       // 파일이 짧아도 상태 콜백이 안 오는 기기가 있어 안전장치를 둔다.
       const safety = setTimeout(resolve, 30000);
@@ -83,12 +89,12 @@ async function playOne(id: CueId, mine: number): Promise<void> {
 
 // 멘트를 순서대로 재생한다. 사이 간격은 문서가 정한 0.8초.
 // 재생이 끝나면 resolve — 화면은 이 시점에 마이크를 연다(자기 목소리를 듣지 않게).
-export async function playCues(ids: CueId[]): Promise<void> {
+export async function playCues(ids: CueId[], onStart?: CueStart): Promise<void> {
   await stopCues();
   const mine = ++token;
   for (let i = 0; i < ids.length; i++) {
     if (mine !== token) return;
-    await playOne(ids[i], mine);
+    await playOne(ids[i], mine, onStart);
     if (i < ids.length - 1) {
       await new Promise((r) => setTimeout(r, GAP_MS));
     }

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Mic, Check, ChevronRight, Clock, Hand } from "lucide-react-native";
+import { Mic, Check, ChevronRight, ChevronLeft, Clock, Hand } from "lucide-react-native";
 import InCallManager from "react-native-incall-manager";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
@@ -10,12 +10,14 @@ import { ensurePermission, scheduleReminders } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { useSpeechToText } from "../hooks/useSpeechToText";
 import { playCues, stopCues, currentCueId } from "../lib/cuePlayer";
+import { useTypedCaption } from "../hooks/useTypedCaption";
 import { CUES, CueId, DISCLAIMER } from "../lib/voiceScript";
 import { DoseTime, Slot, SLOTS, parseUtterance, afterMealTimes, CONTEXT_WORDS } from "../lib/voiceParse";
 import { slotLabel } from "../lib/timeOfDay";
 import {
   GuideState, INITIAL_STATE, cuesForStep, onUtterance, onNoReply,
   onPickCount, onPickTimes, onConfirm, onSkip,
+  stepIndex, GUIDE_TOTAL_STEPS,
 } from "../lib/voiceGuideFlow";
 import { isLikelyEcho, isLongCue } from "../lib/voiceEcho";
 import { logGuideEvent } from "../lib/analytics";
@@ -41,7 +43,10 @@ export function VoiceGuideScreen() {
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [state, setState] = useState<GuideState>(INITIAL_STATE);
+  // 자막은 음성 길이에 맞춰 타이핑된다 (useTypedCaption). caption은 원문 —
+  // 에코 필터·접근성용으로 항상 전문을 들고 있는다.
   const [caption, setCaption] = useState<string>(CUES.V01.text);
+  const typed = useTypedCaption();
   const [saving, setSaving] = useState(false);
   const [tapHint, setTapHint] = useState(false);
 
@@ -70,7 +75,11 @@ export function VoiceGuideScreen() {
       setTapHint(ids.some((id) => isLongCue(CUES[id].text)));
       // 재생을 기다리지 않고 마이크를 먼저 연다 — 그래야 말을 끊을 수 있다.
       if (canListen) { try { await speech.start(); } catch {} }
-      await playCues(ids);
+      // 멘트가 실제로 시작될 때 그 파일의 길이를 받아, 자막을 그 길이에 맞춰 친다.
+      await playCues(ids, (id, durationMs) => {
+        setCaption(CUES[id].text);
+        typed.begin(CUES[id].text, durationMs, { dropExample: true });
+      });
       setTapHint(false);
     }
     const s = stateRef.current;
@@ -103,6 +112,7 @@ export function VoiceGuideScreen() {
     }
     // 사용자가 말했다 → 나가던 안내를 즉시 멈춘다 (barge-in).
     void stopCues();
+    typed.finish(CUES[playing ?? "V01"].text, { dropExample: true });
     setTapHint(false);
     clearNoReply();
     const before = stateRef.current;
@@ -134,8 +144,10 @@ export function VoiceGuideScreen() {
 
   // ③ 화면 탭으로 즉시 끊기. 에코 필터가 새거나 AEC가 안 걸리는 기기를 위한 확실한 길.
   function tapToSpeak() {
-    if (!currentCueId()) return;
+    const playing = currentCueId();
+    if (!playing) return;
     void stopCues();
+    typed.finish(CUES[playing].text, { dropExample: true }); // 끊겨도 문장은 다 보이게
     setTapHint(false);
     stats.current.tapInterrupt++;
     const s = stateRef.current;
@@ -224,16 +236,45 @@ export function VoiceGuideScreen() {
   }
 
   const listening = speech.listening;
+  const progress = stepIndex(state.step);
+
+  // 뒤로: 한 단계 되돌린다. 첫 단계에서 누르면 안내를 그만두고 앞 화면으로.
+  // 되돌아간 단계의 멘트를 다시 재생해 어디로 왔는지 소리로도 알려 준다.
+  function goBack() {
+    speech.stop(); clearNoReply(); void stopCues();
+    const s = stateRef.current;
+    if (s.step === "time") { setState({ ...s, step: "count" }); void runCues(cuesForStep("count"), true); return; }
+    if (s.step === "confirm") { setState({ ...s, step: "time" }); void runCues(cuesForStep("time"), true); return; }
+    if (nav.canGoBack()) nav.goBack();
+  }
 
   return (
     <Pressable style={styles.screen} onPress={tapToSpeak} accessibilityRole="button">
       <ScrollView contentContainerStyle={[styles.c, { paddingTop: insets.top + spacing.md, paddingBottom: spacing.xl + insets.bottom }]}>
-        {/* 우상단 건너뛰기 — 단계 1~3 어디서든 (문서 §4) */}
-        {state.step !== "done" && state.step !== "skipped" ? (
-          <Pressable onPress={skip} style={styles.skipBtn} hitSlop={10}>
-            <Text style={styles.skipText}>나중에 설정할게요</Text>
+        {/* 헤더 — 뒤로가기 · 진행 표시(4칸) · 건너뛰기 (시안 + 문서 §4) */}
+        <View style={styles.header}>
+          <Pressable onPress={goBack} hitSlop={12} style={styles.backBtn}
+            accessibilityRole="button" accessibilityLabel="뒤로">
+            <ChevronLeft size={26} color={colors.textSecondary} />
           </Pressable>
-        ) : null}
+
+          {progress !== null ? (
+            <View style={styles.progressWrap} accessibilityLabel={`${progress}단계, 전체 ${GUIDE_TOTAL_STEPS}단계`}>
+              <View style={styles.segRow}>
+                {Array.from({ length: GUIDE_TOTAL_STEPS }, (_, i) => (
+                  <View key={i} style={[styles.seg, i < progress && styles.segOn]} />
+                ))}
+              </View>
+              <Text style={styles.progressText}>{progress}/{GUIDE_TOTAL_STEPS}</Text>
+            </View>
+          ) : <View style={styles.progressWrap} />}
+
+          {state.step !== "done" && state.step !== "skipped" ? (
+            <Pressable onPress={skip} hitSlop={10} style={styles.skipBtn}>
+              <Text style={styles.skipText}>나중에</Text>
+            </Pressable>
+          ) : <View style={styles.skipBtn} />}
+        </View>
 
         {/* 음성 인디케이터 + 자막 */}
         <View style={styles.micWrap}>
@@ -248,7 +289,7 @@ export function VoiceGuideScreen() {
           </Text>
         </View>
 
-        <Text style={styles.caption}>{caption}</Text>
+        <Text style={styles.caption}>{typed.display || caption}</Text>
         {tapHint ? (
           <View style={styles.tapHint}>
             <Hand size={20} color={colors.primaryBlue} />
@@ -361,7 +402,21 @@ export function VoiceGuideScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.lightBlueBg },
   c: { padding: spacing.md, gap: spacing.md },
-  skipBtn: { alignSelf: "flex-end", paddingHorizontal: spacing.sm, paddingVertical: 6 },
+  header: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    marginBottom: spacing.md,
+  },
+  backBtn: { width: 60, height: 44, justifyContent: "center" },
+  skipBtn: { width: 60, height: 44, alignItems: "flex-end", justifyContent: "center" },
+  progressWrap: { flex: 1, alignItems: "center" },
+  segRow: { flexDirection: "row", gap: 6 },
+  seg: {
+    width: 26, height: 5, borderRadius: 3, backgroundColor: "#DCE4EF",
+  },
+  segOn: { backgroundColor: colors.primaryBlue },
+  progressText: {
+    marginTop: 6, fontSize: 13, fontWeight: "700", color: colors.textSecondary,
+  },
   skipText: { fontSize: fontSizes.body, color: colors.textSecondary, fontWeight: "600" },
   micWrap: { alignItems: "center", gap: spacing.sm },
   micHalo: {
