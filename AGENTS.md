@@ -6,8 +6,10 @@
 ## 무엇을 만드는가
 
 - **앱:** React Native + Expo (managed), TypeScript. 코드는 `care-app/`에 있다.
-- **백엔드:** Supabase Postgres, **인증 없음**. 환자는 6자리 `patient_code`를
-  발급받고, 보호자는 그 코드를 입력해 **읽기 전용**으로 본다.
+- **백엔드:** Supabase Postgres, **인증 없음**. 쓰는 사람은 본인(환자) 한 종류다.
+  **보호자 기능은 없다** — 6자리 `patient_code`로 보호자가 읽기 전용 열람하는
+  기능은 회의 결정으로 제거됐다. 되살리자는 제안을 하지 말 것. 코드에도 흔적이
+  없어야 한다(`patient_code`, 역할 구분, 코드 입력 화면).
 - **음성:** TTS는 `expo-speech`, STT는 `expo-av` 녹음 → OpenAI Whisper 전사 →
   의도 분류. 음성 등록은 Whisper + `gpt-4o-mini` 파싱.
 - **알림:** `expo-notifications` 로컬 예약 알림.

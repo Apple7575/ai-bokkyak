@@ -24,7 +24,7 @@ export const supabase = createClient(
 );
 
 export type Patient = {
-  id: string; name: string; patient_code: string; created_at: string;
+  id: string; name: string; created_at: string;
   gender?: string | null; birth_date?: string | null; region?: string | null; phone?: string | null;
   kakao_id?: string | null;       // 카카오 회원번호 (없으면 카카오 없이 가입한 사용자)
 };

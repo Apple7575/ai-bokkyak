@@ -3,7 +3,9 @@ create extension if not exists "pgcrypto";
 create table patients (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  patient_code text unique not null,
+  -- 보호자 기능을 접으면서 앱은 더 이상 이 값을 쓰지 않는다.
+  -- 기존 행 보존을 위해 컬럼만 남겨 뒀다 — migrate-drop-guardian.sql 참고.
+  patient_code text unique,
   gender text,
   birth_date date,
   region text,

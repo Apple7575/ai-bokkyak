@@ -1,7 +1,6 @@
 import { supabase } from "./supabase";
-import { setPatient, setRole } from "./storage";
+import { setPatient } from "./storage";
 
-const DEMO_CODE = "DEMO00";
 const DEMO_NAME = "김복약";
 const DEMO_MEDS = [
   { medicine_name: "고혈압약", time_of_day: "아침", hour: 8 },
@@ -11,10 +10,11 @@ const DEMO_MEDS = [
 
 // 데모 전용 환자로 입장 + 매번 최신 날짜로 샘플 데이터 재시드(이 환자에 한정 격리).
 export async function enterDemo(): Promise<void> {
-  // 1) 데모 환자 확보(코드로 조회, 없으면 생성). created_at 백데이트 위해 schedules를 직접 시드.
-  let { data: patient } = await supabase.from("patients").select("*").eq("patient_code", DEMO_CODE).maybeSingle();
+  // 1) 데모 환자 확보(없으면 생성). created_at 백데이트 위해 schedules를 직접 시드.
+  // 보호자 코드를 없앤 뒤로는 이름으로 찾는다. 데모 환자는 하나뿐이다.
+  let { data: patient } = await supabase.from("patients").select("*").eq("name", DEMO_NAME).maybeSingle();
   if (!patient) {
-    const ins = await supabase.from("patients").insert({ name: DEMO_NAME, patient_code: DEMO_CODE }).select().single();
+    const ins = await supabase.from("patients").insert({ name: DEMO_NAME }).select().single();
     patient = ins.data ?? null;
   }
   if (!patient) throw new Error("demo patient 생성 실패");
@@ -31,7 +31,7 @@ export async function enterDemo(): Promise<void> {
     hour: m.hour, minute: 0, repeat_days: [] as number[], active: true, created_at: createdAt,
   }));
   const { data: scheds } = await supabase.from("schedules").insert(schedRows).select();
-  if (!scheds || scheds.length === 0) { await setPatient(pid, DEMO_CODE); await setRole("patient"); return; }
+  if (!scheds || scheds.length === 0) { await setPatient(pid); return; }
 
   // 3) 최근 14일 복약 기록(섞인 상태)으로 달력 색/이행률 생성
   const now = new Date();
@@ -53,6 +53,5 @@ export async function enterDemo(): Promise<void> {
   if (records.length) await supabase.from("intake_records").upsert(records, { onConflict: "schedule_id,scheduled_for" });
 
   // 4) 로컬 상태 설정 → 앱 진입 (데모 알림 예약 안 함)
-  await setPatient(pid, DEMO_CODE);
-  await setRole("patient");
+  await setPatient(pid);
 }

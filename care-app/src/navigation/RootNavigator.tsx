@@ -4,7 +4,7 @@ import notifee from "@notifee/react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { RootStackParamList, TabParamList } from "./types";
-import { getRole, getOnboarded, Role } from "../lib/storage";
+import { getPatientId, getOnboarded } from "../lib/storage";
 import { OnboardingScreen } from "../screens/OnboardingScreen";
 import { SplashScreen } from "../screens/SplashScreen";
 import { RoleSelectScreen } from "../screens/RoleSelectScreen";
@@ -92,11 +92,12 @@ function PatientTabs() {
 }
 
 export function RootNavigator() {
-  const [init, setInit] = useState<{ role: Role | null; onboarded: boolean } | "loading">("loading");
+  const [init, setInit] = useState<{ signedUp: boolean; onboarded: boolean } | "loading">("loading");
   const [alarmSid, setAlarmSid] = useState<string | null>(null);
   useEffect(() => {
     (async () => {
-      const role = await getRole();
+      // 보호자 기능을 뺀 뒤로 역할 구분이 없다. 환자 id가 있으면 가입한 것이다.
+      const signedUp = (await getPatientId()) !== null;
       const onboarded = await getOnboarded();
       // 알람(풀스크린/알림 탭)으로 앱이 켜졌으면 홈을 먼저 그리지 않고 처음부터 알람 화면을 띄운다.
       try {
@@ -104,7 +105,7 @@ export function RootNavigator() {
         const sid = initial?.notification?.data?.scheduleId as string | undefined;
         if (sid) setAlarmSid(sid);
       } catch {}
-      setInit({ role, onboarded });
+      setInit({ signedUp, onboarded });
     })();
   }, []);
   if (init === "loading") {
@@ -113,8 +114,8 @@ export function RootNavigator() {
   // 첫 실행(가입 전 + 온보딩 미완료)이면 안내 화면부터, 그다음 가입 화면.
   const initialRouteName: keyof RootStackParamList =
     alarmSid ? "Alarm"
-      : !init.role && !init.onboarded ? "Splash"
-        : !init.role ? "RoleSelect"
+      : !init.signedUp && !init.onboarded ? "Splash"
+        : !init.signedUp ? "RoleSelect"
           : "Tabs";
   return (
     <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>

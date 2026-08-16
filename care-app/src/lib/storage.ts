@@ -1,8 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// 보호자 기능 제거 후 역할은 환자(본인)만 남는다. 값은 "가입 완료" 플래그로 쓰인다.
-export type Role = "patient";
-const KEYS = { role: "care.role", patientId: "care.patientId", patientCode: "care.patientCode", onboarded: "care.onboarded" };
+// 보호자 기능을 뺐다. 쓰는 사람은 본인 한 종류뿐이라 역할 구분도, 보호자에게
+// 건네주던 6자리 코드도 없다. "가입했나"는 환자 id가 있느냐로 판단한다.
+//
+// care.role / care.patientCode 키는 더 쓰지 않지만 clearAll이 지울 수 있게
+// 남겨 둔다 — 이전 버전을 쓰던 기기에 값이 남아 있다.
+const KEYS = { patientId: "care.patientId", onboarded: "care.onboarded" };
+const LEGACY_KEYS = ["care.role", "care.patientCode"];
 
 export async function getOnboarded(): Promise<boolean> {
   return (await AsyncStorage.getItem(KEYS.onboarded)) === "1";
@@ -11,23 +15,14 @@ export async function setOnboarded(): Promise<void> {
   await AsyncStorage.setItem(KEYS.onboarded, "1");
 }
 
-export async function getRole(): Promise<Role | null> {
-  return (await AsyncStorage.getItem(KEYS.role)) as Role | null;
-}
-export async function setRole(role: Role): Promise<void> {
-  await AsyncStorage.setItem(KEYS.role, role);
-}
 export async function getPatientId(): Promise<string | null> {
   return AsyncStorage.getItem(KEYS.patientId);
 }
-export async function setPatient(id: string, code: string): Promise<void> {
-  await AsyncStorage.multiSet([[KEYS.patientId, id], [KEYS.patientCode, code]]);
-}
-export async function getPatientCode(): Promise<string | null> {
-  return AsyncStorage.getItem(KEYS.patientCode);
+export async function setPatient(id: string): Promise<void> {
+  await AsyncStorage.setItem(KEYS.patientId, id);
 }
 export async function clearAll(): Promise<void> {
-  await AsyncStorage.multiRemove(Object.values(KEYS));
+  await AsyncStorage.multiRemove([...Object.values(KEYS), ...LEGACY_KEYS]);
 }
 
 const PENDING = "care.pendingAlarm";

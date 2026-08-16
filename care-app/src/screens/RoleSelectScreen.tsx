@@ -3,18 +3,12 @@ import { View, Text, TextInput, StyleSheet, Alert, ScrollView, Pressable } from 
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Pill, User, Eye, MessageCircle } from "lucide-react-native";
-import { setRole, setPatient } from "../lib/storage";
+import { setPatient } from "../lib/storage";
 import { supabase } from "../lib/supabase";
 import { enterDemo } from "../lib/demo";
 import { signInWithKakao } from "../lib/kakaoAuth";
 import { buildBirthDate } from "../lib/callTools";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
-
-function makeCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let c = ""; for (let i = 0; i < 6; i++) c += chars[Math.floor(Math.random() * chars.length)];
-  return c;
-}
 
 // 가입 화면 — 이름·성별만 받는다. 생년월일·복약 정보 등 나머지는 가입 직후
 // AI 건강전화(음성)로 여쭤보고 받는다(어르신이 직접 입력하기 어렵기 때문).
@@ -51,17 +45,14 @@ export function RoleSelectScreen() {
     }
     setSaving(true);
     try {
-      const code = makeCode();
       const { data, error } = await supabase.from("patients")
         .insert({
           name: name.trim(),
-          patient_code: code,
           gender: gender ?? null,
           birth_date: birth,
         }).select().single();
       if (error || !data) { Alert.alert("등록 실패", error?.message ?? ""); setSaving(false); return; }
-      await setPatient(data.id, data.patient_code);
-      await setRole("patient");
+      await setPatient(data.id);
       // 가입 직후 음성 가이드로 복용 알람을 설정한다(사전 녹음 인출 방식).
       // 기존 Realtime 통화(setup)는 main 브랜치에 그대로 있다.
       nav.reset({ index: 0, routes: [{ name: "Tabs" }, { name: "VoiceGuide" }] });
@@ -91,8 +82,7 @@ export function RoleSelectScreen() {
 
       if (found) {
         // 기기를 바꿔도 약과 기록이 따라온다.
-        await setPatient(found.id, found.patient_code);
-        await setRole("patient");
+        await setPatient(found.id);
         nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
         return;
       }
@@ -112,12 +102,11 @@ export function RoleSelectScreen() {
       }
       const { data, error } = await supabase.from("patients")
         .insert({
-          name: finalName, patient_code: makeCode(),
+          name: finalName,
           gender: gender ?? null, kakao_id: r.kakaoId, birth_date: birth,
         }).select().single();
       if (error || !data) throw error ?? new Error("insert 실패");
-      await setPatient(data.id, data.patient_code);
-      await setRole("patient");
+      await setPatient(data.id);
       nav.reset({ index: 0, routes: [{ name: "Tabs" }, { name: "VoiceGuide" }] });
     } catch {
       Alert.alert("가입에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
