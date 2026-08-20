@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, Pressable } from "react-native";
+import { View, Text, ScrollView, StyleSheet, Pressable, useWindowDimensions } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Plus, AlertTriangle, ChevronRight, Pill } from "lucide-react-native";
@@ -10,6 +10,7 @@ import { getKindMap, resolveKind } from "../lib/medStore";
 import { lookupIngredients, fetchContraindications } from "../lib/drugData";
 import { allIngredients, matchFindings, MedIngredients, Finding } from "../lib/interactions";
 import { groupByMedicine, describeDoses, describeRepeat, MedGroup } from "../lib/medSummary";
+import { tabLayout } from "../lib/cabinetTabs";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 
 // D-01 내 약장 — 확정 시안 기준.
@@ -22,13 +23,13 @@ import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 type Filter = "전체" | MedKind | "미분류";
 const FILTERS: readonly Filter[] = ["전체", "처방약", "일반약", "건기식", "미분류"] as const;
 
+// 아래 styles와 tabLayout() 계산이 같은 값을 봐야 한다. 한 곳에만 둔다.
+const LIST_PADDING = spacing.md;
+const TABS_PADDING = 4;
+
 const KIND_LABEL: Record<MedKind | "미분류", string> = {
   처방약: "처방약", 일반약: "일반약", 건기식: "건기식", 미분류: "미분류",
 };
-// 상단 요약은 시안대로 4칸을 유지한다(미분류까지 5칸이면 숫자가 좁아 읽기 어렵다).
-// 미분류는 아래 필터 탭에서 고른다.
-const SUMMARY_CELLS: readonly Filter[] = ["전체", "처방약", "일반약", "건기식"] as const;
-
 const KIND_COLOR: Record<MedKind | "미분류", string> = {
   처방약: colors.primaryBlue,
   일반약: colors.secondaryBlue,
@@ -39,6 +40,11 @@ const KIND_COLOR: Record<MedKind | "미분류", string> = {
 export function CabinetScreen() {
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  // 구분 5개(전체·처방약·일반약·건기식·미분류)를 요약 칸과 필터 탭 모두 한 줄에
+  // 넣어야 한다. 넘치면 글자 크기를 화면 폭에 맞춰 줄인다(cabinetTabs.ts).
+  const { width: screenWidth } = useWindowDimensions();
+  const summaryFont = tabLayout(screenWidth, LIST_PADDING).fontSize;
+  const tabFont = tabLayout(screenWidth, LIST_PADDING, TABS_PADDING).fontSize;
   const [items, setItems] = useState<Schedule[]>([]);
   const [kinds, setKinds] = useState<Record<string, MedKind>>({});
   const [findings, setFindings] = useState<Finding[] | null>(null); // null = 확인 못 함
@@ -89,12 +95,17 @@ export function CabinetScreen() {
       </View>
 
       <ScrollView contentContainerStyle={[styles.list, { paddingBottom: spacing.xl + insets.bottom }]}>
-        {/* 요약 4칸 */}
+        {/* 요약 5칸 — 필터 탭과 같은 구분을 같은 순서로 (전체·처방약·일반약·건기식·미분류) */}
         <View style={styles.summary}>
-          {SUMMARY_CELLS.map((f) => (
+          {FILTERS.map((f) => (
             <View key={f} style={styles.summaryCell}>
-              <Text style={[styles.summaryNum, f !== "전체" && { color: KIND_COLOR[f] }]}>{counts[f]}</Text>
-              <Text style={styles.summaryLabel}>{f}</Text>
+              <Text
+                style={[styles.summaryNum, f !== "전체" && { color: KIND_COLOR[f] }]}
+                numberOfLines={1}
+              >
+                {counts[f]}
+              </Text>
+              <Text style={[styles.summaryLabel, { fontSize: summaryFont }]} numberOfLines={1}>{f}</Text>
             </View>
           ))}
         </View>
@@ -125,7 +136,12 @@ export function CabinetScreen() {
               onPress={() => setFilter(f)}
               style={[styles.tab, filter === f && styles.tabOn]}
             >
-              <Text style={[styles.tabText, filter === f && styles.tabTextOn]}>{f}</Text>
+              <Text
+                style={[styles.tabText, { fontSize: tabFont }, filter === f && styles.tabTextOn]}
+                numberOfLines={1}
+              >
+                {f}
+              </Text>
             </Pressable>
           ))}
         </View>
@@ -185,15 +201,15 @@ const styles = StyleSheet.create({
   },
   headerSide: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   headerTitle: { flex: 1, textAlign: "center", fontSize: 26, fontWeight: "800", color: colors.primaryNavy },
-  list: { padding: spacing.md, gap: spacing.md },
+  list: { padding: LIST_PADDING, gap: spacing.md },
   summary: {
     flexDirection: "row", backgroundColor: colors.cardBg,
     borderColor: colors.border, borderWidth: 1, borderRadius: radii.card,
     paddingVertical: spacing.md,
   },
-  summaryCell: { flex: 1, alignItems: "center" },
-  summaryNum: { fontSize: 30, fontWeight: "800", color: colors.primaryNavy },
-  summaryLabel: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 2 },
+  summaryCell: { flex: 1, minWidth: 0, alignItems: "center" },
+  summaryNum: { fontSize: 28, fontWeight: "800", color: colors.primaryNavy },
+  summaryLabel: { color: colors.textSecondary, marginTop: 2 },
   warn: {
     backgroundColor: "#FFF8EC", borderColor: colors.warningOrange, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.md,
@@ -201,18 +217,19 @@ const styles = StyleSheet.create({
   warnHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   warnTitle: { flex: 1, fontSize: 21, fontWeight: "800", color: "#8A5A00" },
   warnPair: { fontSize: fontSizes.body, color: "#8A5A00", marginTop: 6, lineHeight: 25 },
-  // 탭이 5개가 되어 한 줄에 넣으면 글자가 좁아진다. 가로 스크롤은 나머지 탭이
-  // 화면 밖에 숨어 어르신이 못 찾으므로, 줄바꿈해서 전부 보이게 한다.
+  // 5개를 반드시 한 줄에. 줄바꿈하면 아랫줄이 목록처럼 보이고, 가로 스크롤은
+  // 나머지 탭이 화면 밖에 숨어 어르신이 못 찾는다. 대신 좁은 화면에서는
+  // 글자 크기를 줄여 맞춘다(tabFont).
   tabs: {
-    flexDirection: "row", flexWrap: "wrap", gap: 6,
-    backgroundColor: colors.lightBlueBg, borderRadius: radii.card, padding: 4,
+    flexDirection: "row", backgroundColor: colors.lightBlueBg,
+    borderRadius: radii.pill, padding: TABS_PADDING,
   },
   tab: {
-    flexGrow: 1, flexBasis: "30%", minHeight: 48,
+    flex: 1, minWidth: 0, minHeight: 48,
     alignItems: "center", justifyContent: "center", borderRadius: radii.pill,
   },
   tabOn: { backgroundColor: colors.cardBg },
-  tabText: { fontSize: fontSizes.body, fontWeight: "700", color: colors.textSecondary },
+  tabText: { fontWeight: "700", color: colors.textSecondary },
   tabTextOn: { color: colors.primaryNavy },
   listHint: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: -spacing.xs },
   card: {
