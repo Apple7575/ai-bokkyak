@@ -1,12 +1,10 @@
-import React, { useCallback, useRef, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from "react-native";
-import { Swipeable } from "react-native-gesture-handler";
+import React, { useCallback, useState } from "react";
+import { View, Text, ScrollView, StyleSheet, Pressable } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Plus, AlertTriangle, ChevronRight, Pencil, Trash2, Pill } from "lucide-react-native";
+import { Plus, AlertTriangle, ChevronRight, Pill } from "lucide-react-native";
 import { supabase, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
-import { cancelSchedule } from "../lib/notifications";
 import { MedKind } from "../lib/medKind";
 import { getKindMap, resolveKind } from "../lib/medStore";
 import { lookupIngredients, fetchContraindications } from "../lib/drugData";
@@ -19,12 +17,18 @@ import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 // 유효기간(「46일 남았어요」)은 넣지 않는다 — 실제 처방 데이터가 있어야 의미가 있어
 // 회의에서 보류로 정리됐다.
 
-type Filter = "전체" | MedKind;
-const FILTERS: readonly Filter[] = ["전체", "처방약", "일반약", "건기식"] as const;
+// QA 2026-08-20: 구분을 아직 안 정한 약이 어느 탭에도 안 잡혀 '전체'에서만 보였다.
+// 미분류를 필터로 올려서 "정해야 할 약"을 한 번에 볼 수 있게 한다.
+type Filter = "전체" | MedKind | "미분류";
+const FILTERS: readonly Filter[] = ["전체", "처방약", "일반약", "건기식", "미분류"] as const;
 
 const KIND_LABEL: Record<MedKind | "미분류", string> = {
   처방약: "처방약", 일반약: "일반약", 건기식: "건기식", 미분류: "미분류",
 };
+// 상단 요약은 시안대로 4칸을 유지한다(미분류까지 5칸이면 숫자가 좁아 읽기 어렵다).
+// 미분류는 아래 필터 탭에서 고른다.
+const SUMMARY_CELLS: readonly Filter[] = ["전체", "처방약", "일반약", "건기식"] as const;
+
 const KIND_COLOR: Record<MedKind | "미분류", string> = {
   처방약: colors.primaryBlue,
   일반약: colors.secondaryBlue,
@@ -62,68 +66,11 @@ export function CabinetScreen() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  // 열려 있는 스와이프는 하나만 — 다음 행을 열면 이전 행이 닫힌다.
-  const rowRefs = useRef<Record<string, Swipeable>>({});
-  const openRef = useRef<Swipeable | null>(null);
-  function closeOpen(except?: Swipeable | null) {
-    if (openRef.current && openRef.current !== except) openRef.current.close();
-  }
-
-  // 약 하나를 지우면 그 약의 모든 시간대 일정이 함께 사라져야 한다
-  // (아침·저녁 두 행 중 하나만 남으면 사용자에겐 "안 지워진" 것으로 보인다).
-  function confirmDelete(g: MedGroup<Schedule>) {
-    const many = g.doses.length > 1 ? `\n(${g.doses.length}개 시간대 모두)` : "";
-    Alert.alert(`'${g.name}' 삭제`, `이 약의 복약 일정과 알림을 삭제할까요?${many}`, [
-      { text: "취소", style: "cancel" },
-      {
-        text: "삭제", style: "destructive",
-        onPress: async () => {
-          try {
-            for (const d of g.doses) {
-              // 하드 삭제하면 복약 기록이 cascade로 사라진다 — 비활성화로 목록에서만 뺀다.
-              const { error } = await supabase.from("schedules").update({ active: false }).eq("id", d.id);
-              if (error) throw error;
-              await cancelSchedule(d.id);
-            }
-            await load();
-          } catch {
-            Alert.alert("삭제에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
-          }
-        },
-      },
-    ]);
-  }
-
-  function renderActions(g: MedGroup<Schedule>) {
-    return (
-      <View style={styles.actions}>
-        <Pressable
-          onPress={() => { closeOpen(); nav.navigate("ButtonRegister", { editId: g.doses[0].id }); }}
-          style={[styles.actionBtn, { backgroundColor: colors.primaryBlue }]}
-        >
-          <Pencil size={22} color="#fff" />
-          <Text style={styles.actionText}>수정</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => { closeOpen(); confirmDelete(g); }}
-          style={[styles.actionBtn, { backgroundColor: colors.dangerRed }]}
-        >
-          <Trash2 size={22} color="#fff" />
-          <Text style={styles.actionText}>삭제</Text>
-        </Pressable>
-      </View>
-    );
-  }
-
   // 같은 약을 한 장의 카드로 묶는다(아침·저녁 = 1개 약, 1일 2회).
   const groups = groupByMedicine(items);
   const kindOf = (name: string): MedKind | "미분류" => resolveKind(name, kinds) ?? "미분류";
-  const counts = { 전체: groups.length, 처방약: 0, 일반약: 0, 건기식: 0 } as Record<Filter, number>;
-  for (const g of groups) {
-    const k = kindOf(g.name);
-    if (k !== "미분류") counts[k]++;
-  }
-  // 미분류 약은 어느 구분 탭에도 안 잡히므로 '전체'에서만 보인다.
+  const counts = { 전체: groups.length, 처방약: 0, 일반약: 0, 건기식: 0, 미분류: 0 } as Record<Filter, number>;
+  for (const g of groups) counts[kindOf(g.name)]++;
   const shown = filter === "전체" ? groups : groups.filter((g) => kindOf(g.name) === filter);
 
   return (
@@ -144,7 +91,7 @@ export function CabinetScreen() {
       <ScrollView contentContainerStyle={[styles.list, { paddingBottom: spacing.xl + insets.bottom }]}>
         {/* 요약 4칸 */}
         <View style={styles.summary}>
-          {FILTERS.map((f) => (
+          {SUMMARY_CELLS.map((f) => (
             <View key={f} style={styles.summaryCell}>
               <Text style={[styles.summaryNum, f !== "전체" && { color: KIND_COLOR[f] }]}>{counts[f]}</Text>
               <Text style={styles.summaryLabel}>{f}</Text>
@@ -175,7 +122,7 @@ export function CabinetScreen() {
           {FILTERS.map((f) => (
             <Pressable
               key={f}
-              onPress={() => { closeOpen(); setFilter(f); }}
+              onPress={() => setFilter(f)}
               style={[styles.tab, filter === f && styles.tabOn]}
             >
               <Text style={[styles.tabText, filter === f && styles.tabTextOn]}>{f}</Text>
@@ -186,26 +133,21 @@ export function CabinetScreen() {
         {groups.length === 0 ? (
           <Text style={styles.empty}>약장이 비어 있어요.{"\n"}오른쪽 위 + 를 눌러 약을 등록해 주세요.</Text>
         ) : shown.length === 0 ? (
-          <Text style={styles.empty}>{`${filter}으로 등록된 약이 없어요.`}</Text>
+          <Text style={styles.empty}>
+            {filter === "미분류" ? "구분을 정하지 않은 약이 없어요." : `${filter}으로 등록된 약이 없어요.`}
+          </Text>
         ) : (
-          <Text style={styles.swipeHint}>약을 왼쪽으로 밀면 수정·삭제할 수 있어요.</Text>
+          // QA 2026-08-20: "왼쪽으로 밀어서 수정"은 어르신에게 보이지 않는 조작이라
+          // 스와이프를 없앴다. 수정·삭제는 약을 눌러 들어간 상세 화면에서 버튼으로 한다.
+          <Text style={styles.listHint}>약을 누르면 자세히 보고 수정할 수 있어요.</Text>
         )}
 
         {shown.map((g) => {
           const k = kindOf(g.name);
           const color = KIND_COLOR[k];
           return (
-            <Swipeable
-              key={g.name}
-              ref={(r) => { if (r) rowRefs.current[g.name] = r; }}
-              renderRightActions={() => renderActions(g)}
-              onSwipeableWillOpen={() => {
-                closeOpen(rowRefs.current[g.name]);
-                openRef.current = rowRefs.current[g.name] ?? null;
-              }}
-              overshootRight={false}
-            >
               <Pressable
+                key={g.name}
                 onPress={() => nav.navigate("MedicineDetail", { scheduleId: g.doses[0].id })}
                 style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
               >
@@ -227,7 +169,6 @@ export function CabinetScreen() {
                 </View>
                 <ChevronRight size={22} color={colors.textSecondary} />
               </Pressable>
-            </Swipeable>
           );
         })}
       </ScrollView>
@@ -260,15 +201,20 @@ const styles = StyleSheet.create({
   warnHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   warnTitle: { flex: 1, fontSize: 21, fontWeight: "800", color: "#8A5A00" },
   warnPair: { fontSize: fontSizes.body, color: "#8A5A00", marginTop: 6, lineHeight: 25 },
+  // 탭이 5개가 되어 한 줄에 넣으면 글자가 좁아진다. 가로 스크롤은 나머지 탭이
+  // 화면 밖에 숨어 어르신이 못 찾으므로, 줄바꿈해서 전부 보이게 한다.
   tabs: {
-    flexDirection: "row", backgroundColor: colors.lightBlueBg,
-    borderRadius: radii.pill, padding: 4,
+    flexDirection: "row", flexWrap: "wrap", gap: 6,
+    backgroundColor: colors.lightBlueBg, borderRadius: radii.card, padding: 4,
   },
-  tab: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radii.pill },
+  tab: {
+    flexGrow: 1, flexBasis: "30%", minHeight: 48,
+    alignItems: "center", justifyContent: "center", borderRadius: radii.pill,
+  },
   tabOn: { backgroundColor: colors.cardBg },
   tabText: { fontSize: fontSizes.body, fontWeight: "700", color: colors.textSecondary },
   tabTextOn: { color: colors.primaryNavy },
-  swipeHint: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: -spacing.xs },
+  listHint: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: -spacing.xs },
   card: {
     flexDirection: "row", alignItems: "center", gap: spacing.md,
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
@@ -286,12 +232,5 @@ const styles = StyleSheet.create({
     fontSize: 20, color: colors.textSecondary, textAlign: "center",
     marginTop: spacing.lg, lineHeight: 30,
   },
-  actions: { flexDirection: "row", alignItems: "stretch" },
-  actionBtn: {
-    width: 84, alignItems: "center", justifyContent: "center", gap: 4,
-    marginLeft: spacing.sm, borderRadius: radii.card,
-  },
-  actionText: { color: "#fff", fontSize: 17, fontWeight: "800" },
-  // (minTouch는 스와이프 액션 최소 높이 기준으로 유지)
   _touch: { minHeight: minTouch },
 });

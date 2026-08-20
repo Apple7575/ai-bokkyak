@@ -9,6 +9,8 @@ import { supabase } from "./supabase";
 import { alarmChannelId } from "./alarmSound";
 import { slotLabel } from "./timeOfDay";
 import { getAlarmSoundSettings } from "./alarmSettings";
+import { alarmTitle, alarmBody, snoozeTitle } from "./alarmText";
+import { planWindowBursts } from "./iosAlarmWindow";
 
 // 정확 알람(SCHEDULE_EXACT_ALARM)이 허용된 경우에만 alarmManager 옵션을 켠다.
 // 권한이 없는 Android(14+ 등)에서 alarmManager를 주면 Notifee가 트리거를 거부해
@@ -90,13 +92,19 @@ const REPEAT_INTERVAL_MS = 30_000;
 const MAX_SEQ = 5;
 
 // 알람 알림 본문(primary/후속 공용). data.seq로 반복 단계를 추적한다.
+// medName은 data에도 실어 둔다 — 백그라운드 이벤트 핸들러가 스누즈를 다시 예약할 때
+// Supabase를 한 번 더 조회하지 않고 같은 이름을 그대로 쓸 수 있다(오프라인에서도 유지).
 function alarmNotification(
-  scheduleId: string, tod: TOD, ch: string, hour: number, minute: number, seq: number, silent: boolean
+  scheduleId: string, tod: TOD, ch: string, hour: number, minute: number, seq: number,
+  silent: boolean, medName: string
 ) {
   return {
-    title: `${slotLabel(tod)} 약 복용 시간입니다`,
-    body: "약을 드신 후 복용 완료를 눌러주세요.",
-    data: { scheduleId, hour: String(hour), minute: String(minute), tod, seq: String(seq) },
+    title: alarmTitle(medName, slotLabel(tod)),
+    body: alarmBody(medName, slotLabel(tod)),
+    data: {
+      scheduleId, hour: String(hour), minute: String(minute), tod,
+      seq: String(seq), medName,
+    },
     android: androidAlarm(scheduleId, ch, SOUND[tod], silent),
     ios: {
       categoryId: "care-alarm",
@@ -109,14 +117,15 @@ function alarmNotification(
 // 알람이 전달됐는데 아직 응답이 없을 때, 다음 반복 알림을 30초 뒤로 예약한다(이벤트 핸들러에서 호출).
 // seq는 "다음" 단계 번호. MAX_SEQ를 넘으면 더 울리지 않는다.
 export async function scheduleRepeatFollowup(
-  scheduleId: string, timeOfDay: string, hour: number, minute: number, seq: number
+  scheduleId: string, timeOfDay: string, hour: number, minute: number, seq: number,
+  medName = ""
 ): Promise<void> {
   if (seq > MAX_SEQ) return;
   const tod = todOf(timeOfDay);
   const { silent } = await getAlarmSoundSettings();
   const ch = await ensureChannel(tod, silent);
   await notifee.createTriggerNotification(
-    { id: `alarm-${scheduleId}-rep`, ...alarmNotification(scheduleId, tod, ch, hour, minute, seq, silent) },
+    { id: `alarm-${scheduleId}-rep`, ...alarmNotification(scheduleId, tod, ch, hour, minute, seq, silent, medName) },
     { type: TriggerType.TIMESTAMP, timestamp: Date.now() + REPEAT_INTERVAL_MS, ...(await exactAlarmOption()) });
 }
 
@@ -131,7 +140,8 @@ const WINDOW_HOURS = 48;
 const BURST_GAP_MS = 30_000;
 
 export async function scheduleIosWindow(
-  scheduleId: string, timeOfDay: string, hour: number, minute: number, repeatDays: number[]
+  scheduleId: string, timeOfDay: string, hour: number, minute: number, repeatDays: number[],
+  medName = ""
 ): Promise<void> {
   if (Platform.OS !== "ios") return;
   await cancelIosWindow(scheduleId);
@@ -143,24 +153,30 @@ export async function scheduleIosWindow(
   try { pending = (await notifee.getTriggerNotificationIds()).length; } catch {}
   const room = Math.max(0, 60 - pending);            // 64 한도에서 약간 여유
   const perDose = doses.length > 0 ? Math.max(1, Math.min(6, Math.floor(room / doses.length))) : 0;
-  for (let di = 0; di < doses.length; di++) {
-    const base = doses[di].getTime();
-    for (let b = 0; b < perDose; b++) {
-      // 64한도 초과 시 createTriggerNotification이 throw할 수 있으므로 graceful — 크래시 방지.
-      // (도즈별 b=0부터 예약하므로 한도에 닿아도 기본 알람이 우선 등록된다.)
-      try {
-        await notifee.createTriggerNotification(
-          { id: `alarm-${scheduleId}-win-${di}-${b}`, title: `${slotLabel(tod)} 약 복용 시간입니다`,
-            body: "약을 드신 후 '지금 약 먹기'를 눌러주세요.",
-            data: { scheduleId, hour: String(hour), minute: String(minute), tod, seq: String(b) },
-            ios: {
-              categoryId: "care-alarm",
-              ...(silent ? {} : { sound: `${SOUND[tod]}.mp3` }),
-              interruptionLevel: "timeSensitive" as const,
-            } },
-          { type: TriggerType.TIMESTAMP, timestamp: base + b * BURST_GAP_MS });
-      } catch {}
-    }
+  // 어떤 시각을 예약할지는 순수 함수가 정한다(iosAlarmWindow.test.ts가 지킨다).
+  // 첫 도즈의 정시는 rescheduleNext가 이미 잡아 두었으므로 비운다 — 여기서 또
+  // 만들면 같은 초에 알림이 두 개 뜬다(QA 2026-08-20). 둘은 항상 짝으로 호출된다
+  // (scheduleReminders / resyncAllAlarms / stopAlarm).
+  for (const { doseIndex, burst, at } of planWindowBursts(doses, perDose, BURST_GAP_MS)) {
+    // 64한도 초과 시 createTriggerNotification이 throw할 수 있으므로 graceful — 크래시 방지.
+    try {
+      await notifee.createTriggerNotification(
+        { id: `alarm-${scheduleId}-win-${doseIndex}-${burst}`,
+          // 본문·제목은 정시 알람과 같은 alarmText로 만든다 — 두 알림의 안내 문구가
+          // 달라 "뭘 눌러야 하는지 모르겠다"는 QA 지적의 재발을 막는다.
+          title: alarmTitle(medName, slotLabel(tod)),
+          body: alarmBody(medName, slotLabel(tod)),
+          data: {
+            scheduleId, hour: String(hour), minute: String(minute), tod,
+            seq: String(burst), medName,
+          },
+          ios: {
+            categoryId: "care-alarm",
+            ...(silent ? {} : { sound: `${SOUND[tod]}.mp3` }),
+            interruptionLevel: "timeSensitive" as const,
+          } },
+        { type: TriggerType.TIMESTAMP, timestamp: at });
+    } catch {}
   }
 }
 
@@ -213,12 +229,20 @@ export async function stopAlarm(scheduleId: string): Promise<void> {
         .eq("active", true)
         .maybeSingle();
       if (data) {
+        // 정시 알람과 윈도우는 반드시 짝으로 예약한다. 윈도우는 첫 도즈의 정시
+        // (b=0)를 일부러 비워 두므로, 여기서 rescheduleNext를 빼면 알림 탭(PRESS)
+        // 처럼 재예약이 없는 경로에서 다음 회차 정시 알람이 사라진다.
+        await rescheduleNext(
+          scheduleId, data.hour, data.minute, data.repeat_days ?? [], data.time_of_day,
+          data.medicine_name ?? ""
+        );
         await scheduleIosWindow(
           scheduleId,
           data.time_of_day,
           data.hour,
           data.minute,
-          data.repeat_days ?? []
+          data.repeat_days ?? [],
+          data.medicine_name ?? ""
         );
       }
     } catch {}
@@ -227,7 +251,8 @@ export async function stopAlarm(scheduleId: string): Promise<void> {
 
 // 다음 1회 정확 알람을 예약(반복 트리거 대신 — 매 회차 setExactAndAllowWhileIdle 유지).
 export async function rescheduleNext(
-  scheduleId: string, hour: number, minute: number, repeatDays: number[], timeOfDay: string
+  scheduleId: string, hour: number, minute: number, repeatDays: number[], timeOfDay: string,
+  medName = ""
 ): Promise<void> {
   const tod = todOf(timeOfDay);
   const { silent } = await getAlarmSoundSettings();
@@ -238,7 +263,7 @@ export async function rescheduleNext(
   // 두는 바람에 "지금부터 2분 내" 등록·재동기화 알람이 내일로 밀리던 버그가 있었다.)
   const fireAt = nextDoseAt({ hour, minute, repeat_days: repeatDays }, new Date()).getTime();
   await notifee.createTriggerNotification(
-    { id: `alarm-${scheduleId}`, ...alarmNotification(scheduleId, tod, ch, hour, minute, 0, silent) },
+    { id: `alarm-${scheduleId}`, ...alarmNotification(scheduleId, tod, ch, hour, minute, 0, silent, medName) },
     { type: TriggerType.TIMESTAMP, timestamp: fireAt, ...(await exactAlarmOption()) }); // repeatFrequency 없음
 }
 
@@ -246,8 +271,8 @@ export async function scheduleReminders(
   scheduleId: string, medicineName: string, hour: number, minute: number,
   repeatDays: number[], timeOfDay: string
 ): Promise<string[]> {
-  await rescheduleNext(scheduleId, hour, minute, repeatDays, timeOfDay);
-  await scheduleIosWindow(scheduleId, timeOfDay, hour, minute, repeatDays);
+  await rescheduleNext(scheduleId, hour, minute, repeatDays, timeOfDay, medicineName);
+  await scheduleIosWindow(scheduleId, timeOfDay, hour, minute, repeatDays, medicineName);
   return [`alarm-${scheduleId}`];
 }
 
@@ -260,7 +285,9 @@ export async function scheduleSnooze(
   const ch = await ensureChannel(tod, silent);
   const fireAt = nextSnoozeFire(spec, new Date()).getTime();
   const id = await notifee.createTriggerNotification(
-    { id: `alarm-${scheduleId}-snooze`, ...alarmNotification(scheduleId, tod, ch, hour, minute, 0, silent), title: "다시 알림" },
+    { id: `alarm-${scheduleId}-snooze`,
+      ...alarmNotification(scheduleId, tod, ch, hour, minute, 0, silent, medicineName),
+      title: snoozeTitle(medicineName, slotLabel(tod)) },
     { type: TriggerType.TIMESTAMP, timestamp: fireAt, ...(await exactAlarmOption()) });
   return [id];
 }

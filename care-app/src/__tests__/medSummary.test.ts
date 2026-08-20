@@ -103,3 +103,23 @@ describe("buildDoseRows", () => {
     expect(buildDoseRows([], { ...timeBy })).toEqual([]);
   });
 });
+
+// ── 약 상세의 "복약 일정" 한 줄 (QA 2026-08-20) ────────────────────
+import { describeDoseRepeat, describeDoseTime } from "../lib/medSummary";
+
+describe("describeDoseRepeat", () => {
+  const base = { id: "1", medicine_name: "약", time_of_day: "아침", hour: 8, minute: 0 };
+  it("빈 배열은 매일", () => {
+    expect(describeDoseRepeat({ ...base, repeat_days: [] })).toBe("매일");
+  });
+  it("요일은 정렬·중복제거해서 보여준다", () => {
+    expect(describeDoseRepeat({ ...base, repeat_days: [2, 0, 2, 1] })).toBe("일·월·화요일");
+  });
+});
+
+describe("describeDoseTime", () => {
+  it("시간대와 시각을 붙인다", () => {
+    expect(describeDoseTime({ id: "1", medicine_name: "약", time_of_day: "취침", hour: 21, minute: 5, repeat_days: [] }))
+      .toBe("자기 전 21:05");
+  });
+});

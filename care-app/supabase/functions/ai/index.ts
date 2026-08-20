@@ -438,7 +438,22 @@ Deno.serve(async (req: Request) => {
               // 입력 전사를 켜야 conversation.item.input_audio_transcription.* 이벤트가
               // 오고, 통화 화면의 "나" 자막이 표시된다. 이 설정이 없으면 모델은 음성을
               // 알아듣지만 전사 이벤트를 보내지 않아 사용자 자막이 영영 비어 있다.
-              input: { transcription: { model: "gpt-4o-mini-transcribe", language: "ko" } },
+              input: {
+                transcription: { model: "gpt-4o-mini-transcribe", language: "ko" },
+                // QA 2026-08-20: 스피커로 나간 AI 목소리와 주변 소음을 마이크가 물어
+                // "나" 자막에 뜬금없는 말이 채워졌다.
+                //   · near_field  — 휴대폰을 얼굴 가까이 대고 쓰는 상황에 맞춘 잡음 억제.
+                //   · threshold   — 기본 0.5는 잡음에도 발화 turn이 열린다. 올려 잡는다.
+                //   · silence_duration_ms — 어르신은 말 중간에 쉬는 구간이 길다. 기본
+                //     500ms면 말을 끊고 끼어들어, 반 토막 난 문장이 전사된다.
+                noise_reduction: { type: "near_field" },
+                turn_detection: {
+                  type: "server_vad",
+                  threshold: 0.65,
+                  prefix_padding_ms: 300,
+                  silence_duration_ms: 800,
+                },
+              },
               output: { voice },
             },
             tools,

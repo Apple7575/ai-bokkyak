@@ -78,6 +78,20 @@ export function describeRepeat<T extends DoseLike>(g: MedGroup<T>): string {
   return list ? `${list}요일` : "매일";
 }
 
+// 일정 한 줄짜리 설명 — 약 상세의 "복약 일정" 목록에서 쓴다.
+// describeRepeat의 단일 도즈 버전(약 하나가 아침은 매일, 저녁은 월·수만일 수 있다).
+export function describeDoseRepeat(d: DoseLike): string {
+  const days = d.repeat_days ?? [];
+  if (days.length === 0) return "매일"; // 빈 배열 = 매일 (프로젝트 규칙)
+  const list = [...new Set(days)].sort((a, b) => a - b).map((x) => DAY_LABEL[x] ?? "?").join("·");
+  return list ? `${list}요일` : "매일";
+}
+
+// "아침 08:00"
+export function describeDoseTime(d: DoseLike): string {
+  return `${slotLabel(d.time_of_day)} ${hhmm(d.hour, d.minute)}`;
+}
+
 // C-09에서 고른 시간대들을 저장 가능한 행 목록으로 바꾼다.
 // 시간대마다 시각이 다를 수 있어 (시간대 → 시각) 표를 그대로 받는다.
 export function buildDoseRows(

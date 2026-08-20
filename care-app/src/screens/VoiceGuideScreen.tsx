@@ -204,9 +204,11 @@ export function VoiceGuideScreen() {
   }
 
   return (
-    <Pressable style={styles.screen} onPress={skipNarration} accessibilityRole="button"
-      accessibilityLabel="안내 건너뛰기">
-      <ScrollView contentContainerStyle={[styles.c, { paddingTop: insets.top + spacing.md, paddingBottom: spacing.xl + insets.bottom }]}>
+    // 상단 인셋은 ScrollView 바깥에. contentContainerStyle에 주면 스크롤할 때
+    // 내용이 상태바 밑으로 올라와 겹친다.
+    <Pressable style={[styles.screen, { paddingTop: insets.top }]} onPress={skipNarration}
+      accessibilityRole="button" accessibilityLabel="안내 건너뛰기">
+      <ScrollView contentContainerStyle={[styles.c, { paddingTop: spacing.md, paddingBottom: spacing.xl + insets.bottom }]}>
         {/* 헤더 — 뒤로가기 · 진행 표시(4칸) · 건너뛰기 (시안 + 문서 §4) */}
         <View style={styles.header}>
           <Pressable onPress={goBack} hitSlop={12} style={styles.backBtn}

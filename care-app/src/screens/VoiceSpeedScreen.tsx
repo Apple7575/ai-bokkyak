@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, Pressable, ScrollView, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { Check, Volume2 } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
-import { SpeechRate, SPEECH_RATES, describeRate } from "../lib/ttsSpeed";
+import { SpeechRate, SPEECH_RATES, describeRate, speedOf } from "../lib/ttsSpeed";
 import { getSpeechRate, setSpeechRate } from "../lib/voiceSettings";
 import { speak, stopSpeaking } from "../lib/tts";
 import { colors, fontSizes, radii, spacing, minTouch } from "../theme/tokens";
@@ -11,8 +11,10 @@ import { colors, fontSizes, radii, spacing, minTouch } from "../theme/tokens";
 const SAMPLE = "아침 약 드실 시간이에요.";
 
 export function VoiceSpeedScreen() {
-  const [rate, setRate] = useState<SpeechRate | null>(null); // null = 불러오는 중
-  const [busy, setBusy] = useState(false);
+  const [rate, setRate] = useState<SpeechRate | null>(null);      // null = 불러오는 중
+  const [playing, setPlaying] = useState<SpeechRate | null>(null); // 지금 들려주는 중인 항목
+  // 빠르게 연달아 누르면 늦게 끝난 요청이 최신 선택을 덮어쓸 수 있어 세대를 센다.
+  const genRef = useRef(0);
 
   useEffect(() => {
     let alive = true;
@@ -20,20 +22,31 @@ export function VoiceSpeedScreen() {
     return () => { alive = false; void stopSpeaking(); };
   }, []);
 
+  // QA 2026-08-20: '느리게'를 누르면 '보통'이 한동안 안 눌렸다.
+  //   원인은 저장 + 샘플 재생(캐시가 없으면 네트워크 왕복 최대 4초)을 다 기다리는
+  //   동안 화면 입력을 막은 것이다. 선택은 즉시 반영하고, 소리는 뒤에서 따라온다.
+  //   speak()가 내부에서 stopSpeaking을 먼저 하므로 도중에 다른 항목을 눌러도
+  //   이전 샘플이 끊기고 새 샘플이 나온다.
   async function choose(next: SpeechRate): Promise<void> {
-    if (busy) return;
-    setBusy(true);
+    const gen = ++genRef.current;
     const prev = rate;
-    setRate(next);
+    setRate(next);      // 낙관적 반영 — 저장이 실패하면 되돌린다
+    setPlaying(next);
     try {
       await setSpeechRate(next);
-      // 바꾼 속도를 즉시 들려준다 — 숫자보다 귀로 확인하는 편이 빠르다.
-      await speak(SAMPLE);
     } catch {
-      setRate(prev);
+      if (genRef.current === gen) { setRate(prev); setPlaying(null); }
       Alert.alert("설정을 저장하지 못했어요", "잠시 후 다시 시도해 주세요.");
+      return;
+    }
+    try {
+      // 바꾼 속도를 들려준다 — 숫자보다 귀로 확인하는 편이 빠르다.
+      // 방금 저장한 값을 명시적으로 넘긴다(저장 반영 전 읽기 경합 방지).
+      await speak(SAMPLE, { speed: speedOf(next) });
+    } catch {
+      // 소리가 안 나와도 설정은 이미 저장됐다 — 흐름을 막지 않는다.
     } finally {
-      setBusy(false);
+      if (genRef.current === gen) setPlaying(null);
     }
   }
 
@@ -65,9 +78,15 @@ export function VoiceSpeedScreen() {
             </View>
             <View style={styles.textWrap}>
               <Text style={styles.label}>{r}</Text>
-              <Text style={styles.desc}>{describeRate(r)}</Text>
+              <Text style={styles.desc}>
+                {playing === r ? "들려드리는 중이에요…" : describeRate(r)}
+              </Text>
             </View>
-            {rate === r ? <Check size={24} color={colors.primaryBlue} /> : null}
+            {playing === r ? (
+              <ActivityIndicator color={colors.primaryBlue} />
+            ) : rate === r ? (
+              <Check size={24} color={colors.primaryBlue} />
+            ) : null}
           </Pressable>
         ))}
 

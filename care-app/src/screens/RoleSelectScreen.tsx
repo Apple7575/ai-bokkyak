@@ -2,13 +2,19 @@ import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, Alert, ScrollView, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Pill, User, Eye, MessageCircle } from "lucide-react-native";
+import { User, Eye, MessageCircle } from "lucide-react-native";
+import { Logo } from "../components/Logo";
 import { setPatient } from "../lib/storage";
 import { supabase } from "../lib/supabase";
 import { enterDemo } from "../lib/demo";
 import { signInWithKakao } from "../lib/kakaoAuth";
 import { buildBirthDate } from "../lib/callTools";
+import { sanitizeBirthPart, birthError } from "../lib/birthInput";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
+
+// 로고 이미지는 여백이 거의 없는 정사각형이라 카드 안쪽에 패딩을 준다.
+const LOGO_CARD = 104;
+const LOGO_SIZE = 80;
 
 // 가입 화면 — 이름·성별만 받는다. 생년월일·복약 정보 등 나머지는 가입 직후
 // AI 건강전화(음성)로 여쭤보고 받는다(어르신이 직접 입력하기 어렵기 때문).
@@ -25,6 +31,9 @@ export function RoleSelectScreen() {
   const [birthM, setBirthM] = useState("");
   const [birthD, setBirthD] = useState("");
 
+  // 화면에 바로 보여줄 생년월일 오류(없으면 null).
+  const birthMsg = birthError(birthY, birthM, birthD);
+
   // 입력한 생년월일을 검증해 "YYYY-MM-DD"로. 비어 있으면 null(선택 입력).
   // 적었는데 형식이 틀리면 undefined를 돌려 저장을 막는다 — 조용히 버리면
   // 어르신은 입력했다고 생각하는데 저장이 안 된 상태가 된다.
@@ -40,7 +49,7 @@ export function RoleSelectScreen() {
     if (!name.trim()) { Alert.alert("이름을 입력해 주세요"); return; }
     const birth = resolveBirth();
     if (birth === undefined) {
-      Alert.alert("생년월일을 확인해 주세요", "예: 1954년 3월 1일");
+      Alert.alert("생년월일을 확인해 주세요", birthMsg ?? "예: 1954년 3월 1일");
       return;
     }
     setSaving(true);
@@ -127,17 +136,19 @@ export function RoleSelectScreen() {
   }
 
   return (
+    // 상단 인셋은 ScrollView 바깥에. contentContainerStyle에 주면 스크롤할 때
+    // 내용이 상태바 밑으로 올라와 겹친다.
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
     <ScrollView
-      style={styles.screen}
-      contentContainerStyle={[styles.c, { paddingTop: insets.top + spacing.xl }]}
+      style={styles.scroll}
+      contentContainerStyle={[styles.c, { paddingTop: spacing.xl }]}
     >
-      {/* Brand */}
+      {/* Brand — 스플래시와 같은 로고 이미지를 쓴다(아이콘 대체) */}
       <View style={styles.brand}>
         <View style={styles.logo}>
-          <Pill size={40} color={colors.primaryBlue} strokeWidth={1.8} />
+          <Logo size={LOGO_SIZE} />
         </View>
         <Text style={styles.title}>모두의 복약</Text>
-        <Text style={styles.sub}>이름, 성별, 생년월일만 알려주세요</Text>
       </View>
 
       {/* Profile input card */}
@@ -164,31 +175,34 @@ export function RoleSelectScreen() {
         <Text style={[styles.label, { marginTop: spacing.lg }]}>생년월일</Text>
         <View style={styles.birthRow}>
           <TextInput
-            style={[styles.input, styles.birthInput, { flex: 1.5 }]}
-            value={birthY} onChangeText={setBirthY}
+            style={[styles.input, styles.birthInput, { flex: 1.5 }, birthMsg && styles.inputBad]}
+            value={birthY}
+            onChangeText={(t) => setBirthY(sanitizeBirthPart(t, "year", birthY))}
             placeholder="1954" placeholderTextColor={colors.textSecondary}
             keyboardType="number-pad" maxLength={4}
           />
           <Text style={styles.birthUnit}>년</Text>
           <TextInput
-            style={[styles.input, styles.birthInput]}
-            value={birthM} onChangeText={setBirthM}
+            style={[styles.input, styles.birthInput, birthMsg && styles.inputBad]}
+            value={birthM}
+            onChangeText={(t) => setBirthM(sanitizeBirthPart(t, "month", birthM))}
             placeholder="3" placeholderTextColor={colors.textSecondary}
             keyboardType="number-pad" maxLength={2}
           />
           <Text style={styles.birthUnit}>월</Text>
           <TextInput
-            style={[styles.input, styles.birthInput]}
-            value={birthD} onChangeText={setBirthD}
+            style={[styles.input, styles.birthInput, birthMsg && styles.inputBad]}
+            value={birthD}
+            onChangeText={(t) => setBirthD(sanitizeBirthPart(t, "day", birthD))}
             placeholder="1" placeholderTextColor={colors.textSecondary}
             keyboardType="number-pad" maxLength={2}
           />
           <Text style={styles.birthUnit}>일</Text>
         </View>
-
-        <Text style={styles.hint}>
-          드시는 약은 가입 후 AI 건강전화로 편하게 말씀해 주시면 돼요.
-        </Text>
+        {/* 다 적고 [가입]을 누른 뒤에야 알려주면 어디가 틀렸는지 알기 어렵다.
+            13월처럼 칸 하나로 판정되는 값은 애초에 입력이 안 되고(sanitizeBirthPart),
+            2월 30일처럼 합쳐 봐야 아는 값은 여기서 바로 이유를 보여준다. */}
+        {birthMsg ? <Text style={styles.birthError}>{birthMsg}</Text> : null}
       </View>
 
       {/* 카카오로 시작하기 — 기기를 바꿔도 약이 따라오는 유일한 경로라 위에 둔다 */}
@@ -204,9 +218,6 @@ export function RoleSelectScreen() {
           {kakaoBusy ? "카카오 로그인 중…" : "카카오로 시작하기"}
         </Text>
       </Pressable>
-      <Text style={styles.kakaoHint}>
-        카카오로 시작하면 휴대폰을 바꾸셔도 등록한 약이 그대로 남아요.
-      </Text>
 
       {/* Sign up */}
       <Pressable
@@ -230,20 +241,21 @@ export function RoleSelectScreen() {
         <Text style={styles.demoText}>{demoLoading ? "데모 불러오는 중…" : "둘러보기 (데모)"}</Text>
       </Pressable>
     </ScrollView>
+    </View>
   );
 }
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.lightBlueBg },
+  scroll: { flex: 1 },
   c: { padding: spacing.lg, paddingBottom: spacing.xl, flexGrow: 1, justifyContent: "center" },
   brand: { alignItems: "center", marginBottom: spacing.xl },
   logo: {
-    width: 88, height: 88, borderRadius: 26, backgroundColor: colors.cardBg,
+    width: LOGO_CARD, height: LOGO_CARD, borderRadius: 28, backgroundColor: colors.cardBg,
     alignItems: "center", justifyContent: "center", marginBottom: spacing.md,
     shadowColor: colors.primaryNavy, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08, shadowRadius: 12, elevation: 2,
   },
   title: { fontSize: 40, fontWeight: "800", color: colors.primaryNavy, textAlign: "center" },
-  sub: { fontSize: fontSizes.emphasis, color: colors.textSecondary, textAlign: "center", marginTop: spacing.sm },
   card: {
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.lg, marginBottom: spacing.lg,
@@ -257,6 +269,8 @@ const styles = StyleSheet.create({
   birthRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   birthInput: { flex: 1, minWidth: 0, textAlign: "center", paddingHorizontal: 0 },
   birthUnit: { fontSize: fontSizes.body, fontWeight: "600", color: colors.textSecondary },
+  inputBad: { borderColor: colors.dangerRed, borderWidth: 2 },
+  birthError: { fontSize: fontSizes.body, color: colors.dangerRed, marginTop: spacing.sm, lineHeight: 25 },
   genderChip: {
     flex: 1, minHeight: minTouch, alignItems: "center", justifyContent: "center",
     backgroundColor: colors.lightBlueBg, borderColor: colors.border, borderWidth: 1,
@@ -265,10 +279,6 @@ const styles = StyleSheet.create({
   genderChipOn: { backgroundColor: colors.primaryBlue, borderColor: colors.primaryBlue },
   genderText: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text },
   genderTextOn: { color: "#fff" },
-  hint: {
-    fontSize: fontSizes.body, color: colors.textSecondary, lineHeight: 24,
-    marginTop: spacing.lg,
-  },
   choice: {
     flexDirection: "row", alignItems: "center", gap: spacing.md,
     minHeight: minTouch, borderRadius: radii.button,
@@ -289,14 +299,11 @@ const styles = StyleSheet.create({
   kakaoBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
     minHeight: minTouch, borderRadius: radii.button, backgroundColor: "#FEE500",
-    marginBottom: spacing.sm,
+    // 아래 설명 문구를 뺐으므로(QA 2026-08-20) 다음 버튼과의 간격을 여기서 준다.
+    marginBottom: spacing.md,
     shadowColor: "#B9A100", shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2, shadowRadius: 10, elevation: 3,
   },
   kakaoIcon: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
   kakaoText: { fontSize: fontSizes.emphasis, fontWeight: "800", color: "#3C1E1E" },
-  kakaoHint: {
-    fontSize: fontSizes.body, color: colors.textSecondary,
-    textAlign: "center", marginBottom: spacing.md, lineHeight: 24,
-  },
 });

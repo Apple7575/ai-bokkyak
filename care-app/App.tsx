@@ -71,7 +71,7 @@ export default function App() {
           navigateToAlarm(sid);
           try {
             const { data: s } = await supabase.from("schedules").select("*").eq("id", sid).eq("active", true).maybeSingle();
-            if (s) await rescheduleNext(sid, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day);
+            if (s) await rescheduleNext(sid, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day, s.medicine_name ?? "");
           } catch {}
         }
         return;
@@ -93,17 +93,17 @@ export default function App() {
             // 다음 정시 회차 재예약(멱등 — 이미 예약돼 있으면 덮어씀)
             try {
               const { data: s } = await supabase.from("schedules").select("*").eq("id", sid).eq("active", true).maybeSingle();
-              if (s) await rescheduleNext(sid, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day);
+              if (s) await rescheduleNext(sid, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day, s.medicine_name ?? "");
             } catch {}
           } else if (detail.pressAction?.id === "snooze") {
             // 알림 액션 스누즈 = 앱 안 열고 기본 10분 빠른 스누즈. stopAlarm(기존 스누즈 취소) 후 예약해야 살아남음.
             await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "snoozed", method: "버튼" });
             await stopAlarm(sid);
-            await scheduleSnooze(sid, "", { mode: "duration", minutes: 10 }, hour, minute, String(data?.tod ?? "아침"));
+            await scheduleSnooze(sid, String(data?.medName ?? ""), { mode: "duration", minutes: 10 }, hour, minute, String(data?.tod ?? "아침"));
             // 다음 정시 회차 재예약(멱등)
             try {
               const { data: s } = await supabase.from("schedules").select("*").eq("id", sid).eq("active", true).maybeSingle();
-              if (s) await rescheduleNext(sid, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day);
+              if (s) await rescheduleNext(sid, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day, s.medicine_name ?? "");
             } catch {}
           } else {
             await stopAlarm(sid);
@@ -120,8 +120,8 @@ export default function App() {
   if (!fontsReady) return null;
 
   return (
-    // 내 약장의 스와이프(Swipeable)가 동작하려면 제스처 핸들러 루트가 필요하다.
-    // 없으면 Android에서 스와이프가 조용히 먹지 않는다.
+    // react-navigation의 제스처(스택 뒤로 밀기 등)가 동작하려면 제스처 핸들러 루트가
+    // 필요하다. (내 약장의 스와이프는 QA 2026-08-20으로 제거됐지만 루트는 그대로 둔다.)
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         {/* 흰 배경에서 시간·배터리 등 상태바 글씨가 보이도록 어두운 색으로 고정 */}

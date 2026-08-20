@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { slotLabel } from "../lib/timeOfDay";
 import { View, Text, ScrollView, StyleSheet, Pressable, Alert, ActivityIndicator } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Pill, Trash2, Stethoscope, AlertTriangle, ChevronRight } from "lucide-react-native";
+import { Pill, Trash2, Stethoscope, AlertTriangle, ChevronRight, Pencil, Clock } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { supabase, Schedule } from "../lib/supabase";
 import { cancelSchedule } from "../lib/notifications";
@@ -12,13 +11,18 @@ import { getKindMap, resolveKind, setKind } from "../lib/medStore";
 import { fetchDrugInfo, lookupIngredients, fetchContraindications } from "../lib/drugData";
 import { allIngredients, matchFindings, MedIngredients } from "../lib/interactions";
 import { getPatientId } from "../lib/storage";
+import { describeDoseRepeat, describeDoseTime } from "../lib/medSummary";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 
 // D-02 약 상세.
 // 회의 결정:
-//   · 수정 버튼은 삭제 — 시간 변경은 '내 약장'에서 왼쪽으로 밀어서 한다. 여기는 "이 약이 뭔지" 보는 화면.
 //   · "약사에게 물어보기" 버튼 제거 — 약사 시스템은 추후. 지금은 확인을 권하는 문구로 갈음.
 //   · 상세 내용은 우리 데이터에 없으면 AI가 채운다.
+//
+// QA 2026-08-20로 바뀐 것:
+//   수정은 원래 '내 약장'에서 카드를 왼쪽으로 밀어야 나왔는데, 어르신에게는
+//   보이지 않는 조작이었다. 스와이프를 없애고 여기 "복약 일정" 줄마다 [수정]
+//   버튼을 드러낸다. 삭제도 여기로 모았다(약장에서 사라진 경로를 대신한다).
 
 export function MedicineDetailScreen() {
   const nav = useNavigation<any>();
@@ -27,6 +31,8 @@ export function MedicineDetailScreen() {
   const scheduleId: string | undefined = route.params?.scheduleId;
 
   const [sched, setSched] = useState<Schedule | null>(null);
+  // 같은 약 이름의 활성 일정 전부(아침·저녁처럼 하루 여러 번일 수 있다).
+  const [doses, setDoses] = useState<Schedule[]>([]);
   const [kind, setKindState] = useState<MedKind | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [infoLoading, setInfoLoading] = useState(false);
@@ -59,7 +65,16 @@ export function MedicineDetailScreen() {
       if (!pid) return;
       const { data } = await supabase.from("schedules").select("*")
         .eq("patient_id", pid).eq("active", true);
-      const names = [...new Set(((data ?? []) as Schedule[]).map((s) => s.medicine_name))];
+      const all = (data ?? []) as Schedule[];
+      // 이 약의 시간대 전부를 시각 순으로. 목록에서 들어온 일정 하나만 고치면
+      // 아침·저녁 중 한쪽만 바뀌어 "안 고쳐졌다"로 보인다.
+      if (alive) {
+        setDoses(
+          all.filter((x) => x.medicine_name === sched.medicine_name)
+            .sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute))
+        );
+      }
+      const names = [...new Set(all.map((s) => s.medicine_name))];
       if (names.length < 2) { if (alive) setWarnCount(0); return; }
       const ing = await lookupIngredients(names);
       if (!ing.ready) { if (alive) setWarnCount(null); return; }
@@ -81,16 +96,22 @@ export function MedicineDetailScreen() {
 
   function confirmDelete() {
     if (!sched) return;
-    Alert.alert(`'${sched.medicine_name}' 삭제`, "이 복약 일정과 알림을 삭제할까요?", [
+    // 약 하나를 지우면 그 약의 모든 시간대가 함께 사라져야 한다 — 아침·저녁 중
+    // 한쪽만 남으면 사용자에겐 "안 지워진" 것으로 보인다(약장 삭제와 같은 규칙).
+    const targets = doses.length > 0 ? doses : [sched];
+    const many = targets.length > 1 ? `\n(${targets.length}개 시간대 모두)` : "";
+    Alert.alert(`'${sched.medicine_name}' 삭제`, `이 약의 복약 일정과 알림을 삭제할까요?${many}`, [
       { text: "취소", style: "cancel" },
       {
         text: "삭제", style: "destructive",
         onPress: async () => {
           try {
-            // 하드 삭제하면 복약 기록이 cascade로 사라진다 — 비활성화로 목록에서만 뺀다.
-            const { error } = await supabase.from("schedules").update({ active: false }).eq("id", sched.id);
-            if (error) throw error;
-            await cancelSchedule(sched.id);
+            for (const d of targets) {
+              // 하드 삭제하면 복약 기록이 cascade로 사라진다 — 비활성화로 목록에서만 뺀다.
+              const { error } = await supabase.from("schedules").update({ active: false }).eq("id", d.id);
+              if (error) throw error;
+              await cancelSchedule(d.id);
+            }
             nav.goBack();
           } catch {
             Alert.alert("삭제에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
@@ -109,18 +130,15 @@ export function MedicineDetailScreen() {
     );
   }
 
-  const timeText = `${slotLabel(sched.time_of_day)} · ${String(sched.hour).padStart(2, "0")}:${String(sched.minute).padStart(2, "0")}`;
-  const repeatText = (sched.repeat_days?.length ?? 0) > 0 ? "요일 반복" : "매일";
-
   return (
     <View style={styles.screen}>
       <ScreenHeader title="약 상세" />
       <ScrollView contentContainerStyle={[styles.c, { paddingBottom: spacing.xl + insets.bottom }]}>
-        {/* 이름 · 복용 시각 */}
+        {/* 이름 · 하루 몇 번 (구체적인 시각은 아래 "복약 일정"에서 수정까지 함께) */}
         <View style={styles.hero}>
           <View style={styles.heroIcon}><Pill size={30} color={colors.primaryBlue} /></View>
           <Text style={styles.name}>{sched.medicine_name}</Text>
-          <Text style={styles.time}>{`${timeText}  (${repeatText})`}</Text>
+          <Text style={styles.time}>{`1일 ${Math.max(1, doses.length)}회`}</Text>
         </View>
 
         {/* 주의 — 있을 때만 */}
@@ -134,6 +152,30 @@ export function MedicineDetailScreen() {
             <ChevronRight size={22} color={colors.dangerRed} />
           </Pressable>
         ) : null}
+
+        {/* 복약 일정 — 시간대마다 [수정]을 눈에 보이게 둔다 (QA 2026-08-20).
+            스와이프처럼 숨겨진 조작 대신, 고칠 대상 바로 옆에 버튼을 붙인다. */}
+        <Text style={styles.section}>복약 일정</Text>
+        <View style={styles.card}>
+          {(doses.length > 0 ? doses : [sched]).map((d, i) => (
+            <View key={d.id} style={[styles.doseRow, i > 0 && styles.doseDivider]}>
+              <Clock size={22} color={colors.primaryBlue} />
+              <View style={styles.doseTextWrap}>
+                <Text style={styles.doseTime}>{describeDoseTime(d)}</Text>
+                <Text style={styles.doseRepeat}>{describeDoseRepeat(d)}</Text>
+              </View>
+              <Pressable
+                onPress={() => nav.navigate("ButtonRegister", { editId: d.id })}
+                style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.9 }]}
+                accessibilityRole="button"
+                accessibilityLabel={`${describeDoseTime(d)} 복약 일정 수정`}
+              >
+                <Pencil size={18} color="#fff" />
+                <Text style={styles.editText}>수정</Text>
+              </Pressable>
+            </View>
+          ))}
+        </View>
 
         {/* 구분 — 자동 분류가 안 되는 약은 사용자가 직접 고른다 (회의 결정) */}
         <Text style={styles.section}>약 구분</Text>
@@ -223,6 +265,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.md,
   },
+  doseRow: {
+    flexDirection: "row", alignItems: "center", gap: spacing.sm,
+    paddingVertical: spacing.sm, minHeight: minTouch,
+  },
+  doseDivider: { borderTopWidth: 1, borderTopColor: colors.border },
+  doseTextWrap: { flex: 1 },
+  doseTime: { fontSize: 21, fontWeight: "800", color: colors.text },
+  doseRepeat: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 2 },
+  editBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    minHeight: 48, paddingHorizontal: 18, borderRadius: radii.button,
+    backgroundColor: colors.primaryBlue,
+  },
+  editText: { fontSize: fontSizes.body, fontWeight: "800", color: "#fff" },
   infoText: { fontSize: 19, color: colors.text, lineHeight: 30 },
   infoEmpty: { fontSize: 19, color: colors.textSecondary, lineHeight: 30 },
   infoLoading: { flexDirection: "row", alignItems: "center", gap: spacing.sm },

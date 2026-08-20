@@ -21,11 +21,11 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
   if (type === EventType.DELIVERED && scheduleId) {
     const seq = Number(data?.seq ?? 0);
     // 같은 회차의 30초 반복(미응답 시 끈질기게)
-    await scheduleRepeatFollowup(scheduleId, String(data?.tod ?? "아침"), hour, minute, seq + 1);
+    await scheduleRepeatFollowup(scheduleId, String(data?.tod ?? "아침"), hour, minute, seq + 1, String(data?.medName ?? ""));
     // 다음 정시 회차 재예약(반복 트리거 대체) — 일정의 repeat_days를 조회해서
     try {
       const { data: s } = await supabase.from("schedules").select("*").eq("id", scheduleId).eq("active", true).maybeSingle();
-      if (s) await rescheduleNext(scheduleId, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day);
+      if (s) await rescheduleNext(scheduleId, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day, s.medicine_name ?? "");
     } catch {}
     return;
   }
@@ -44,17 +44,17 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
         // 다음 정시 회차 재예약(멱등 — 이미 예약돼 있으면 덮어씀)
         try {
           const { data: s } = await supabase.from("schedules").select("*").eq("id", scheduleId).eq("active", true).maybeSingle();
-          if (s) await rescheduleNext(scheduleId, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day);
+          if (s) await rescheduleNext(scheduleId, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day, s.medicine_name ?? "");
         } catch {}
       } else if (detail.pressAction?.id === "snooze") {
         // 알림 액션 스누즈 = 앱 안 열고 기본 10분 빠른 스누즈
         await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "snoozed", method: "버튼" });
         await stopAlarm(scheduleId); // 현재 울림/기존 스누즈 트리거 정리 (반드시 scheduleSnooze 전에)
-        await scheduleSnooze(scheduleId, "", { mode: "duration", minutes: 10 }, hour, minute, String(data?.tod ?? "아침"));
+        await scheduleSnooze(scheduleId, String(data?.medName ?? ""), { mode: "duration", minutes: 10 }, hour, minute, String(data?.tod ?? "아침"));
         // 다음 정시 회차 재예약(멱등)
         try {
           const { data: s } = await supabase.from("schedules").select("*").eq("id", scheduleId).eq("active", true).maybeSingle();
-          if (s) await rescheduleNext(scheduleId, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day);
+          if (s) await rescheduleNext(scheduleId, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day, s.medicine_name ?? "");
         } catch {}
       }
     } catch {}

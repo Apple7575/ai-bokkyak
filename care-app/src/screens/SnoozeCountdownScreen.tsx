@@ -1,6 +1,7 @@
 // care-app/src/screens/SnoozeCountdownScreen.tsx
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Alert } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { BigButton } from "../components/BigButton";
 import { supabase } from "../lib/supabase";
@@ -18,6 +19,7 @@ function mmss(ms: number): string {
 
 export function SnoozeCountdownScreen() {
   const nav = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const p = useRoute<any>().params as {
     scheduleId: string;
     fireAt: string;
@@ -76,7 +78,7 @@ export function SnoozeCountdownScreen() {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.md }]}>
       <Text style={styles.title}>일정 변경됨</Text>
       <Text style={styles.sub}>다음 알림까지 남은 시간</Text>
       <Text style={styles.count}>{mmss(remain)}</Text>
@@ -100,7 +102,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.cardBg,
     padding: spacing.lg,
-    paddingTop: spacing.xl * 2,
     alignItems: "center",
   },
   title: {

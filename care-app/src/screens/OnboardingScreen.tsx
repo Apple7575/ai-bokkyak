@@ -30,9 +30,11 @@ export function OnboardingScreen() {
   }
 
   return (
-    <View style={s.screen}>
+    // 상단 인셋은 ScrollView 바깥에. contentContainerStyle에 주면 스크롤할 때
+    // 내용이 상태바 밑으로 올라와 겹친다.
+    <View style={[s.screen, { paddingTop: insets.top }]}>
       <ScrollView
-        contentContainerStyle={[s.content, { paddingTop: insets.top + spacing.xl, paddingBottom: spacing.xl }]}
+        contentContainerStyle={[s.content, { paddingTop: spacing.xl, paddingBottom: spacing.xl }]}
       >
         {/* 말풍선 느낌의 인사 카드 */}
         <View style={s.bubble}>

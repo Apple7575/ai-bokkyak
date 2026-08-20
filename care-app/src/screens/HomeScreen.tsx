@@ -125,9 +125,12 @@ export function HomeScreen() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   return (
+    // 상단 인셋은 ScrollView 바깥에 준다. contentContainerStyle에 주면 스크롤할 때
+    // 내용이 상태바(시계·배터리) 밑으로 올라와 겹친다.
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
     <ScrollView
-      style={styles.screen}
-      contentContainerStyle={[styles.c, { paddingTop: insets.top + spacing.md }]}
+      style={styles.scroll}
+      contentContainerStyle={[styles.c, { paddingTop: spacing.md }]}
     >
       {/* 브랜드 헤더 */}
       <View style={styles.brandRow}>
@@ -264,11 +267,13 @@ export function HomeScreen() {
         </View>
       ) : null}
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F7FAFF" },
+  scroll: { flex: 1 },
   c: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
   brandRow: { flexDirection: "row", alignItems: "center" },
   iconBtn: {

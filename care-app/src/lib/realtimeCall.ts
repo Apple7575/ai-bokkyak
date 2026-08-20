@@ -16,6 +16,7 @@ import { mediaDevices, RTCPeerConnection, MediaStream } from "react-native-webrt
 import InCallManager from "react-native-incall-manager";
 import { CallMed } from "./callTools";
 import { sdpErrorMessage, tokenErrorMessage } from "./callErrors";
+import { isDisplayableUserTranscript } from "./callTranscript";
 
 const extra = Constants.expoConfig?.extra ?? {};
 const SUPABASE_URL = (extra.supabaseUrl as string) ?? "";
@@ -206,7 +207,16 @@ export async function startCall(opts: {
 
   try {
     try {
-      localStream = await mediaDevices.getUserMedia({ audio: true });
+      // QA 2026-08-20: 스피커로 나가는 AI 목소리를 마이크가 도로 물어 "나" 자막에
+      // 엉뚱한 말이 채워졌다. 에코 제거·잡음 억제·자동 게인을 명시적으로 켠다
+      // (audio: true만 주면 플랫폼 기본값에 맡겨져 기기마다 달라진다).
+      localStream = await mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      } as any);
     } catch {
       // 실기기에서 가장 흔한 실패 — 네이티브 영어 메시지 대신 안내 문구로.
       throw koreanError("마이크 권한을 허용해 주세요.");
@@ -302,12 +312,13 @@ export async function startCall(opts: {
           aiTranscript = "";
           aiResponseId = null;
           break;
-        case "conversation.item.input_audio_transcription.completed":
-          safeEmit({
-            type: "user-transcript",
-            text: typeof event.transcript === "string" ? event.transcript : "",
-          });
+        case "conversation.item.input_audio_transcription.completed": {
+          // 잡음·에코에서 만들어진 전사는 화면에 올리지 않는다. 걸러진 경우 자막을
+          // 그대로 두어 직전 대답이 남게 한다(빈 칸으로 깜빡이는 것보다 덜 혼란스럽다).
+          const t = typeof event.transcript === "string" ? event.transcript : "";
+          if (isDisplayableUserTranscript(t)) safeEmit({ type: "user-transcript", text: t });
           break;
+        }
         case "response.done": {
           const output: any[] = Array.isArray(event.response?.output) ? event.response.output : [];
           const batch: { name: string; argsJson: string; callId: string }[] = [];
