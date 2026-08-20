@@ -26,11 +26,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.modoobokyak.app",
-      "buildNumber": "22",
+      "buildNumber": "23",
       "bitcode": false,
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "음성으로 복약 응답과 약 등록을 하기 위해 마이크를 사용합니다.",
-        "NSSpeechRecognitionUsageDescription": "음성을 글자로 바꾸기 위해 음성 인식을 사용합니다.",
         "NSCameraUsageDescription": "약 봉투를 촬영해 복약 정보를 자동으로 등록하기 위해 카메라를 사용합니다.",
         "NSPhotoLibraryUsageDescription": "약 봉투 사진으로 복약 정보를 등록하기 위해 사진에 접근합니다.",
         "NSPhotoLibraryAddUsageDescription": "약 관련 이미지를 저장할 때 사진 라이브러리에 접근할 수 있습니다.",
@@ -49,14 +47,12 @@
       "versionCode": 6,
       "permissions": [
         "android.permission.ACCESS_NETWORK_STATE",
-        "android.permission.BLUETOOTH",
         "android.permission.CAMERA",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
         "android.permission.INTERNET",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.POST_NOTIFICATIONS",
-        "android.permission.RECORD_AUDIO",
         "android.permission.SCHEDULE_EXACT_ALARM",
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.USE_FULL_SCREEN_INTENT",
@@ -83,7 +79,7 @@
       [
         "expo-av",
         {
-          "microphonePermission": "음성으로 복약 응답과 약 등록을 하기 위해 마이크를 사용합니다."
+          "microphonePermission": false
         }
       ],
       [
@@ -93,17 +89,6 @@
           "cameraPermission": "약 봉투를 촬영해 복약 정보를 자동으로 등록하기 위해 카메라를 사용합니다."
         }
       ],
-      [
-        "expo-speech-recognition",
-        {
-          "microphonePermission": "음성으로 복약 응답과 약 등록을 하기 위해 마이크를 사용합니다.",
-          "speechRecognitionPermission": "음성을 글자로 바꾸기 위해 음성 인식을 사용합니다.",
-          "androidSpeechServicePackages": [
-            "com.google.android.googlequicksearchbox"
-          ]
-        }
-      ],
-      "@config-plugins/react-native-webrtc",
       "expo-web-browser",
       "expo-font"
     ],

@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Mic, ListChecks, Camera, Search, ChevronRight } from "lucide-react-native";
+import { ListChecks, Camera, Search, ChevronRight } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
 
@@ -16,35 +16,21 @@ export function RegisterMethodScreen() {
       </View>
 
       <View style={styles.body}>
-        {/* 음성 - primary */}
+        {/* 이름으로 찾기 (C-07) — 공공데이터에서 정확한 제품을 고른다.
+            정확한 제품명이 남아야 성분 기반 병용금기 검사가 실제로 걸린다.
+            음성 등록을 걷어내면서(회의 결정 2026-08-20) 이게 첫 번째 방법이 됐다. */}
         <Pressable
-          onPress={() => nav.navigate("VoiceRegister")}
+          onPress={() => nav.navigate("MedicineSearch")}
           style={({ pressed }) => [styles.card, styles.cardPrimary, pressed && { opacity: 0.92 }]}
         >
           <View style={[styles.iconBox, styles.iconBoxPrimary]}>
-            <Mic size={28} color="#fff" />
+            <Search size={28} color="#fff" />
           </View>
           <View style={styles.cardText}>
-            <Text style={[styles.cardTitle, { color: "#fff" }]}>음성으로 간편 등록</Text>
-            <Text style={[styles.cardDesc, { color: "rgba(255,255,255,0.85)" }]}>말씀해 주시면 자동으로 입력해 드려요</Text>
+            <Text style={[styles.cardTitle, { color: "#fff" }]}>약 이름으로 찾기</Text>
+            <Text style={[styles.cardDesc, { color: "rgba(255,255,255,0.85)" }]}>이름을 입력하면 목록에서 골라요</Text>
           </View>
           <ChevronRight size={20} color="#fff" />
-        </Pressable>
-
-        {/* 이름으로 찾기 (C-07) — 공공데이터에서 정확한 제품을 고른다.
-            정확한 제품명이 남아야 성분 기반 병용금기 검사가 실제로 걸린다. */}
-        <Pressable
-          onPress={() => nav.navigate("MedicineSearch")}
-          style={({ pressed }) => [styles.card, styles.cardSecondary, pressed && { opacity: 0.92 }]}
-        >
-          <View style={[styles.iconBox, { backgroundColor: colors.lightBlueBg }]}>
-            <Search size={28} color={colors.primaryBlue} />
-          </View>
-          <View style={styles.cardText}>
-            <Text style={styles.cardTitle}>약 이름으로 찾기</Text>
-            <Text style={styles.cardDesc}>이름을 입력하면 목록에서 골라요</Text>
-          </View>
-          <ChevronRight size={20} color={colors.textSecondary} />
         </Pressable>
 
         {/* 버튼 - secondary */}

@@ -6,14 +6,13 @@ export type RootStackParamList = {
   VoiceGuide: undefined;
   RegisterMethod: undefined;
   ButtonRegister: { editId?: string } | undefined;
-  VoiceRegister: undefined;
   OcrRegister: undefined;
   MedicineSearch: undefined;
   DoseTime: { medicineName: string };
   Alarm: { scheduleId?: string };
   SnoozePicker: { scheduleId: string };
   SnoozeCountdown: { scheduleId: string; fireAt: string; hour: number; minute: number };
-  Call: { setup?: boolean } | undefined;
+  Checkup: undefined;
   AlarmSound: undefined;
   VoiceSpeed: undefined;
   Privacy: undefined;

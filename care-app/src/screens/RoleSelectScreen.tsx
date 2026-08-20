@@ -8,16 +8,15 @@ import { setPatient } from "../lib/storage";
 import { supabase } from "../lib/supabase";
 import { enterDemo } from "../lib/demo";
 import { signInWithKakao } from "../lib/kakaoAuth";
-import { buildBirthDate } from "../lib/callTools";
-import { sanitizeBirthPart, birthError } from "../lib/birthInput";
+import { sanitizeBirthPart, birthError, buildBirthDate } from "../lib/birthInput";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 
 // 로고 이미지는 여백이 거의 없는 정사각형이라 카드 안쪽에 패딩을 준다.
 const LOGO_CARD = 104;
 const LOGO_SIZE = 80;
 
-// 가입 화면 — 이름·성별만 받는다. 생년월일·복약 정보 등 나머지는 가입 직후
-// AI 건강전화(음성)로 여쭤보고 받는다(어르신이 직접 입력하기 어렵기 때문).
+// 가입 화면 — 이름·성별·생년월일만 받는다.
+// 복약 정보는 가입 직후 음성 안내(VoiceGuide)에서 화면 터치로 받는다.
 export function RoleSelectScreen() {
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -26,7 +25,7 @@ export function RoleSelectScreen() {
   const [saving, setSaving] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const [kakaoBusy, setKakaoBusy] = useState(false);
-  // 생년월일은 직접 입력으로 받는다(디자인 시안 결정). 약은 여전히 통화로 받는다.
+  // 생년월일은 직접 입력으로 받는다(디자인 시안 결정).
   const [birthY, setBirthY] = useState("");
   const [birthM, setBirthM] = useState("");
   const [birthD, setBirthD] = useState("");
@@ -62,8 +61,7 @@ export function RoleSelectScreen() {
         }).select().single();
       if (error || !data) { Alert.alert("등록 실패", error?.message ?? ""); setSaving(false); return; }
       await setPatient(data.id);
-      // 가입 직후 음성 가이드로 복용 알람을 설정한다(사전 녹음 인출 방식).
-      // 기존 Realtime 통화(setup)는 main 브랜치에 그대로 있다.
+      // 가입 직후 음성 가이드로 복용 알람을 설정한다(사전 녹음 인출 + 화면 터치).
       nav.reset({ index: 0, routes: [{ name: "Tabs" }, { name: "VoiceGuide" }] });
     } catch {
       Alert.alert("등록 실패", "인터넷 연결을 확인해 주세요.");

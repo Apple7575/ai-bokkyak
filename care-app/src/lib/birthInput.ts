@@ -56,3 +56,25 @@ export function birthError(
   if (yn < 1900) return "연도를 다시 확인해 주세요. 예: 1954";
   return null;
 }
+
+/**
+ * 세 숫자 → "YYYY-MM-DD" 또는 null(유효하지 않음).
+ * 저장 직전의 마지막 관문. 화면 검증(birthError)과 별개로 여기서도 막는다 —
+ * 저장 경로가 화면 하나뿐이라는 보장이 없다.
+ *
+ * (AI 건강전화가 음성으로 생년월일을 받던 시절 callTools.ts에 있던 함수다.
+ *  음성 AI를 걷어내면서 생년월일 로직이 모인 이 파일로 옮겼다.)
+ */
+export function buildBirthDate(year: unknown, month: unknown, day: unknown): string | null {
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
+  const y = year as number, mo = month as number, d = day as number;
+  if (y < 1900 || y > 2100 || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  const mm = String(mo).padStart(2, "0");
+  const dd = String(d).padStart(2, "0");
+  // 롤오버(존재하지 않는 날짜) 거부: 구성요소 라운드트립 확인.
+  const dt = new Date(`${y}-${mm}-${dd}T00:00:00`);
+  if (isNaN(dt.getTime()) || dt.getFullYear() !== y || dt.getMonth() + 1 !== mo || dt.getDate() !== d) {
+    return null;
+  }
+  return `${y}-${mm}-${dd}`;
+}

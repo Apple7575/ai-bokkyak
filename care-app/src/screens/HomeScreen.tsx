@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, Pressable } from "react-native";
 import notifee from "@notifee/react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Bell, User, Clock, Pencil, Mic, ChevronRight, AlertTriangle } from "lucide-react-native";
+import { Bell, User, Clock, Pencil, Volume2, ChevronRight, AlertTriangle } from "lucide-react-native";
 import { Logo } from "../components/Logo";
 import { supabase, Schedule, IntakeRecord } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
@@ -16,8 +16,7 @@ import { allIngredients, matchFindings, MedIngredients } from "../lib/interactio
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
 
 // B-01 홈 — 확정 시안 기준.
-// 위에서부터: 다음 복약 시간(음성 AI 진입 포함) → 오늘 복약 일정 → 내 약장 요약 → 주의.
-// 별도의 "AI 건강전화" 버튼은 두지 않는다. 음성 진입은 다음 복약 카드 안에 있다.
+// 위에서부터: 다음 복약 시간(복약 확인 진입 포함) → 오늘 복약 일정 → 내 약장 요약 → 주의.
 
 function fmt(d: Date): string {
   const h = d.getHours(), m = d.getMinutes();
@@ -187,12 +186,14 @@ export function HomeScreen() {
           </View>
         ) : null}
 
+        {/* AI 건강전화(양방향 음성 통화)를 걷어내고 TTS+터치 확인으로 바꿨다
+            (회의 결정 2026-08-20). 알람 시간 변경은 '내 약장'의 수정 버튼에서 한다. */}
         <Pressable
-          onPress={() => nav.navigate("Call")}
+          onPress={() => nav.navigate("Checkup")}
           style={({ pressed }) => [styles.voiceBtn, pressed && { opacity: 0.9 }]}
         >
-          <Mic size={22} color="#fff" />
-          <Text style={styles.voiceBtnText}>음성 AI로 복약 알림 변경하기</Text>
+          <Volume2 size={22} color="#fff" />
+          <Text style={styles.voiceBtnText}>오늘 복약 확인하기</Text>
         </Pressable>
       </View>
 

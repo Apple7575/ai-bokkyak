@@ -1,6 +1,6 @@
 # AGENTS.md — 케어(CARE) 프로젝트 규칙
 
-고령층을 위한 음성 AI 복약 관리 MVP. 구현자(Claude 서브에이전트)와
+고령층을 위한 복약 관리 MVP (안내는 음성, 입력은 화면 터치). 구현자(Claude 서브에이전트)와
 교차 리뷰어(OpenAI Codex)가 **공유**하는 규칙. 어기면 리뷰에서 막힌다.
 
 ## 무엇을 만드는가
@@ -10,8 +10,14 @@
   **보호자 기능은 없다** — 6자리 `patient_code`로 보호자가 읽기 전용 열람하는
   기능은 회의 결정으로 제거됐다. 되살리자는 제안을 하지 말 것. 코드에도 흔적이
   없어야 한다(`patient_code`, 역할 구분, 코드 입력 화면).
-- **음성:** TTS는 `expo-speech`, STT는 `expo-av` 녹음 → OpenAI Whisper 전사 →
-  의도 분류. 음성 등록은 Whisper + `gpt-4o-mini` 파싱.
+- **음성:** **출력(TTS) 전용이다. 음성 인식(STT)은 없다.**
+  앱이 읽어 주고, 사용자는 화면 버튼으로 답한다. 회의 결정으로 음성 AI를 전부
+  제거했다 — AI 건강전화(Realtime + WebRTC), 음성으로 약 등록, 온보딩 음성 응답.
+  되살리자는 제안을 하지 말 것. 코드에 마이크·녹음·음성 인식 흔적이 없어야 한다
+  (`RECORD_AUDIO`, `NSMicrophoneUsageDescription`, `expo-speech-recognition`,
+  `react-native-webrtc`, `?op=realtime-token`).
+  TTS 경로는 세 가지다: 엣지 함수 `?op=tts`(문장 → mp3, `lib/tts.ts`),
+  미리 만들어 둔 안내 mp3(`lib/cuePlayer.ts`), 알람 소리 mp3(`lib/alarmRinger.ts`).
 - **알림:** `expo-notifications` 로컬 예약 알림.
 
 설계 문서: `docs/superpowers/specs/2026-06-11-care-mvp-design.md`
@@ -25,15 +31,18 @@
 2. **intake_records 쓰기는 반드시 upsert**, `onConflict: "schedule_id,scheduled_for"`.
    알림 재발화/재탭으로 같은 (schedule, 시각)에 **중복 행이 생기면 안 된다.**
    스키마에 `unique (schedule_id, scheduled_for)` 존재.
-3. **의도 분류 우선순위: 재알림 > 미복용 > 복용완료 > 인식실패.**
-   "안 먹었어요"는 "먹었"을 포함하지만 **미복용**으로, "이따 먹을게"는
-   **재알림**으로 분류돼야 한다. 키워드 그룹을 이 순서로 검사한다.
+3. **알람 화면·복약 확인의 응답은 화면 터치로만 받는다.** 음성 인식을 다시
+   붙이지 말 것. (`intent.ts`의 의도 분류 우선순위 재알림 > 미복용 > 복용완료 >
+   인식실패는 음성을 되살릴 때를 대비해 테스트와 함께 남겨 뒀을 뿐, 지금은
+   화면에서 쓰이지 않는다.)
 
 ## 코드 컨벤션
 
-- TTS/STT는 좁은 교체 가능 인터페이스 뒤에 둔다(`lib/tts.ts`, `lib/stt.ts`).
-  나중에 더 좋은 모델로 바꿀 때 이 두 파일만 교체. 화면이 음성 SDK를 직접
-  호출하지 말 것.
+- TTS는 좁은 교체 가능 인터페이스 뒤에 둔다(`lib/tts.ts`). 나중에 더 좋은
+  모델로 바꿀 때 이 파일만 교체. 화면이 음성 SDK를 직접 호출하지 말 것.
+- **소리가 버튼을 막으면 안 된다.** TTS 재생·저장·재예약을 하나의 `await`로 묶어
+  입력을 잠그지 말 것. 선택은 즉시 반영하고 나머지는 뒤에서 처리한다
+  (QA 2026-08-20에서 알림 소리 설정·음성 속도 설정이 이 문제로 지적됐다).
 - 순수 로직(`intent.ts`, `schedule.ts`, `parse.ts`)은 RN/네트워크 의존이 없어야
   하고 jest로 단위 테스트한다. 화면·음성·알림은 실기기 수동 검증.
 - 디자인 토큰은 `src/theme/tokens.ts`에서만 가져온다. 색·폰트 하드코딩 금지.

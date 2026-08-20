@@ -13,14 +13,13 @@ import { RecordScreen } from "../screens/RecordScreen";
 import { RegisterMethodScreen } from "../screens/RegisterMethodScreen";
 import { VoiceGuideScreen } from "../screens/VoiceGuideScreen";
 import { ButtonRegisterScreen } from "../screens/ButtonRegisterScreen";
-import { VoiceRegisterScreen } from "../screens/VoiceRegisterScreen";
 import { OcrRegisterScreen } from "../screens/OcrRegisterScreen";
 import { MedicineSearchScreen } from "../screens/MedicineSearchScreen";
 import { DoseTimeScreen } from "../screens/DoseTimeScreen";
 import { AlarmScreen } from "../screens/AlarmScreen";
 import { SnoozePickerScreen } from "../screens/SnoozePickerScreen";
 import { SnoozeCountdownScreen } from "../screens/SnoozeCountdownScreen";
-import { CallScreen } from "../screens/CallScreen";
+import { CheckupScreen } from "../screens/CheckupScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { AlarmSoundScreen } from "../screens/AlarmSoundScreen";
 import { VoiceSpeedScreen } from "../screens/VoiceSpeedScreen";
@@ -126,7 +125,6 @@ export function RootNavigator() {
       <Stack.Screen name="VoiceGuide" component={VoiceGuideScreen} options={{ headerShown: false }} />
       <Stack.Screen name="RegisterMethod" component={RegisterMethodScreen} options={{ headerShown: false }} />
       <Stack.Screen name="ButtonRegister" component={ButtonRegisterScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="VoiceRegister" component={VoiceRegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="OcrRegister" component={OcrRegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="MedicineSearch" component={MedicineSearchScreen} options={{ headerShown: false }} />
       <Stack.Screen name="DoseTime" component={DoseTimeScreen} options={{ headerShown: false }} />
@@ -137,7 +135,7 @@ export function RootNavigator() {
         options={{ headerShown: false, presentation: "transparentModal", animation: "slide_from_bottom" }}
       />
       <Stack.Screen name="SnoozeCountdown" component={SnoozeCountdownScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Call" component={CallScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Checkup" component={CheckupScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AlarmSound" component={AlarmSoundScreen} options={{ headerShown: false }} />
       <Stack.Screen name="VoiceSpeed" component={VoiceSpeedScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Privacy" component={PrivacyScreen} options={{ headerShown: false }} />

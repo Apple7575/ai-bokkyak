@@ -75,3 +75,28 @@ describe("birthError", () => {
     expect(birthError("2026", "8", "20", today)).toBeNull();
   });
 });
+
+// callTools.ts에서 옮겨 온 저장 직전 관문 (음성 AI 제거로 이 파일에 통합).
+import { buildBirthDate } from "../lib/birthInput";
+
+describe("buildBirthDate", () => {
+  it("정상 값을 YYYY-MM-DD로 만든다", () => {
+    expect(buildBirthDate(1954, 3, 1)).toBe("1954-03-01");
+  });
+  it("정수가 아니면 null", () => {
+    expect(buildBirthDate("1954", 3, 1)).toBeNull();
+    expect(buildBirthDate(1954.5, 3, 1)).toBeNull();
+    expect(buildBirthDate(NaN, 3, 1)).toBeNull();
+  });
+  it("범위를 벗어나면 null", () => {
+    expect(buildBirthDate(1954, 13, 1)).toBeNull();
+    expect(buildBirthDate(1954, 0, 1)).toBeNull();
+    expect(buildBirthDate(1954, 3, 32)).toBeNull();
+    expect(buildBirthDate(1899, 3, 1)).toBeNull();
+  });
+  it("존재하지 않는 날짜는 롤오버 없이 null", () => {
+    expect(buildBirthDate(1955, 2, 30)).toBeNull();
+    expect(buildBirthDate(1955, 4, 31)).toBeNull();
+    expect(buildBirthDate(1956, 2, 29)).toBe("1956-02-29"); // 윤년
+  });
+});
