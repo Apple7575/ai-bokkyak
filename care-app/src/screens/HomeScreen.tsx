@@ -220,10 +220,15 @@ export function HomeScreen() {
               style={({ pressed }) => [styles.doseRow, pressed && { opacity: 0.9 }]}
             >
               <MedicineMark name={r.s.medicine_name} size={44} />
-              <Text style={styles.doseTime}>{fmt(r.at)}</Text>
-              <Text style={styles.doseName} numberOfLines={1}>{r.s.medicine_name}</Text>
-              <View style={[styles.kindBadge, { backgroundColor: KIND_COLOR[r.kind] + "1A" }]}>
-                <Text style={[styles.kindBadgeText, { color: KIND_COLOR[r.kind] }]}>{KIND_LABEL[r.kind]}</Text>
+              {/* 약 이름이 1순위 — 좁은 폰(360dp)에서도 눌리지 않게 시각·구분은 둘째 줄로 */}
+              <View style={styles.doseMain}>
+                <Text style={styles.doseName} numberOfLines={1}>{r.s.medicine_name}</Text>
+                <View style={styles.doseMeta}>
+                  <Text style={styles.doseTime}>{fmt(r.at)}</Text>
+                  <View style={[styles.kindBadge, { backgroundColor: KIND_COLOR[r.kind] + "1A" }]}>
+                    <Text style={[styles.kindBadgeText, { color: KIND_COLOR[r.kind] }]}>{KIND_LABEL[r.kind]}</Text>
+                  </View>
+                </View>
               </View>
               <View style={[styles.statusBadge, r.status === "완료" && styles.statusDone]}>
                 <Text style={[styles.statusText, r.status === "완료" && styles.statusDoneText]}>{r.status}</Text>
@@ -338,8 +343,10 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", gap: spacing.sm,
     paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.border,
   },
-  doseTime: { fontSize: fontSizes.body, fontWeight: "700", color: colors.text, width: 82 },
-  doseName: { fontSize: 19, color: colors.text, flex: 1, minWidth: 0 },
+  doseMain: { flex: 1, minWidth: 0, gap: 4 },
+  doseMeta: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  doseTime: { fontSize: fontSizes.body, fontWeight: "700", color: colors.text },
+  doseName: { fontSize: 20, fontWeight: "700", color: colors.text },
   kindBadge: { borderRadius: radii.pill, paddingHorizontal: 9, paddingVertical: 3 },
   kindBadgeText: { fontSize: 14, fontWeight: "700" },
   statusBadge: {
@@ -348,7 +355,7 @@ const styles = StyleSheet.create({
   },
   statusDone: { backgroundColor: colors.primaryBlue },
   statusText: { fontSize: 15, fontWeight: "700", color: colors.textSecondary },
-  statusDoneText: { color: "#fff" },
+  statusDoneText: { color: colors.white },
 
   tileRow: { flexDirection: "row", gap: spacing.sm },
   tile: { flex: 1, borderRadius: radii.card, paddingVertical: spacing.md, paddingHorizontal: spacing.sm },
