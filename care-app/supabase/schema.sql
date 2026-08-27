@@ -45,7 +45,7 @@ create table alarm_events (
   patient_id uuid not null references patients(id) on delete cascade,
   schedule_id uuid not null references schedules(id) on delete cascade,
   scheduled_for timestamptz not null,
-  event_type text not null,               -- 'fired' | 'completed' | 'snoozed' | 'skipped'
+  event_type text not null,               -- 'fired' | 'completed' | 'snoozed' | 'skipped' | 'undone'(완료 되돌리기, 직전 completed 상쇄)
   method text,                            -- 응답 방식(음성/버튼) — 응답 이벤트만
   event_at timestamptz not null default now(),
   created_at timestamptz not null default now()

@@ -56,13 +56,19 @@ export async function undoIntake(args: {
       responded_at: args.previous.responded_at,
     }, { onConflict: "schedule_id,scheduled_for" });
     if (error) throw error;
-    return;
+  } else {
+    const { error } = await supabase
+      .from("intake_records")
+      .delete()
+      .eq("patient_id", args.patientId)
+      .eq("schedule_id", args.scheduleId)
+      .eq("scheduled_for", args.scheduledFor.toISOString());
+    if (error) throw error;
   }
-  const { error } = await supabase
-    .from("intake_records")
-    .delete()
-    .eq("patient_id", args.patientId)
-    .eq("schedule_id", args.scheduleId)
-    .eq("scheduled_for", args.scheduledFor.toISOString());
-  if (error) throw error;
+  // recordIntake가 남긴 'completed' 이벤트를 상쇄하는 보정 이벤트(베스트에포트).
+  // 지표 집계 시 undone이 뒤따르는 completed는 무효로 본다.
+  void logAlarmEvent({
+    patientId: args.patientId, scheduleId: args.scheduleId,
+    scheduledFor: args.scheduledFor, type: "undone", method: "버튼",
+  });
 }

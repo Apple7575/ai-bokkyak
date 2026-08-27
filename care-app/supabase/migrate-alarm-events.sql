@@ -10,7 +10,7 @@ create table if not exists alarm_events (
   patient_id uuid not null references patients(id) on delete cascade,
   schedule_id uuid not null references schedules(id) on delete cascade,
   scheduled_for timestamptz not null,               -- 이 발생 슬롯의 예정 시각
-  event_type text not null,                          -- 'fired' | 'completed' | 'snoozed' | 'skipped'
+  event_type text not null,                          -- 'fired' | 'completed' | 'snoozed' | 'skipped' | 'undone'(완료 되돌리기, 직전 completed 상쇄)
   method text,                                       -- 응답 방식(음성/버튼) — 응답 이벤트만
   event_at timestamptz not null default now(),       -- 실제 발생/응답 시각
   created_at timestamptz not null default now()

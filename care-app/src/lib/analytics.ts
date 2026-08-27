@@ -3,7 +3,8 @@ import { supabase } from "./supabase";
 // 알파 테스트 지표용 알람 이벤트 로그.
 // 'fired'  = 알람이 실제로 발생(알람 화면 진입)한 시각.
 // 나머지    = 사용자 응답(완료/미루기/건너뛰기) 이벤트 — 발생과 대비해 반응 시간 산출.
-export type AlarmEventType = "fired" | "completed" | "snoozed" | "skipped";
+// "undone": 완료 직후 "잘못 눌렀어요"로 되돌린 경우. 직전 completed 이벤트를 상쇄하는 보정 이벤트.
+export type AlarmEventType = "fired" | "completed" | "snoozed" | "skipped" | "undone";
 
 // 알람 이벤트를 alarm_events에 남긴다.
 // 베스트에포트: 테이블 미생성/네트워크 실패 등 어떤 이유로도 예외를 던지지 않아,
