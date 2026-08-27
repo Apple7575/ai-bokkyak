@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: "800", color: colors.primaryNavy, lineHeight: 36, letterSpacing: -0.7 },
   subtitle: { fontSize: fontSizes.body, lineHeight: 26, color: colors.textSecondary, marginTop: spacing.xs },
   art: { position: "absolute", width: 180, height: 132, right: -22, bottom: -3 },
-  body: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, gap: spacing.md },
+  body: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, gap: spacing.md },
   card: {
     width: "100%",
     minHeight: 112,

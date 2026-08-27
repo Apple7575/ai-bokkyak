@@ -1,5 +1,6 @@
 import React from "react";
 import { Image, View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Volume2, Gauge, Type, Shield, LogOut, ChevronRight } from "lucide-react-native";
 import notifee from "@notifee/react-native";
@@ -24,6 +25,7 @@ const menuItems: MenuItem[] = [
 
 export function SettingsScreen() {
   const nav = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const onLogout = async () => {
     await notifee.cancelAllNotifications().catch(() => {});
     // 카카오 로그인은 Supabase Auth 세션을 만들지 않으므로 끊을 세션이 없다.
@@ -36,7 +38,7 @@ export function SettingsScreen() {
   return (
     <View style={styles.screen}>
       <ScreenHeader title="더보기" />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance + insets.bottom }]}>
         <View style={styles.introCard}>
           <View style={styles.introCopy}>
             <Text style={styles.introTitle}>나에게 편하게 맞춰요</Text>
@@ -90,7 +92,7 @@ export function SettingsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
-  content: { padding: spacing.md, paddingBottom: tabBarClearance, gap: spacing.md },
+  content: { padding: spacing.md, gap: spacing.md },
   introCard: {
     minHeight: 126, padding: spacing.md, justifyContent: "center", overflow: "hidden",
     backgroundColor: colors.sageSoft, borderColor: colors.border, borderWidth: 1,

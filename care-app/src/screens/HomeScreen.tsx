@@ -132,7 +132,7 @@ export function HomeScreen() {
     <View style={[styles.screen, { paddingTop: insets.top }]}>
     <ScrollView
       style={styles.scroll}
-      contentContainerStyle={[styles.c, { paddingTop: spacing.md }]}
+      contentContainerStyle={[styles.c, { paddingTop: spacing.md, paddingBottom: tabBarClearance + insets.bottom }]}
     >
       {/* 브랜드 헤더 */}
       <View style={styles.brandRow}>
@@ -280,7 +280,7 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
   scroll: { flex: 1 },
-  c: { padding: spacing.md, paddingBottom: tabBarClearance, gap: spacing.md },
+  c: { padding: spacing.md, gap: spacing.md },
   brandRow: { flexDirection: "row", alignItems: "center" },
   iconBtn: {
     width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surfaceRaised,

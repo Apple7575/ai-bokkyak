@@ -68,6 +68,10 @@ export function AlarmScreen() {
   // 다른 응답(건너뛰기 등)을 고르면, 뒤늦게 도착한 되돌리기 삭제가 새 기록까지
   // 지워 버리는 경쟁을 막기 위함. (intake_records는 슬롯당 한 행이어야 한다.)
   const [busy, setBusy] = useState(false);
+  // 상태(busy)는 렌더 후에야 반영되므로, getPatientId() 대기 중 들어오는 두 번째 탭은
+  // ref로 동기적으로 막는다.
+  const busyRef = useRef(false);
+  function setBusyBoth(v: boolean) { busyRef.current = v; setBusy(v); }
 
   // 완료 모달을 닫고 홈으로. 알람으로 콜드 스타트한 경우 Tabs가 push되어
   // 이 화면이 살아 있으므로, 모달을 명시적으로 닫지 않으면 홈 위에 남는다.
@@ -77,12 +81,12 @@ export function AlarmScreen() {
   }
 
   async function respond(status: "completed" | "skipped") {
-    if (busy) return;
+    if (busyRef.current) return;
+    setBusyBoth(true);
     void stopRinging();
     const pid = await getPatientId();
-    if (!pid || !scheduleId || !schedule) { nav.navigate("Tabs"); return; }
+    if (!pid || !scheduleId || !schedule) { setBusyBoth(false); nav.navigate("Tabs"); return; }
     const slot = doseSlot(schedule.hour, schedule.minute, new Date());
-    setBusy(true);
     if (status === "completed") {
       savedRef.current = false;
       undoneRef.current = false;
@@ -95,7 +99,7 @@ export function AlarmScreen() {
       await stopAlarm(scheduleId);
     } catch {
       setCompletionVisible(false);
-      setBusy(false);
+      setBusyBoth(false);
       Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
       return;
     }
@@ -109,14 +113,14 @@ export function AlarmScreen() {
         } catch {
           Alert.alert("되돌리지 못했어요", "기록 화면에서 복용 기록을 확인해 주세요.");
         }
-        setBusy(false);
+        setBusyBoth(false);
         return;
       }
-      setBusy(false);
+      setBusyBoth(false);
       if (finishRequestedRef.current) leave();
       return;
     }
-    setBusy(false);
+    setBusyBoth(false);
     leave();
   }
 
@@ -132,14 +136,14 @@ export function AlarmScreen() {
     const args = completionArgsRef.current;
     // 아직 저장 전이면 respond()의 후속 처리가 되돌리기를 수행한다(busy 유지).
     if (!savedRef.current || !args) return;
-    setBusy(true);
+    setBusyBoth(true);
     try {
       await undoIntake(args);
       savedRef.current = false;
     } catch {
       Alert.alert("되돌리지 못했어요", "인터넷 연결을 확인하고 기록 화면에서 확인해 주세요.");
     }
-    setBusy(false);
+    setBusyBoth(false);
   }
 
   function goSnooze() {

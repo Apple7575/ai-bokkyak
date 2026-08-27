@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Image, View, Text, ScrollView, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { StatusBadge } from "../components/StatusBadge";
@@ -43,6 +44,7 @@ function dueSlot(s: Schedule, year: number, monthIdx: number, day: number, now: 
 type DayDetail = { medicine_name: string; status: IntakeStatus | "missed" };
 
 export function RecordScreen() {
+  const insets = useSafeAreaInsets();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [records, setRecords] = useState<IntakeRecord[]>([]);
   const [selected, setSelected] = useState<string>(() => localKey(new Date()));
@@ -170,7 +172,7 @@ export function RecordScreen() {
   return (
     <View style={styles.screen}>
       <ScreenHeader title="복약 기록" />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance + insets.bottom }]}>
         <View style={styles.adherenceCard}>
           <View style={styles.adherenceCopy}>
             <Text style={styles.adherenceEyebrow}>이번 달 건강 습관</Text>
@@ -258,7 +260,7 @@ function formatSelected(key: string): string {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
-  content: { padding: spacing.md, paddingBottom: tabBarClearance, gap: spacing.md },
+  content: { padding: spacing.md, gap: spacing.md },
   adherenceCard: {
     minHeight: 142, backgroundColor: colors.sageSoft, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.md, overflow: "hidden", justifyContent: "center",
