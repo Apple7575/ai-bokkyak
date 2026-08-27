@@ -12,16 +12,16 @@
       "url": "https://u.expo.dev/248ad789-5d52-4843-a401-20c7a22afc9e"
     },
     "orientation": "portrait",
-    "icon": "./assets/icon-care-v2.png",
+    "icon": "./assets/icon.png",
     "splash": {
-      "image": "./assets/splash-icon-care-v2.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F7F3EA"
+      "backgroundColor": "#F4F7FB"
     },
     "userInterfaceStyle": "light",
     "androidStatusBar": {
       "barStyle": "dark-content",
-      "backgroundColor": "#F7F3EA"
+      "backgroundColor": "#F4F7FB"
     },
     "ios": {
       "supportsTablet": true,
@@ -38,8 +38,9 @@
     "android": {
       "package": "com.care.bokyak",
       "adaptiveIcon": {
-        "backgroundColor": "#DDEEE9",
-        "foregroundImage": "./assets/android-icon-foreground-care-v2.png",
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
@@ -60,7 +61,7 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon-care-v2.png"
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "./plugins/withAlarmReceiver",
