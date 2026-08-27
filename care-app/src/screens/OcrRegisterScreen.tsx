@@ -5,11 +5,14 @@ import * as ImagePicker from "expo-image-picker";
 import { Trash2 } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { IllustrationBanner } from "../components/IllustrationBanner";
 import { TimeChip } from "../components/TimeChip";
 import { gptOcrPrescription } from "../lib/ocr";
 import { ParsedSchedule } from "../lib/parse";
 import { normalizeRepeatDays } from "../lib/schedule";
 import { TIME_OF_DAYS, timeOfDayForHour, hourForTimeOfDay } from "../lib/timeOfDay";
+
+const OCR_ART = require("../../assets/illustrations/ocr-envelope.png");
 import { searchProducts, ProductHit } from "../lib/drugData";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
@@ -137,6 +140,7 @@ export function OcrRegisterScreen() {
     <View style={styles.screen}>
       <ScreenHeader title="사진으로 약 등록" />
       <ScrollView contentContainerStyle={styles.c}>
+        <IllustrationBanner source={OCR_ART} tone="sage" height={192} imageScale={0.84} />
         <Text style={styles.guide}>약봉투나 약 포장을 촬영하면 자동으로 읽어드려요.</Text>
 
         <BigButton label="약봉투 촬영하기" onPress={() => capture("camera")} />
@@ -231,7 +235,7 @@ export function OcrRegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.cardBg },
+  screen: { flex: 1, backgroundColor: colors.canvas },
   c: { padding: spacing.lg, paddingBottom: spacing.xl },
   guide: { fontSize: fontSizes.body, fontWeight: "600", color: colors.text, marginBottom: spacing.md },
   candWrap: {

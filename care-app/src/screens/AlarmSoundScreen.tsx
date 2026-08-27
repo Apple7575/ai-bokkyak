@@ -2,10 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Platform } from "react-native";
 import { Volume2, VolumeX, Play, Check } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { IllustrationBanner } from "../components/IllustrationBanner";
 import { getAlarmSoundSettings, setAlarmSoundSettings } from "../lib/alarmSettings";
 import { playPreview, stopPreview } from "../lib/alarmRinger";
 import { resyncAllAlarms } from "../lib/alarmSync";
 import { colors, fontSizes, radii, spacing, minTouch } from "../theme/tokens";
+
+const SOUND_ART = require("../../assets/illustrations/alarm-sound.png");
 
 const SLOTS: { tod: string; desc: string }[] = [
   { tod: "아침", desc: "아침 약 드실 시간 안내" },
@@ -69,6 +72,7 @@ export function AlarmSoundScreen() {
     <View style={styles.screen}>
       <ScreenHeader title="알림 소리 설정" />
       <ScrollView contentContainerStyle={styles.content}>
+        <IllustrationBanner source={SOUND_ART} tone="coral" height={184} imageScale={0.9} />
         <Text style={styles.sectionTitle}>알람 소리</Text>
 
         <Pressable
@@ -145,7 +149,7 @@ export function AlarmSoundScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7FAFF" },
+  screen: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.md, paddingBottom: spacing.xl },
   loading: { textAlign: "center", fontSize: fontSizes.body, color: colors.textSecondary, marginTop: spacing.lg },
   sectionTitle: {

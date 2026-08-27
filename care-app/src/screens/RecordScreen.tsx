@@ -1,14 +1,17 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { View, Text, ScrollView, StyleSheet } from "react-native";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Image, View, Text, ScrollView, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { StatusBadge } from "../components/StatusBadge";
+import { MedicineMark } from "../components/MedicineMark";
 import { supabase, IntakeRecord, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { dayMark, markColor, monthlyAdherence } from "../lib/adherence";
 import { statusLabel, IntakeStatus } from "../lib/intakeStatus";
 import { colors, fontSizes, radii, spacing } from "../theme/tokens";
+
+const RECORD_ART = require("../../assets/illustrations/record-progress-accent.png");
 
 LocaleConfig.locales["ko"] = {
   monthNames: ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"],
@@ -48,6 +51,7 @@ export function RecordScreen() {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
+  const progress = useRef(new Animated.Value(0)).current;
 
   useFocusEffect(
     useCallback(() => {
@@ -155,13 +159,33 @@ export function RecordScreen() {
     return details;
   }, [schedules, records, selected]);
 
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: monthPct,
+      duration: 650,
+      useNativeDriver: false,
+    }).start();
+  }, [monthPct, progress]);
+
   return (
     <View style={styles.screen}>
       <ScreenHeader title="복약 기록" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.adherenceCard}>
-          <Text style={styles.adherenceLabel}>이번 달 복약 이행률</Text>
-          <Text style={styles.adherencePct}>{monthPct}%</Text>
+          <View style={styles.adherenceCopy}>
+            <Text style={styles.adherenceEyebrow}>이번 달 건강 습관</Text>
+            <Text style={styles.adherenceLabel}>복약 이행률</Text>
+            <Text style={styles.adherencePct}>{monthPct}%</Text>
+            <View style={styles.progressTrack}>
+              <Animated.View
+                style={[
+                  styles.progressFill,
+                  { width: progress.interpolate({ inputRange: [0, 100], outputRange: ["0%", "100%"] }) },
+                ]}
+              />
+            </View>
+          </View>
+          <Image source={RECORD_ART} style={styles.adherenceArt} resizeMode="contain" />
         </View>
 
         <View style={styles.calendarWrap}>
@@ -202,6 +226,7 @@ export function RecordScreen() {
             ) : (
               dayDetails.map((item, i) => (
                 <View key={`${item.medicine_name}-${i}`} style={styles.row}>
+                  <MedicineMark name={item.medicine_name} size={46} />
                   <View style={styles.rowLeft}>
                     <Text style={styles.name}>{item.medicine_name}</Text>
                     <Text style={styles.meta}>{statusLabel(item.status)}</Text>
@@ -232,14 +257,19 @@ function formatSelected(key: string): string {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7FAFF" },
+  screen: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
   adherenceCard: {
-    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
-    borderRadius: radii.card, padding: spacing.md, alignItems: "center",
+    minHeight: 142, backgroundColor: colors.sageSoft, borderColor: colors.border, borderWidth: 1,
+    borderRadius: radii.card, padding: spacing.md, overflow: "hidden", justifyContent: "center",
   },
-  adherenceLabel: { fontSize: fontSizes.body, color: colors.textSecondary },
-  adherencePct: { fontSize: fontSizes.hero, fontWeight: "800", color: colors.successGreen, marginTop: 4 },
+  adherenceCopy: { width: "58%", zIndex: 1 },
+  adherenceEyebrow: { fontSize: 16, fontWeight: "800", color: colors.successGreen },
+  adherenceLabel: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 2 },
+  adherencePct: { fontSize: fontSizes.hero, fontWeight: "800", color: colors.primaryNavy, marginTop: 2 },
+  adherenceArt: { position: "absolute", width: 184, height: 132, right: -20, bottom: -3 },
+  progressTrack: { height: 8, borderRadius: radii.pill, backgroundColor: colors.surfaceRaised, overflow: "hidden", marginTop: spacing.sm },
+  progressFill: { height: "100%", borderRadius: radii.pill, backgroundColor: colors.successGreen },
   calendarWrap: {
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.xs, overflow: "hidden",
@@ -255,7 +285,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.md,
   },
-  rowLeft: { flexShrink: 1, gap: 4 },
+  rowLeft: { flex: 1, minWidth: 0, gap: 4, marginLeft: spacing.sm },
   name: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text },
   meta: { fontSize: fontSizes.body, color: colors.textSecondary },
 });

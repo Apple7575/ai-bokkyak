@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, Pressable, useWindowDimensions } from "react-native";
+import { Image, View, Text, ScrollView, StyleSheet, Pressable, useWindowDimensions } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Plus, AlertTriangle, ChevronRight, Pill } from "lucide-react-native";
+import { Plus, AlertTriangle, ChevronRight } from "lucide-react-native";
+import { MedicineMark } from "../components/MedicineMark";
 import { supabase, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { MedKind } from "../lib/medKind";
@@ -12,6 +13,8 @@ import { allIngredients, matchFindings, MedIngredients, Finding } from "../lib/i
 import { groupByMedicine, describeDoses, describeRepeat, MedGroup } from "../lib/medSummary";
 import { tabLayout } from "../lib/cabinetTabs";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
+
+const CABINET_ART = require("../../assets/illustrations/medicine-cabinet.png");
 
 // D-01 내 약장 — 확정 시안 기준.
 // 상단 요약(전체/처방약/일반약/건기식) → 주의 배너 → 필터 탭 → 약 카드 목록.
@@ -147,7 +150,11 @@ export function CabinetScreen() {
         </View>
 
         {groups.length === 0 ? (
-          <Text style={styles.empty}>약장이 비어 있어요.{"\n"}오른쪽 위 + 를 눌러 약을 등록해 주세요.</Text>
+          <View style={styles.emptyCard}>
+            <Image source={CABINET_ART} style={styles.emptyArt} resizeMode="contain" />
+            <Text style={styles.emptyTitle}>아직 등록한 약이 없어요</Text>
+            <Text style={styles.empty}>오른쪽 위 + 버튼을 눌러{`\n`}복용 중인 약을 등록해 주세요.</Text>
+          </View>
         ) : shown.length === 0 ? (
           <Text style={styles.empty}>
             {filter === "미분류" ? "구분을 정하지 않은 약이 없어요." : `${filter}으로 등록된 약이 없어요.`}
@@ -167,9 +174,7 @@ export function CabinetScreen() {
                 onPress={() => nav.navigate("MedicineDetail", { scheduleId: g.doses[0].id })}
                 style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
               >
-                <View style={[styles.iconBox, { backgroundColor: color + "1A" }]}>
-                  <Pill size={22} color={color} />
-                </View>
+                <MedicineMark name={g.name} size={52} />
                 <View style={styles.info}>
                   <Text style={styles.name} numberOfLines={2}>{g.name}</Text>
                   <View style={styles.metaRow}>
@@ -193,7 +198,7 @@ export function CabinetScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7FAFF" },
+  screen: { flex: 1, backgroundColor: colors.canvas },
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     backgroundColor: colors.cardBg, paddingHorizontal: 12, paddingBottom: 12,
@@ -211,12 +216,12 @@ const styles = StyleSheet.create({
   summaryNum: { fontSize: 28, fontWeight: "800", color: colors.primaryNavy },
   summaryLabel: { color: colors.textSecondary, marginTop: 2 },
   warn: {
-    backgroundColor: "#FFF8EC", borderColor: colors.warningOrange, borderWidth: 1,
+    backgroundColor: colors.warningSoft, borderColor: colors.warningOrange, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.md,
   },
   warnHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  warnTitle: { flex: 1, fontSize: 21, fontWeight: "800", color: "#8A5A00" },
-  warnPair: { fontSize: fontSizes.body, color: "#8A5A00", marginTop: 6, lineHeight: 25 },
+  warnTitle: { flex: 1, fontSize: 21, fontWeight: "800", color: colors.text },
+  warnPair: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 6, lineHeight: 25 },
   // 5개를 반드시 한 줄에. 줄바꿈하면 아랫줄이 목록처럼 보이고, 가로 스크롤은
   // 나머지 탭이 화면 밖에 숨어 어르신이 못 찾는다. 대신 좁은 화면에서는
   // 글자 크기를 줄여 맞춘다(tabFont).
@@ -237,7 +242,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.md, minHeight: 88,
   },
-  iconBox: { width: 48, height: 48, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   info: { flex: 1 },
   name: { fontSize: 21, fontWeight: "800", color: colors.text },
   metaRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: 5 },
@@ -249,5 +253,8 @@ const styles = StyleSheet.create({
     fontSize: 20, color: colors.textSecondary, textAlign: "center",
     marginTop: spacing.lg, lineHeight: 30,
   },
+  emptyCard: { alignItems: "center", backgroundColor: colors.cardBg, borderRadius: radii.card, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, overflow: "hidden" },
+  emptyArt: { width: "88%", height: 235, marginTop: -10 },
+  emptyTitle: { marginTop: spacing.sm, fontSize: 23, fontWeight: "800", color: colors.primaryNavy, textAlign: "center" },
   _touch: { minHeight: minTouch },
 });

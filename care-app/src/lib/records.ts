@@ -20,3 +20,17 @@ export async function recordIntake(args: {
     scheduledFor: args.scheduledFor, type: args.status, method: args.method,
   });
 }
+
+// 완료 직후 "잘못 눌렀어요"로 되돌릴 때만 사용한다. 삭제 범위는 해당 환자·일정·
+// 예정 시각 한 건으로 제한해 다른 복약 기록에 영향을 주지 않는다.
+export async function undoIntake(args: {
+  patientId: string; scheduleId: string; scheduledFor: Date;
+}): Promise<void> {
+  const { error } = await supabase
+    .from("intake_records")
+    .delete()
+    .eq("patient_id", args.patientId)
+    .eq("schedule_id", args.scheduleId)
+    .eq("scheduled_for", args.scheduledFor.toISOString());
+  if (error) throw error;
+}

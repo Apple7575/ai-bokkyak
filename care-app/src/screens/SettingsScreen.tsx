@@ -1,11 +1,13 @@
 import React from "react";
-import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
+import { Image, View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Volume2, Mic2, Type, Shield, LogOut, ChevronRight } from "lucide-react-native";
+import { Volume2, Gauge, Type, Shield, LogOut, ChevronRight } from "lucide-react-native";
 import notifee from "@notifee/react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { clearAll } from "../lib/storage";
-import { colors, fontSizes, radii, spacing } from "../theme/tokens";
+import { colors, fontSizes, radii, spacing, shadows } from "../theme/tokens";
+
+const SETTINGS_ART = require("../../assets/illustrations/settings-dial-accent.png");
 
 type IconType = React.ComponentType<{ size?: number; color?: string }>;
 // route가 있는 항목만 실제 화면으로 이동한다. 나머지는 아직 시각용 자리표시자.
@@ -13,7 +15,7 @@ type MenuItem = { Icon: IconType; label: string; color: string; sub?: string; ro
 
 const menuItems: MenuItem[] = [
   { Icon: Volume2, label: "알림 소리 설정", color: colors.primaryBlue, route: "AlarmSound" },
-  { Icon: Mic2, label: "음성 안내 속도", color: colors.primaryBlue, route: "VoiceSpeed" },
+  { Icon: Gauge, label: "음성 안내 속도", color: colors.primaryBlue, route: "VoiceSpeed" },
   // 아직 만들지 않은 기능은 눌러도 아무 일이 없는 대신 "준비 중"이라고 밝힌다
   // (QA에서 "버튼이 안 눌림"으로 보고됨).
   { Icon: Type, label: "큰 글씨 모드", color: colors.textSecondary, sub: "준비 중이에요" },
@@ -35,6 +37,13 @@ export function SettingsScreen() {
     <View style={styles.screen}>
       <ScreenHeader title="더보기" />
       <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.introCard}>
+          <View style={styles.introCopy}>
+            <Text style={styles.introTitle}>나에게 편하게 맞춰요</Text>
+            <Text style={styles.introBody}>소리와 글씨를 보기 편하게 설정할 수 있어요.</Text>
+          </View>
+          <Image source={SETTINGS_ART} style={styles.introArt} resizeMode="contain" />
+        </View>
         <View style={styles.group}>
           {menuItems.map(({ Icon, label, color, sub, route }, i) => {
             const rowStyle = [styles.rowItem, i < menuItems.length - 1 && styles.rowDivider];
@@ -80,16 +89,25 @@ export function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7FAFF" },
-  content: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
-  group: {
-    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
-    borderRadius: radii.card, overflow: "hidden",
+  screen: { flex: 1, backgroundColor: colors.canvas },
+  content: { padding: spacing.md, paddingBottom: 112, gap: spacing.md },
+  introCard: {
+    minHeight: 126, padding: spacing.md, justifyContent: "center", overflow: "hidden",
+    backgroundColor: colors.sageSoft, borderColor: colors.border, borderWidth: 1,
+    borderRadius: radii.card,
   },
-  rowItem: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: 16 },
+  introCopy: { width: "62%", zIndex: 1 },
+  introTitle: { fontSize: 22, lineHeight: 29, fontWeight: "800", color: colors.primaryNavy },
+  introBody: { marginTop: 5, fontSize: 17, lineHeight: 24, color: colors.textSecondary },
+  introArt: { position: "absolute", right: -23, bottom: -9, width: 162, height: 118 },
+  group: {
+    backgroundColor: colors.surfaceRaised, borderColor: colors.border, borderWidth: 1,
+    borderRadius: radii.card, overflow: "hidden", ...shadows.card,
+  },
+  rowItem: { flexDirection: "row", alignItems: "center", gap: spacing.md, minHeight: 72, paddingHorizontal: spacing.md, paddingVertical: 14 },
   rowDivider: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  iconBox: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  iconBox: { width: 48, height: 48, borderRadius: 17, alignItems: "center", justifyContent: "center" },
   rowTextWrap: { flex: 1 },
-  rowLabel: { fontSize: fontSizes.body, fontWeight: "600", color: colors.text },
+  rowLabel: { fontSize: 19, fontWeight: "700", color: colors.text },
   rowSub: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 2 },
 });

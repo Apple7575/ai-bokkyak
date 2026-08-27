@@ -12,21 +12,21 @@
       "url": "https://u.expo.dev/248ad789-5d52-4843-a401-20c7a22afc9e"
     },
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon-care-v2.png",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash-icon-care-v2.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
+      "backgroundColor": "#F7F3EA"
     },
     "userInterfaceStyle": "light",
     "androidStatusBar": {
       "barStyle": "dark-content",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#F7F3EA"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.modoobokyak.app",
-      "buildNumber": "24",
+      "buildNumber": "27",
       "bitcode": false,
       "infoPlist": {
         "NSCameraUsageDescription": "약 봉투를 촬영해 복약 정보를 자동으로 등록하기 위해 카메라를 사용합니다.",
@@ -38,9 +38,8 @@
     "android": {
       "package": "com.care.bokyak",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
+        "backgroundColor": "#DDEEE9",
+        "foregroundImage": "./assets/android-icon-foreground-care-v2.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
@@ -61,7 +60,7 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon-care-v2.png"
     },
     "plugins": [
       "./plugins/withAlarmReceiver",

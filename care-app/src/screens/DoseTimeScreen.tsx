@@ -228,7 +228,7 @@ export function DoseTimeScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7FAFF" },
+  screen: { flex: 1, backgroundColor: colors.canvas },
   c: { padding: spacing.md, paddingBottom: spacing.xl },
   medCard: {
     flexDirection: "row", alignItems: "center", gap: spacing.sm,

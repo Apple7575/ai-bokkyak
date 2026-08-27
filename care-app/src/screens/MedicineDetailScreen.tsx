@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert, ActivityIndicator } from "react-native";
+import { Image, View, Text, ScrollView, StyleSheet, Pressable, Alert, ActivityIndicator } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Pill, Trash2, Stethoscope, AlertTriangle, ChevronRight, Pencil, Clock } from "lucide-react-native";
+import { Trash2, Stethoscope, AlertTriangle, ChevronRight, Pencil, Clock } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { MedicineMark } from "../components/MedicineMark";
 import { supabase, Schedule } from "../lib/supabase";
 import { cancelSchedule } from "../lib/notifications";
 import { MED_KINDS, MedKind } from "../lib/medKind";
@@ -12,6 +13,8 @@ import { fetchDrugInfo, lookupIngredients, fetchContraindications } from "../lib
 import { allIngredients, matchFindings, MedIngredients } from "../lib/interactions";
 import { getPatientId } from "../lib/storage";
 import { describeDoseRepeat, describeDoseTime } from "../lib/medSummary";
+
+const DETAIL_ART = require("../../assets/illustrations/medicine-detail-accent.png");
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 
 // D-02 약 상세.
@@ -136,9 +139,12 @@ export function MedicineDetailScreen() {
       <ScrollView contentContainerStyle={[styles.c, { paddingBottom: spacing.xl + insets.bottom }]}>
         {/* 이름 · 하루 몇 번 (구체적인 시각은 아래 "복약 일정"에서 수정까지 함께) */}
         <View style={styles.hero}>
-          <View style={styles.heroIcon}><Pill size={30} color={colors.primaryBlue} /></View>
-          <Text style={styles.name}>{sched.medicine_name}</Text>
-          <Text style={styles.time}>{`1일 ${Math.max(1, doses.length)}회`}</Text>
+          <View style={styles.heroCopy}>
+            <View style={styles.heroLabel}><MedicineMark name={sched.medicine_name} size={34} /><Text style={styles.heroLabelText}>복용 중인 약</Text></View>
+            <Text style={styles.name}>{sched.medicine_name}</Text>
+            <Text style={styles.time}>{`하루 ${Math.max(1, doses.length)}번 복용`}</Text>
+          </View>
+          <Image source={DETAIL_ART} style={styles.heroArt} resizeMode="contain" />
         </View>
 
         {/* 주의 — 있을 때만 */}
@@ -231,22 +237,22 @@ export function MedicineDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7FAFF" },
+  screen: { flex: 1, backgroundColor: colors.canvas },
   c: { padding: spacing.md },
   loading: { textAlign: "center", fontSize: fontSizes.body, color: colors.textSecondary, marginTop: spacing.lg },
   hero: {
-    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
-    borderRadius: radii.card, padding: spacing.lg, alignItems: "center",
+    minHeight: 150, backgroundColor: colors.coralSoft, borderColor: colors.border, borderWidth: 1,
+    borderRadius: radii.card, padding: spacing.md, justifyContent: "center", overflow: "hidden",
   },
-  heroIcon: {
-    width: 64, height: 64, borderRadius: 999, backgroundColor: colors.lightBlueBg,
-    alignItems: "center", justifyContent: "center", marginBottom: spacing.sm,
-  },
-  name: { fontSize: 28, fontWeight: "800", color: colors.primaryNavy, textAlign: "center" },
-  time: { fontSize: 20, color: colors.textSecondary, marginTop: spacing.xs },
+  heroCopy: { width: "60%", zIndex: 1 },
+  heroLabel: { flexDirection: "row", alignItems: "center", gap: 6 },
+  heroLabelText: { fontSize: 16, fontWeight: "800", color: colors.primaryBlue },
+  heroArt: { position: "absolute", width: 190, height: 138, right: -32, bottom: -4 },
+  name: { fontSize: 28, lineHeight: 36, fontWeight: "800", color: colors.primaryNavy, marginTop: spacing.sm },
+  time: { fontSize: 18, color: colors.textSecondary, marginTop: spacing.xs },
   warn: {
     flexDirection: "row", alignItems: "center", gap: spacing.sm,
-    backgroundColor: "#FFF0F0", borderColor: colors.dangerRed, borderWidth: 1,
+    backgroundColor: colors.dangerSoft, borderColor: colors.dangerRed, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.md, marginTop: spacing.md,
   },
   warnText: { flex: 1, fontSize: 19, fontWeight: "700", color: colors.dangerRed, lineHeight: 26 },

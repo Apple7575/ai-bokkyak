@@ -2,10 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { Check, Volume2 } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { IllustrationBanner } from "../components/IllustrationBanner";
 import { SpeechRate, SPEECH_RATES, describeRate, speedOf } from "../lib/ttsSpeed";
 import { getSpeechRate, setSpeechRate } from "../lib/voiceSettings";
 import { speak, stopSpeaking } from "../lib/tts";
 import { colors, fontSizes, radii, spacing, minTouch } from "../theme/tokens";
+
+const SPEED_ART = require("../../assets/illustrations/voice-speed.png");
 
 // 음성 안내 속도 설정. 고르면 바로 그 속도로 들려줘서 비교할 수 있게 한다.
 const SAMPLE = "아침 약 드실 시간이에요.";
@@ -63,6 +66,7 @@ export function VoiceSpeedScreen() {
     <View style={styles.screen}>
       <ScreenHeader title="음성 안내 속도" />
       <ScrollView contentContainerStyle={styles.content}>
+        <IllustrationBanner source={SPEED_ART} tone="sage" height={164} />
         <Text style={styles.lead}>
           알람과 안내 음성을 읽어주는 빠르기예요. 고르시면 바로 들려드립니다.
         </Text>
@@ -100,7 +104,7 @@ export function VoiceSpeedScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7FAFF" },
+  screen: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.md, paddingBottom: spacing.xl },
   loading: { textAlign: "center", fontSize: fontSizes.body, color: colors.textSecondary, marginTop: spacing.lg },
   lead: { fontSize: 19, color: colors.textSecondary, lineHeight: 28, marginBottom: spacing.md },

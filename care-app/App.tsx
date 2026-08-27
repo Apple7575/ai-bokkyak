@@ -2,7 +2,7 @@ import "react-native-gesture-handler";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import React, { useEffect } from "react";
 import { AppState } from "react-native";
-import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
+import { NavigationContainer, createNavigationContainerRef, DefaultTheme } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
@@ -17,10 +17,24 @@ import { doseSlot } from "./src/lib/schedule";
 import { supabase } from "./src/lib/supabase";
 import { resyncAllAlarms } from "./src/lib/alarmSync";
 import { applyPretendard } from "./src/theme/applyPretendard";
+import { colors } from "./src/theme/tokens";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export const navRef = createNavigationContainerRef<RootStackParamList>();
+
+const navigationTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: colors.primaryBlue,
+    background: colors.canvas,
+    card: colors.surfaceRaised,
+    text: colors.text,
+    border: colors.border,
+    notification: colors.coral,
+  },
+};
 
 function navigateToAlarm(scheduleId: string | undefined, attempt = 0) {
   if (navRef.isReady()) {
@@ -126,7 +140,7 @@ export default function App() {
       <SafeAreaProvider>
         {/* 흰 배경에서 시간·배터리 등 상태바 글씨가 보이도록 어두운 색으로 고정 */}
         <StatusBar style="dark" />
-        <NavigationContainer ref={navRef}>
+        <NavigationContainer ref={navRef} theme={navigationTheme}>
           <RootNavigator />
         </NavigationContainer>
       </SafeAreaProvider>

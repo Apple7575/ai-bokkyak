@@ -6,9 +6,12 @@ import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Search, Pencil, ChevronRight, Pill } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { IllustrationBanner } from "../components/IllustrationBanner";
 import { searchProducts, ProductHit } from "../lib/drugData";
 import { guessMedKind } from "../lib/medKind";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
+
+const SEARCH_ART = require("../../assets/illustrations/medicine-search.png");
 
 // C-07 약 이름으로 찾기 — 공공데이터(drug_product 21,953건)에서 제품을 골라 등록한다.
 // 직접 타이핑한 이름보다 정확한 제품명이 남아야 성분 기반 병용금기 검사가 실제로 걸린다.
@@ -66,6 +69,7 @@ export function MedicineSearchScreen() {
         contentContainerStyle={[styles.list, { paddingBottom: spacing.xl + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
       >
+        <IllustrationBanner source={SEARCH_ART} tone="cream" height={156} imageScale={0.98} />
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator color={colors.primaryBlue} />
@@ -129,7 +133,7 @@ export function MedicineSearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7FAFF" },
+  screen: { flex: 1, backgroundColor: colors.canvas },
   searchWrap: {
     flexDirection: "row", alignItems: "center", gap: spacing.sm,
     margin: spacing.md, paddingHorizontal: spacing.md,

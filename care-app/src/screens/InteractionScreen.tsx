@@ -3,11 +3,14 @@ import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from "react-nat
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlertTriangle, Stethoscope, ShieldCheck } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { IllustrationBanner } from "../components/IllustrationBanner";
 import { supabase, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { lookupIngredients, fetchContraindications } from "../lib/drugData";
 import { allIngredients, matchFindings, Finding, MedIngredients } from "../lib/interactions";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
+
+const SAFETY_ART = require("../../assets/illustrations/interaction-safety.png");
 
 // D-03 주의 상세 (병용금기).
 //
@@ -58,6 +61,7 @@ export function InteractionScreen() {
     <View style={styles.screen}>
       <ScreenHeader title="함께 드실 때 주의" />
       <ScrollView contentContainerStyle={[styles.c, { paddingBottom: spacing.xl + insets.bottom }]}>
+        <IllustrationBanner source={SAFETY_ART} tone="coral" height={168} />
         {state.phase === "loading" ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={colors.primaryBlue} />
@@ -125,7 +129,7 @@ export function InteractionScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7FAFF" },
+  screen: { flex: 1, backgroundColor: colors.canvas },
   c: { padding: spacing.md, gap: spacing.md },
   center: { alignItems: "center", gap: spacing.md, marginTop: spacing.xl },
   centerText: { fontSize: 20, color: colors.textSecondary, textAlign: "center", lineHeight: 30 },
@@ -138,7 +142,7 @@ const styles = StyleSheet.create({
   safeDesc: { fontSize: 19, color: colors.textSecondary, textAlign: "center", lineHeight: 28 },
   lead: {
     flexDirection: "row", alignItems: "center", gap: spacing.sm,
-    backgroundColor: "#FFF0F0", borderColor: colors.dangerRed, borderWidth: 1,
+    backgroundColor: colors.dangerSoft, borderColor: colors.dangerRed, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.md,
   },
   leadText: { flex: 1, fontSize: 20, fontWeight: "700", color: colors.dangerRed, lineHeight: 28 },

@@ -4,9 +4,12 @@ import { useNavigation } from "@react-navigation/native";
 import notifee from "@notifee/react-native";
 import { Trash2 } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { IllustrationBanner } from "../components/IllustrationBanner";
 import { supabase } from "../lib/supabase";
 import { getPatientId, clearAll } from "../lib/storage";
 import { colors, fontSizes, radii, spacing, minTouch } from "../theme/tokens";
+
+const PRIVACY_ART = require("../../assets/illustrations/privacy-lock.png");
 
 type Section = { title: string; body: string[] };
 
@@ -115,6 +118,7 @@ export function PrivacyScreen() {
     <View style={styles.screen}>
       <ScreenHeader title="개인정보 설정" />
       <ScrollView contentContainerStyle={styles.content}>
+        <IllustrationBanner source={PRIVACY_ART} tone="cream" height={170} />
         <View style={styles.card}>
           <Text style={styles.docTitle}>개인정보처리방침</Text>
           <Text style={styles.intro}>
@@ -149,7 +153,7 @@ export function PrivacyScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7FAFF" },
+  screen: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.md, paddingBottom: spacing.xl },
   card: {
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,

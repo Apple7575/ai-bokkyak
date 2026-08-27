@@ -19,7 +19,7 @@ export function AlarmListScreen() {
         {alarms.map(({ id, name, time, enabled, days }) => (
           <View key={id} style={styles.card}>
             <View style={styles.left}>
-              <View style={[styles.iconBox, { backgroundColor: enabled ? colors.lightBlueBg : "#F7FAFF" }]}>
+              <View style={[styles.iconBox, { backgroundColor: enabled ? colors.lightBlueBg : colors.canvas }]}>
                 {enabled
                   ? <Bell size={22} color={colors.primaryBlue} />
                   : <BellOff size={22} color={colors.textSecondary} />}
@@ -40,7 +40,7 @@ export function AlarmListScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7FAFF" },
+  screen: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.sm },
   card: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",

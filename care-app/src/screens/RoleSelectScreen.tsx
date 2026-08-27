@@ -9,7 +9,7 @@ import { supabase } from "../lib/supabase";
 import { enterDemo } from "../lib/demo";
 import { signInWithKakao } from "../lib/kakaoAuth";
 import { sanitizeBirthPart, birthError, buildBirthDate } from "../lib/birthInput";
-import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
+import { colors, fontSizes, spacing, radii, minTouch, shadows } from "../theme/tokens";
 
 // 로고 이미지는 여백이 거의 없는 정사각형이라 카드 안쪽에 패딩을 준다.
 const LOGO_CARD = 104;
@@ -210,7 +210,7 @@ export function RoleSelectScreen() {
         style={({ pressed }) => [styles.kakaoBtn, (pressed || kakaoBusy) && { opacity: 0.85 }]}
       >
         <View style={styles.kakaoIcon}>
-          <MessageCircle size={22} color="#3C1E1E" fill="#3C1E1E" />
+          <MessageCircle size={22} color={colors.kakaoInk} fill={colors.kakaoInk} />
         </View>
         <Text style={styles.kakaoText}>
           {kakaoBusy ? "카카오 로그인 중…" : "카카오로 시작하기"}
@@ -243,24 +243,23 @@ export function RoleSelectScreen() {
   );
 }
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.lightBlueBg },
+  screen: { flex: 1, backgroundColor: colors.canvas },
   scroll: { flex: 1 },
   c: { padding: spacing.lg, paddingBottom: spacing.xl, flexGrow: 1, justifyContent: "center" },
   brand: { alignItems: "center", marginBottom: spacing.xl },
   logo: {
-    width: LOGO_CARD, height: LOGO_CARD, borderRadius: 28, backgroundColor: colors.cardBg,
+    width: LOGO_CARD, height: LOGO_CARD, borderRadius: radii.hero, backgroundColor: colors.surfaceRaised,
     alignItems: "center", justifyContent: "center", marginBottom: spacing.md,
-    shadowColor: colors.primaryNavy, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08, shadowRadius: 12, elevation: 2,
+    ...shadows.card,
   },
   title: { fontSize: 40, fontWeight: "800", color: colors.primaryNavy, textAlign: "center" },
   card: {
-    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
-    borderRadius: radii.card, padding: spacing.lg, marginBottom: spacing.lg,
+    backgroundColor: colors.surfaceRaised, borderColor: colors.border, borderWidth: 1,
+    borderRadius: radii.card, padding: spacing.lg, marginBottom: spacing.lg, ...shadows.card,
   },
   label: { fontSize: fontSizes.body, color: colors.text, fontWeight: "700", marginBottom: spacing.sm },
   input: {
-    backgroundColor: colors.lightBlueBg, borderColor: colors.border, borderWidth: 1,
+    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1.5,
     borderRadius: radii.button, fontSize: fontSizes.body, padding: 14,
   },
   genderRow: { flexDirection: "row", gap: spacing.md },
@@ -271,21 +270,20 @@ const styles = StyleSheet.create({
   birthError: { fontSize: fontSizes.body, color: colors.dangerRed, marginTop: spacing.sm, lineHeight: 25 },
   genderChip: {
     flex: 1, minHeight: minTouch, alignItems: "center", justifyContent: "center",
-    backgroundColor: colors.lightBlueBg, borderColor: colors.border, borderWidth: 1,
-    borderRadius: radii.button,
+    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1.5,
+    borderRadius: radii.pill,
   },
   genderChipOn: { backgroundColor: colors.primaryBlue, borderColor: colors.primaryBlue },
   genderText: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text },
-  genderTextOn: { color: "#fff" },
+  genderTextOn: { color: colors.white },
   choice: {
     flexDirection: "row", alignItems: "center", gap: spacing.md,
-    minHeight: minTouch, borderRadius: radii.button,
+    minHeight: 64, borderRadius: radii.pill,
     paddingHorizontal: spacing.lg, paddingVertical: spacing.md, marginVertical: 6,
   },
   choicePrimary: {
     backgroundColor: colors.primaryBlue,
-    shadowColor: colors.primaryBlue, shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3, shadowRadius: 14, elevation: 4,
+    ...shadows.floating,
   },
   choiceIcon: { width: 44, height: 44, borderRadius: 999, alignItems: "center", justifyContent: "center" },
   choiceText: { fontSize: fontSizes.emphasis, fontWeight: "700", flexShrink: 1 },
@@ -296,12 +294,12 @@ const styles = StyleSheet.create({
   demoText: { fontSize: fontSizes.body, color: colors.textSecondary, fontWeight: "600" },
   kakaoBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
-    minHeight: minTouch, borderRadius: radii.button, backgroundColor: "#FEE500",
+    minHeight: minTouch, borderRadius: radii.pill, backgroundColor: colors.kakao,
     // 아래 설명 문구를 뺐으므로(QA 2026-08-20) 다음 버튼과의 간격을 여기서 준다.
     marginBottom: spacing.md,
-    shadowColor: "#B9A100", shadowOffset: { width: 0, height: 4 },
+    shadowColor: colors.kakaoShadow, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2, shadowRadius: 10, elevation: 3,
   },
   kakaoIcon: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
-  kakaoText: { fontSize: fontSizes.emphasis, fontWeight: "800", color: "#3C1E1E" },
+  kakaoText: { fontSize: fontSizes.emphasis, fontWeight: "800", color: colors.kakaoInk },
 });

@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { ScrollView, View, Text, StyleSheet, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
-import { colors, fontSizes } from "../theme/tokens";
+import { colors, fontSizes, radii } from "../theme/tokens";
 
 const ITEM_H = 48;
 type Props = { values: number[]; value: number; onChange: (v: number) => void; suffix?: string };
@@ -39,7 +39,7 @@ export function WheelPicker({ values, value, onChange, suffix }: Props) {
 const styles = StyleSheet.create({
   wrap: { height: ITEM_H * 3, width: 120, justifyContent: "center" },
   selBar: { position: "absolute", top: ITEM_H, left: 0, right: 0, height: ITEM_H,
-    borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.border },
+    borderRadius: radii.button, backgroundColor: colors.primarySoft },
   item: { height: ITEM_H, alignItems: "center", justifyContent: "center" },
   txt: { fontSize: fontSizes.emphasis, color: colors.textSecondary },
   txtOn: { color: colors.primaryNavy, fontWeight: "800" },

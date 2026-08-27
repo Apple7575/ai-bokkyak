@@ -1,9 +1,11 @@
 import React from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { Image, View, Text, Pressable, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { ListChecks, Camera, Search, ChevronRight } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
-import { colors, fontSizes, spacing, radii } from "../theme/tokens";
+import { colors, fontSizes, spacing, radii, shadows } from "../theme/tokens";
+
+const REGISTER_ART = require("../../assets/illustrations/medicine-search.png");
 
 export function RegisterMethodScreen() {
   const nav = useNavigation<any>();
@@ -11,8 +13,13 @@ export function RegisterMethodScreen() {
     <View style={styles.screen}>
       <ScreenHeader title="약 등록" />
       <View style={styles.header}>
-        <Text style={styles.title}>어떻게 약을 등록할까요?</Text>
-        <Text style={styles.subtitle}>원하는 방법을 선택해 주세요.</Text>
+        <View style={styles.introCard}>
+          <View style={styles.introCopy}>
+            <Text style={styles.title}>어떻게 약을{`\n`}등록할까요?</Text>
+            <Text style={styles.subtitle}>원하는 방법을 선택해 주세요.</Text>
+          </View>
+          <Image source={REGISTER_ART} style={styles.art} resizeMode="contain" />
+        </View>
       </View>
 
       <View style={styles.body}>
@@ -53,7 +60,7 @@ export function RegisterMethodScreen() {
           onPress={() => nav.navigate("OcrRegister")}
           style={({ pressed }) => [styles.card, styles.cardSecondary, pressed && { opacity: 0.92 }]}
         >
-          <View style={[styles.iconBox, { backgroundColor: "#F7FAFF" }]}>
+          <View style={[styles.iconBox, { backgroundColor: colors.canvas }]}>
             <Camera size={28} color={colors.primaryBlue} />
           </View>
           <View style={styles.cardText}>
@@ -67,17 +74,21 @@ export function RegisterMethodScreen() {
   );
 }
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.cardBg },
+  screen: { flex: 1, backgroundColor: colors.canvas },
   header: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
   },
-  title: { fontSize: fontSizes.title, fontWeight: "700", color: colors.text, lineHeight: 32 },
-  subtitle: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: spacing.xs },
-  body: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.md },
+  introCard: { minHeight: 142, padding: spacing.md, borderRadius: radii.card, backgroundColor: colors.coralSoft, overflow: "hidden", justifyContent: "center", ...shadows.card },
+  introCopy: { width: "62%", zIndex: 1 },
+  title: { fontSize: 28, fontWeight: "800", color: colors.primaryNavy, lineHeight: 36, letterSpacing: -0.7 },
+  subtitle: { fontSize: 17, lineHeight: 24, color: colors.textSecondary, marginTop: spacing.xs },
+  art: { position: "absolute", width: 180, height: 132, right: -22, bottom: -3 },
+  body: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, gap: spacing.md },
   card: {
     width: "100%",
+    minHeight: 112,
     borderRadius: radii.card,
     padding: spacing.lg - spacing.xs,
     flexDirection: "row",
@@ -86,28 +97,25 @@ const styles = StyleSheet.create({
   },
   cardPrimary: {
     backgroundColor: colors.primaryBlue,
-    shadowColor: colors.primaryBlue,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 14,
-    elevation: 4,
+    ...shadows.floating,
   },
   cardSecondary: {
-    backgroundColor: colors.cardBg,
-    borderWidth: 1,
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1.5,
     borderColor: colors.border,
+    ...shadows.card,
   },
   cardDisabled: { opacity: 0.7 },
-  iconBox: { width: 56, height: 56, borderRadius: radii.card, alignItems: "center", justifyContent: "center" },
+  iconBox: { width: 60, height: 60, borderRadius: 21, alignItems: "center", justifyContent: "center" },
   iconBoxPrimary: { backgroundColor: "rgba(255,255,255,0.2)" },
   cardText: { flex: 1 },
-  cardTitle: { fontSize: 18, fontWeight: "700", color: colors.text },
+  cardTitle: { fontSize: 20, fontWeight: "800", color: colors.text },
   cardDesc: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 3 },
   badge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radii.pill,
-    backgroundColor: "#F3EEFF",
+    backgroundColor: colors.sageSoft,
   },
   badgeText: { fontSize: 14, fontWeight: "600", color: colors.conditionPurple },
 });

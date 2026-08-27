@@ -1,10 +1,11 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, Pressable } from "react-native";
+import { View, Text, ScrollView, StyleSheet, Pressable, Image } from "react-native";
 import notifee from "@notifee/react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Bell, User, Clock, Pencil, Volume2, ChevronRight, AlertTriangle } from "lucide-react-native";
 import { Logo } from "../components/Logo";
+import { MedicineMark } from "../components/MedicineMark";
 import { supabase, Schedule, IntakeRecord } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { nextNotificationTime, todaySlot } from "../lib/schedule";
@@ -13,7 +14,9 @@ import { MedKind } from "../lib/medKind";
 import { getKindMap, resolveKind } from "../lib/medStore";
 import { lookupIngredients, fetchContraindications } from "../lib/drugData";
 import { allIngredients, matchFindings, MedIngredients } from "../lib/interactions";
-import { colors, fontSizes, spacing, radii } from "../theme/tokens";
+import { colors, fontSizes, spacing, radii, shadows } from "../theme/tokens";
+
+const HOME_ART = require("../../assets/illustrations/home-medication.png");
 
 // B-01 홈 — 확정 시안 기준.
 // 위에서부터: 다음 복약 시간(복약 확인 진입 포함) → 오늘 복약 일정 → 내 약장 요약 → 주의.
@@ -160,9 +163,10 @@ export function HomeScreen() {
 
       {/* ① 다음 복약 시간 + ② 음성 AI 진입 */}
       <View style={styles.hero}>
+        <Image source={HOME_ART} style={styles.heroArt} resizeMode="contain" />
         <View style={styles.heroTop}>
           <View style={styles.heroChip}>
-            <Clock size={15} color="#fff" />
+            <Clock size={17} color={colors.white} />
             <Text style={styles.heroChipText}>다음 복약 시간</Text>
           </View>
           {next ? (
@@ -171,7 +175,7 @@ export function HomeScreen() {
               style={styles.heroEdit}
               hitSlop={10}
             >
-              <Pencil size={20} color="#fff" />
+              <Pencil size={20} color={colors.white} />
             </Pressable>
           ) : null}
         </View>
@@ -192,7 +196,7 @@ export function HomeScreen() {
           onPress={() => nav.navigate("Checkup")}
           style={({ pressed }) => [styles.voiceBtn, pressed && { opacity: 0.9 }]}
         >
-          <Volume2 size={22} color="#fff" />
+          <Volume2 size={22} color={colors.white} />
           <Text style={styles.voiceBtnText}>오늘 복약 확인하기</Text>
         </Pressable>
       </View>
@@ -215,6 +219,7 @@ export function HomeScreen() {
               onPress={() => nav.navigate("MedicineDetail", { scheduleId: r.s.id })}
               style={({ pressed }) => [styles.doseRow, pressed && { opacity: 0.9 }]}
             >
+              <MedicineMark name={r.s.medicine_name} size={44} />
               <Text style={styles.doseTime}>{fmt(r.at)}</Text>
               <Text style={styles.doseName} numberOfLines={1}>{r.s.medicine_name}</Text>
               <View style={[styles.kindBadge, { backgroundColor: KIND_COLOR[r.kind] + "1A" }]}>
@@ -263,7 +268,7 @@ export function HomeScreen() {
             style={({ pressed }) => [styles.warnBtn, pressed && { opacity: 0.9 }]}
           >
             <Text style={styles.warnBtnText}>약사에게 확인 요청</Text>
-            <ChevronRight size={18} color="#fff" />
+            <ChevronRight size={18} color={colors.white} />
           </Pressable>
         </View>
       ) : null}
@@ -273,55 +278,56 @@ export function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7FAFF" },
+  screen: { flex: 1, backgroundColor: colors.canvas },
   scroll: { flex: 1 },
-  c: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
+  c: { padding: spacing.md, paddingBottom: 112, gap: spacing.md },
   brandRow: { flexDirection: "row", alignItems: "center" },
   iconBtn: {
-    width: 44, height: 44, borderRadius: 999, backgroundColor: colors.lightBlueBg,
+    width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surfaceRaised,
     alignItems: "center", justifyContent: "center",
+    borderWidth: 1, borderColor: colors.border,
   },
   iconBtnGap: { marginLeft: spacing.sm },
-  greet: { fontSize: 30, fontWeight: "800", color: colors.primaryNavy, marginTop: -spacing.xs },
-  greetSub: { fontSize: 19, color: colors.textSecondary, marginTop: -spacing.sm },
+  greet: { fontSize: 32, fontWeight: "800", color: colors.primaryNavy, marginTop: -spacing.xs, letterSpacing: -0.8 },
+  greetSub: { fontSize: 19, lineHeight: 28, color: colors.textSecondary, marginTop: -spacing.sm },
   warnPerm: {
     flexDirection: "row", gap: spacing.sm, alignItems: "center",
-    backgroundColor: "#FFF0F0", borderColor: colors.dangerRed, borderWidth: 1,
+    backgroundColor: colors.dangerSoft, borderColor: colors.dangerRed, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.md,
   },
   warnPermText: { flex: 1, fontSize: fontSizes.body, color: colors.dangerRed, fontWeight: "700" },
 
   hero: {
-    backgroundColor: colors.primaryBlue, borderRadius: 20, padding: spacing.lg,
-    shadowColor: colors.primaryBlue, shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25, shadowRadius: 14, elevation: 4,
+    backgroundColor: colors.primaryNavy, borderRadius: radii.hero, padding: spacing.lg,
+    overflow: "hidden", ...shadows.floating,
   },
+  heroArt: { position: "absolute", width: 190, height: 150, right: -22, top: 18, opacity: 0.48 },
   heroTop: { flexDirection: "row", alignItems: "center" },
   heroChip: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: "rgba(255,255,255,0.2)", borderRadius: radii.pill,
+    backgroundColor: "rgba(255,255,255,0.14)", borderRadius: radii.pill,
     paddingHorizontal: spacing.sm + 2, paddingVertical: 5,
   },
-  heroChipText: { color: "#fff", fontSize: 15, fontWeight: "600" },
+  heroChipText: { color: colors.white, fontSize: 16, fontWeight: "700" },
   heroEdit: {
     marginLeft: "auto", width: 44, height: 44, borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.14)", alignItems: "center", justifyContent: "center",
   },
-  heroTime: { color: "#fff", fontSize: fontSizes.hero, fontWeight: "800", marginTop: spacing.sm },
+  heroTime: { color: colors.white, fontSize: fontSizes.hero, fontWeight: "800", marginTop: spacing.md, letterSpacing: -1 },
   heroMedRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: 2 },
-  heroMed: { color: "#fff", fontSize: 22, fontWeight: "700", flexShrink: 1 },
+  heroMed: { color: colors.white, fontSize: 22, fontWeight: "700", flexShrink: 1 },
   heroBadge: { backgroundColor: "rgba(255,255,255,0.25)", borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 3 },
-  heroBadgeText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  heroBadgeText: { color: colors.white, fontSize: 15, fontWeight: "700" },
   voiceBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
-    minHeight: 60, borderRadius: radii.button, marginTop: spacing.md,
-    backgroundColor: "rgba(255,255,255,0.22)", borderWidth: 1, borderColor: "rgba(255,255,255,0.45)",
+    minHeight: 62, borderRadius: radii.pill, marginTop: spacing.lg,
+    backgroundColor: colors.coral, borderWidth: 0,
   },
-  voiceBtnText: { color: "#fff", fontSize: 20, fontWeight: "800" },
+  voiceBtnText: { color: colors.white, fontSize: 20, fontWeight: "800" },
 
   card: {
-    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
-    borderRadius: radii.card, padding: spacing.md,
+    backgroundColor: colors.surfaceRaised, borderColor: colors.border, borderWidth: 1,
+    borderRadius: radii.card, padding: spacing.md, ...shadows.card,
   },
   cardHead: { flexDirection: "row", alignItems: "center", marginBottom: spacing.sm },
   cardTitle: { fontSize: 24, fontWeight: "800", color: colors.primaryNavy, flex: 1 },
@@ -332,8 +338,8 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", gap: spacing.sm,
     paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.border,
   },
-  doseTime: { fontSize: 19, fontWeight: "700", color: colors.text, width: 96 },
-  doseName: { fontSize: 19, color: colors.text, flexShrink: 1 },
+  doseTime: { fontSize: 17, fontWeight: "700", color: colors.text, width: 78 },
+  doseName: { fontSize: 19, color: colors.text, flex: 1, minWidth: 0 },
   kindBadge: { borderRadius: radii.pill, paddingHorizontal: 9, paddingVertical: 3 },
   kindBadgeText: { fontSize: 14, fontWeight: "700" },
   statusBadge: {
@@ -350,15 +356,15 @@ const styles = StyleSheet.create({
   tileCount: { fontSize: 30, fontWeight: "800", color: colors.primaryNavy, marginTop: 2 },
 
   warnCard: {
-    backgroundColor: "#FFF8EC", borderColor: colors.warningOrange, borderWidth: 1,
+    backgroundColor: colors.warningSoft, borderColor: colors.warningOrange, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.md,
   },
   warnHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  warnTitle: { fontSize: 21, fontWeight: "800", color: "#8A5A00", flex: 1 },
-  warnDesc: { fontSize: fontSizes.body, color: "#8A5A00", marginTop: 4, marginBottom: spacing.md },
+  warnTitle: { fontSize: 21, fontWeight: "800", color: colors.text, flex: 1 },
+  warnDesc: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 4, marginBottom: spacing.md },
   warnBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4,
     minHeight: 56, borderRadius: radii.button, backgroundColor: colors.warningOrange,
   },
-  warnBtnText: { color: "#fff", fontSize: 19, fontWeight: "800" },
+  warnBtnText: { color: colors.white, fontSize: 19, fontWeight: "800" },
 });

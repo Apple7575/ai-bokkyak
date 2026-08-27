@@ -100,7 +100,7 @@ export function SnoozeCountdownScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.cardBg,
+    backgroundColor: colors.canvas,
     padding: spacing.lg,
     alignItems: "center",
   },

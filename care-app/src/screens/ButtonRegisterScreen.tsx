@@ -189,7 +189,7 @@ export function ButtonRegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.cardBg },
+  screen: { flex: 1, backgroundColor: colors.canvas },
   c: { padding: spacing.lg, paddingBottom: spacing.xl },
   section: { marginBottom: spacing.lg },
   label: { fontSize: fontSizes.body, fontWeight: "700", color: colors.text, marginBottom: spacing.sm },

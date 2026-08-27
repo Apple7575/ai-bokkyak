@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from "react-native";
+import { Image, View, Text, ScrollView, StyleSheet, Pressable, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Volume2, Check, ChevronRight, ChevronLeft, Clock } from "lucide-react-native";
@@ -19,6 +19,8 @@ import {
 } from "../lib/voiceGuideFlow";
 import { logGuideEvent } from "../lib/analytics";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
+
+const VOICE_ART = require("../../assets/illustrations/voice-companion.png");
 
 // 복용 알람 설정 온보딩 (문서 §4).
 //
@@ -235,6 +237,10 @@ export function VoiceGuideScreen() {
         </View>
 
         {/* 안내 음성 인디케이터 — 마이크가 아니라 스피커다. 듣는 게 아니라 말하는 중이라는 뜻. */}
+        <View style={styles.voiceArtCard}>
+          <Image source={VOICE_ART} style={styles.voiceArt} resizeMode="contain" />
+        </View>
+
         <View style={styles.micWrap}>
           <View style={[styles.micHalo, speaking && styles.micHaloOn]}>
             <View style={styles.micCircle}>
@@ -388,7 +394,9 @@ export function VoiceGuideScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.lightBlueBg },
+  screen: { flex: 1, backgroundColor: colors.canvas },
+  voiceArtCard: { width: "100%", height: 180, borderRadius: radii.hero, backgroundColor: colors.coralSoft, overflow: "hidden", marginBottom: spacing.md },
+  voiceArt: { width: "106%", height: "112%", marginLeft: -8, marginTop: -8 },
   c: { padding: spacing.md, gap: spacing.md },
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",

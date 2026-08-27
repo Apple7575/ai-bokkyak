@@ -4,6 +4,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BigButton } from "../components/BigButton";
 import { WheelPicker } from "../components/WheelPicker";
+import { IllustrationBanner } from "../components/IllustrationBanner";
 import { supabase, Schedule } from "../lib/supabase";
 import { scheduleSnooze } from "../lib/notifications";
 import { SnoozeSpec, nextSnoozeFire } from "../lib/snooze";
@@ -12,6 +13,8 @@ import { getPatientId } from "../lib/storage";
 import { recordIntake } from "../lib/records";
 import { doseSlot } from "../lib/schedule";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
+
+const SNOOZE_ART = require("../../assets/illustrations/snooze-rest.png");
 
 const MIN_VALUES = Array.from({ length: 60 }, (_, i) => i + 1);
 const HOUR_VALUES = Array.from({ length: 24 }, (_, i) => i);
@@ -73,6 +76,7 @@ export function SnoozePickerScreen() {
         <View style={styles.grabber} />
         <Text style={styles.title}>얼마 후 알림을 드릴까요?</Text>
         {sch ? <Text style={styles.sub}>{sch.medicine_name}</Text> : null}
+        <IllustrationBanner source={SNOOZE_ART} tone="coral" height={108} imageScale={0.94} />
 
         <View style={styles.tabs}>
           <Pressable style={[styles.tab, tab === "duration" && styles.tabOn]} onPress={() => setTab("duration")}>

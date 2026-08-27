@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from "react-native";
+import { Animated, View, Text, StyleSheet, Pressable, ActivityIndicator, Vibration } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Volume2, Check, X, Clock, Pill } from "lucide-react-native";
+import { Volume2, Check, X, Clock } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { CareCheckIcon } from "../components/CareIcons";
+import { MedicineMark } from "../components/MedicineMark";
 import { supabase, Schedule, Patient } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { recordIntake } from "../lib/records";
@@ -47,6 +49,7 @@ export function CheckupScreen() {
   const baseDateRef = useRef<Date>(new Date());
   // 화면을 떠난 뒤 늦게 도착한 응답이 상태를 되살리지 않게 한다.
   const aliveRef = useRef(true);
+  const doneScale = useRef(new Animated.Value(0.65)).current;
 
   // 소리는 항상 곁다리로 — 실패해도 화면 흐름을 막지 않는다.
   const say = useCallback((text: string) => {
@@ -107,6 +110,13 @@ export function CheckupScreen() {
     })();
     return () => { aliveRef.current = false; void stopSpeaking(); };
   }, [say]);
+
+  useEffect(() => {
+    if (phase !== "done" || takenCount === 0) return;
+    Vibration.vibrate(70);
+    doneScale.setValue(0.65);
+    Animated.spring(doneScale, { toValue: 1, friction: 6, tension: 90, useNativeDriver: true }).start();
+  }, [doneScale, phase, takenCount]);
 
   async function answer(a: CheckupAnswer): Promise<void> {
     const dose = list[index];
@@ -171,7 +181,9 @@ export function CheckupScreen() {
       <View style={[s.screen, { paddingBottom: insets.bottom + spacing.md }]}>
         <ScreenHeader title="복약 확인" />
         <View style={s.center}>
-          <View style={s.doneIcon}><Check size={44} color={colors.successGreen} /></View>
+          <Animated.View style={[s.doneIcon, { transform: [{ scale: doneScale }] }]}>
+            <CareCheckIcon size={72} color={colors.successGreen} accent={colors.white} />
+          </Animated.View>
           <Text style={s.doneText}>{checkupSummary(list.length, takenCount)}</Text>
           {saveFailed ? (
             <Text style={s.warnText}>
@@ -200,7 +212,7 @@ export function CheckupScreen() {
         <Text style={s.progress}>{`${index + 1} / ${list.length}`}</Text>
 
         <View style={s.card}>
-          <View style={s.pillIcon}><Pill size={34} color={colors.primaryBlue} /></View>
+          <MedicineMark name={dose.medicine_name} size={76} />
           <Text style={s.medName}>{dose.medicine_name}</Text>
           <Text style={s.medTime}>{checkupTimeLabel(dose)}</Text>
         </View>
@@ -245,7 +257,7 @@ export function CheckupScreen() {
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7FAFF" },
+  screen: { flex: 1, backgroundColor: colors.canvas },
   body: { flex: 1, padding: spacing.md, alignItems: "center", justifyContent: "center" },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: spacing.md },
   centerText: { fontSize: fontSizes.body, color: colors.textSecondary, textAlign: "center" },
@@ -255,11 +267,7 @@ const s = StyleSheet.create({
     width: "100%", backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.lg, alignItems: "center",
   },
-  pillIcon: {
-    width: 72, height: 72, borderRadius: 999, backgroundColor: colors.lightBlueBg,
-    alignItems: "center", justifyContent: "center", marginBottom: spacing.md,
-  },
-  medName: { fontSize: 32, fontWeight: "800", color: colors.primaryNavy, textAlign: "center" },
+  medName: { fontSize: 32, fontWeight: "800", color: colors.primaryNavy, textAlign: "center", marginTop: spacing.md },
   medTime: { fontSize: 21, color: colors.textSecondary, marginTop: spacing.xs },
   question: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.lg },
   questionText: { fontSize: 26, fontWeight: "800", color: colors.text },
