@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Animated, Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowRight, HeartPulse } from "lucide-react-native";
@@ -32,6 +32,8 @@ export function SplashScreen() {
       <View style={styles.blobTop} />
       <View style={styles.blobBottom} />
 
+      {/* 짧은 폰(iPhone SE)·큰 글씨에서 본문이 시작 버튼과 겹치지 않게 본문만 스크롤 */}
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
       <Animated.View style={[styles.content, { opacity: intro, transform: [{ translateY: intro.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }] }]}>
         <View style={styles.eyebrow}>
           <HeartPulse size={18} color={colors.primaryBlue} />
@@ -46,6 +48,7 @@ export function SplashScreen() {
           <Image source={SENIORS_ART} style={styles.heroArt} resizeMode="contain" />
         </View>
       </Animated.View>
+      </ScrollView>
 
       <View style={styles.footer}>
         <Pressable accessibilityRole="button" accessibilityLabel="시작하기" onPress={() => void start()} style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
@@ -62,7 +65,9 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas, paddingHorizontal: spacing.lg, overflow: "hidden" },
   blobTop: { position: "absolute", width: 280, height: 280, borderRadius: 140, backgroundColor: colors.primarySoft, top: -130, right: -100 },
   blobBottom: { position: "absolute", width: 230, height: 230, borderRadius: 115, backgroundColor: colors.coralSoft, bottom: -120, left: -90 },
-  content: { flex: 1, alignItems: "center", justifyContent: "center" },
+  scroll: { flex: 1 },
+  scrollContent: { flexGrow: 1, justifyContent: "center", paddingBottom: spacing.md },
+  content: { alignItems: "center", justifyContent: "center" },
   eyebrow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceRaised, borderRadius: radii.pill, paddingHorizontal: spacing.md, paddingVertical: 10, borderWidth: 1, borderColor: colors.border },
   eyebrowText: { fontSize: 16, fontWeight: "800", color: colors.primaryBlue },
   title: { marginTop: spacing.lg, fontSize: 34, lineHeight: 45, fontWeight: "800", color: colors.primaryNavy, textAlign: "center", letterSpacing: -1.1 },
