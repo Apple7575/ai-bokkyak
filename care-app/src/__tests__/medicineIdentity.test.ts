@@ -15,4 +15,10 @@ describe("medicineIdentity", () => {
     expect(result.paletteIndex).toBeGreaterThanOrEqual(0);
     expect(result.paletteIndex).toBeLessThan(6);
   });
+
+  it("해시 결과가 고정되어 있다 — 바뀌면 기존 약의 색·모양이 전부 바뀐다", () => {
+    expect(medicineIdentity("혈압약")).toEqual({ shape: "tablet", paletteIndex: 2 });
+    expect(medicineIdentity("Vitamin D")).toEqual({ shape: "tablet", paletteIndex: 5 });
+    expect(medicineIdentity("")).toEqual({ shape: "tablet", paletteIndex: 3 });
+  });
 });

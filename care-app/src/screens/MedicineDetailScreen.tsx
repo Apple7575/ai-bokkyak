@@ -14,8 +14,8 @@ import { allIngredients, matchFindings, MedIngredients } from "../lib/interactio
 import { getPatientId } from "../lib/storage";
 import { describeDoseRepeat, describeDoseTime } from "../lib/medSummary";
 
-const DETAIL_ART = require("../../assets/illustrations/medicine-detail-accent.png");
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
+const DETAIL_ART = require("../../assets/illustrations/medicine-detail-accent.png");
 
 // D-02 약 상세.
 // 회의 결정:

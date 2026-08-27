@@ -12,7 +12,6 @@ import { ParsedSchedule } from "../lib/parse";
 import { normalizeRepeatDays } from "../lib/schedule";
 import { TIME_OF_DAYS, timeOfDayForHour, hourForTimeOfDay } from "../lib/timeOfDay";
 
-const OCR_ART = require("../../assets/illustrations/ocr-envelope.png");
 import { searchProducts, ProductHit } from "../lib/drugData";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
@@ -20,6 +19,7 @@ import { ensurePermission, scheduleReminders } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { speak } from "../lib/tts";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
+const OCR_ART = require("../../assets/illustrations/ocr-envelope.png");
 
 const HOURS = [7, 8, 9, 12, 13, 18, 19, 20, 21];
 const MINUTES = [0, 15, 30, 45];

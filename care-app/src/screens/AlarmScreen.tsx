@@ -64,11 +64,25 @@ export function AlarmScreen() {
     };
   }, [scheduleId]);
 
+  // 저장 중에는 버튼을 잠근다. 완료 저장이 끝나기 전에 "되돌리기"를 누른 뒤
+  // 다른 응답(건너뛰기 등)을 고르면, 뒤늦게 도착한 되돌리기 삭제가 새 기록까지
+  // 지워 버리는 경쟁을 막기 위함. (intake_records는 슬롯당 한 행이어야 한다.)
+  const [busy, setBusy] = useState(false);
+
+  // 완료 모달을 닫고 홈으로. 알람으로 콜드 스타트한 경우 Tabs가 push되어
+  // 이 화면이 살아 있으므로, 모달을 명시적으로 닫지 않으면 홈 위에 남는다.
+  function leave() {
+    setCompletionVisible(false);
+    nav.navigate("Tabs");
+  }
+
   async function respond(status: "completed" | "skipped") {
+    if (busy) return;
     void stopRinging();
     const pid = await getPatientId();
     if (!pid || !scheduleId || !schedule) { nav.navigate("Tabs"); return; }
     const slot = doseSlot(schedule.hour, schedule.minute, new Date());
+    setBusy(true);
     if (status === "completed") {
       savedRef.current = false;
       undoneRef.current = false;
@@ -81,27 +95,33 @@ export function AlarmScreen() {
       await stopAlarm(scheduleId);
     } catch {
       setCompletionVisible(false);
+      setBusy(false);
       Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
       return;
     }
     if (status === "completed") {
       savedRef.current = true;
       if (undoneRef.current) {
+        // 저장 중에 되돌리기를 눌렀던 경우 — 여기서 삭제를 수행한 뒤에야 버튼을 연다.
         try {
           await undoIntake({ patientId: pid, scheduleId, scheduledFor: slot });
+          savedRef.current = false;
         } catch {
           Alert.alert("되돌리지 못했어요", "기록 화면에서 복용 기록을 확인해 주세요.");
         }
+        setBusy(false);
         return;
       }
-      if (finishRequestedRef.current) nav.navigate("Tabs");
+      setBusy(false);
+      if (finishRequestedRef.current) leave();
       return;
     }
-    nav.navigate("Tabs");
+    setBusy(false);
+    leave();
   }
 
   function finishCompletion() {
-    if (savedRef.current) nav.navigate("Tabs");
+    if (savedRef.current) leave();
     else finishRequestedRef.current = true;
   }
 
@@ -110,13 +130,16 @@ export function AlarmScreen() {
     finishRequestedRef.current = false;
     setCompletionVisible(false);
     const args = completionArgsRef.current;
+    // 아직 저장 전이면 respond()의 후속 처리가 되돌리기를 수행한다(busy 유지).
     if (!savedRef.current || !args) return;
+    setBusy(true);
     try {
       await undoIntake(args);
       savedRef.current = false;
     } catch {
       Alert.alert("되돌리지 못했어요", "인터넷 연결을 확인하고 기록 화면에서 확인해 주세요.");
     }
+    setBusy(false);
   }
 
   function goSnooze() {
@@ -152,9 +175,9 @@ export function AlarmScreen() {
         {ready ? (
           <>
             <View style={{ height: spacing.md }} />
-            <BigButton label="지금 약 먹기" onPress={() => respond("completed")} />
-            <BigButton label="안 먹고 건너뛰기" variant="secondary" onPress={() => respond("skipped")} />
-            <BigButton label="잠시 미루기" variant="secondary" onPress={goSnooze} />
+            <BigButton label="지금 약 먹기" disabled={busy} onPress={() => respond("completed")} />
+            <BigButton label="안 먹고 건너뛰기" variant="secondary" disabled={busy} onPress={() => respond("skipped")} />
+            <BigButton label="잠시 미루기" variant="secondary" disabled={busy} onPress={goSnooze} />
           </>
         ) : (
           <Text style={styles.loading}>불러오는 중...</Text>
@@ -175,11 +198,6 @@ const styles = StyleSheet.create({
   bellWrap: { height: 138, alignItems: "center", justifyContent: "center", marginBottom: spacing.sm },
   intakeArt: { width: "86%", height: "112%" },
   bellHaloSmall: { position: "absolute", right: 14, top: 0, width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center", backgroundColor: colors.coralSoft, ...shadows.card },
-  bellHalo: {
-    width: 132, height: 132, borderRadius: 66,
-    alignItems: "center", justifyContent: "center",
-    backgroundColor: colors.coralSoft,
-  },
   bellCircle: {
     width: 56, height: 56, borderRadius: 28,
     alignItems: "center", justifyContent: "center",

@@ -9,7 +9,7 @@ import { supabase, IntakeRecord, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { dayMark, markColor, monthlyAdherence } from "../lib/adherence";
 import { statusLabel, IntakeStatus } from "../lib/intakeStatus";
-import { colors, fontSizes, radii, spacing } from "../theme/tokens";
+import { colors, fontSizes, radii, spacing, tabBarClearance } from "../theme/tokens";
 
 const RECORD_ART = require("../../assets/illustrations/record-progress-accent.png");
 
@@ -258,7 +258,7 @@ function formatSelected(key: string): string {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
-  content: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
+  content: { padding: spacing.md, paddingBottom: tabBarClearance, gap: spacing.md },
   adherenceCard: {
     minHeight: 142, backgroundColor: colors.sageSoft, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.md, overflow: "hidden", justifyContent: "center",

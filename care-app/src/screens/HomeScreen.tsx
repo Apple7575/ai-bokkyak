@@ -14,7 +14,7 @@ import { MedKind } from "../lib/medKind";
 import { getKindMap, resolveKind } from "../lib/medStore";
 import { lookupIngredients, fetchContraindications } from "../lib/drugData";
 import { allIngredients, matchFindings, MedIngredients } from "../lib/interactions";
-import { colors, fontSizes, spacing, radii, shadows } from "../theme/tokens";
+import { colors, fontSizes, spacing, radii, shadows, tabBarClearance } from "../theme/tokens";
 
 const HOME_ART = require("../../assets/illustrations/home-medication.png");
 
@@ -280,7 +280,7 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
   scroll: { flex: 1 },
-  c: { padding: spacing.md, paddingBottom: 112, gap: spacing.md },
+  c: { padding: spacing.md, paddingBottom: tabBarClearance, gap: spacing.md },
   brandRow: { flexDirection: "row", alignItems: "center" },
   iconBtn: {
     width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surfaceRaised,
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", gap: spacing.sm,
     paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.border,
   },
-  doseTime: { fontSize: 17, fontWeight: "700", color: colors.text, width: 78 },
+  doseTime: { fontSize: fontSizes.body, fontWeight: "700", color: colors.text, width: 82 },
   doseName: { fontSize: 19, color: colors.text, flex: 1, minWidth: 0 },
   kindBadge: { borderRadius: radii.pill, paddingHorizontal: 9, paddingVertical: 3 },
   kindBadgeText: { fontSize: 14, fontWeight: "700" },

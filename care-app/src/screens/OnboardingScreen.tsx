@@ -22,8 +22,11 @@ export function OnboardingScreen() {
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    void speak(GREETING);
-    return () => { void stopSpeaking(); };
+    // 느린 네트워크에서 TTS가 화면 이탈 후에 도착하면 다음 화면 위에서 재생되므로
+    // 취소 플래그로 가드한다.
+    let cancelled = false;
+    speak(GREETING).then((ok) => { if (ok && cancelled) void stopSpeaking(); });
+    return () => { cancelled = true; void stopSpeaking(); };
   }, []);
 
   async function start() {
@@ -79,6 +82,6 @@ const styles = StyleSheet.create({
   featureIcon: { width: 58, height: 58, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   featureCopy: { flex: 1 },
   featureTitle: { color: colors.text, fontSize: 20, fontWeight: "800", letterSpacing: -0.3 },
-  featureBody: { marginTop: 4, color: colors.textSecondary, fontSize: 17, lineHeight: 25 },
+  featureBody: { marginTop: 4, color: colors.textSecondary, fontSize: fontSizes.body, lineHeight: 26 },
   footer: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, backgroundColor: colors.canvas },
 });

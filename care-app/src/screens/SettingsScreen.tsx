@@ -5,7 +5,7 @@ import { Volume2, Gauge, Type, Shield, LogOut, ChevronRight } from "lucide-react
 import notifee from "@notifee/react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { clearAll } from "../lib/storage";
-import { colors, fontSizes, radii, spacing, shadows } from "../theme/tokens";
+import { colors, fontSizes, radii, spacing, shadows, tabBarClearance } from "../theme/tokens";
 
 const SETTINGS_ART = require("../../assets/illustrations/settings-dial-accent.png");
 
@@ -90,7 +90,7 @@ export function SettingsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
-  content: { padding: spacing.md, paddingBottom: 112, gap: spacing.md },
+  content: { padding: spacing.md, paddingBottom: tabBarClearance, gap: spacing.md },
   introCard: {
     minHeight: 126, padding: spacing.md, justifyContent: "center", overflow: "hidden",
     backgroundColor: colors.sageSoft, borderColor: colors.border, borderWidth: 1,
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   },
   introCopy: { width: "62%", zIndex: 1 },
   introTitle: { fontSize: 22, lineHeight: 29, fontWeight: "800", color: colors.primaryNavy },
-  introBody: { marginTop: 5, fontSize: 17, lineHeight: 24, color: colors.textSecondary },
+  introBody: { marginTop: 5, fontSize: fontSizes.body, lineHeight: 26, color: colors.textSecondary },
   introArt: { position: "absolute", right: -23, bottom: -9, width: 162, height: 118 },
   group: {
     backgroundColor: colors.surfaceRaised, borderColor: colors.border, borderWidth: 1,

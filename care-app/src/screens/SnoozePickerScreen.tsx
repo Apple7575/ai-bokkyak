@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Pressable, Alert } from "react-native";
+import { View, Text, StyleSheet, Pressable, Alert, ScrollView } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BigButton } from "../components/BigButton";
@@ -74,6 +74,8 @@ export function SnoozePickerScreen() {
       <Pressable style={styles.backdrop} onPress={() => nav.goBack()} />
       <View style={[styles.sheet, { paddingBottom: spacing.lg + insets.bottom }]}>
         <View style={styles.grabber} />
+        {/* 작은 폰·큰 글씨에서 시트가 화면보다 커지면 위가 잘리므로 높이를 제한하고 스크롤 */}
+        <ScrollView style={styles.sheetScroll} bounces={false} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>얼마 후 알림을 드릴까요?</Text>
         {sch ? <Text style={styles.sub}>{sch.medicine_name}</Text> : null}
         <IllustrationBanner source={SNOOZE_ART} tone="coral" height={108} imageScale={0.94} />
@@ -109,6 +111,7 @@ export function SnoozePickerScreen() {
             </Pressable>
           ))}
         </View>
+        </ScrollView>
       </View>
     </View>
   );
@@ -121,7 +124,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardBg,
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingHorizontal: spacing.lg, paddingTop: spacing.md,
+    maxHeight: "92%",
   },
+  sheetScroll: { flexGrow: 0 },
   grabber: { alignSelf: "center", width: 44, height: 5, borderRadius: 3, backgroundColor: colors.border, marginBottom: spacing.md },
   title: { fontSize: fontSizes.title, fontWeight: "800", color: colors.primaryNavy, textAlign: "center" },
   sub: { fontSize: fontSizes.body, color: colors.textSecondary, textAlign: "center", marginTop: spacing.xs, marginBottom: spacing.sm },

@@ -6,7 +6,7 @@ export const colors = {
   cardBg: "#FFFDF8",
   border: "#D7E2DC",
   text: "#20302E",
-  textSecondary: "#60716D",
+  textSecondary: "#52635E",
   successGreen: "#2D7D64",
   warningOrange: "#D77A3E",
   dangerRed: "#C94F4F",
@@ -15,7 +15,7 @@ export const colors = {
   canvasMuted: "#EEE8DC",
   surfaceRaised: "#FFFFFF",
   primarySoft: "#DDEEE9",
-  coral: "#E88766",
+  coral: "#D45F3B",
   coralSoft: "#FBE7DD",
   sage: "#9DB7A7",
   sageSoft: "#E8F0E8",
@@ -42,6 +42,8 @@ export const fontSizes = {
 export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 40 } as const;
 export const radii = { small: 12, card: 24, button: 18, hero: 32, pill: 999 } as const;
 export const minTouch = 56;
+// 탭바가 position:absolute 라 탭 화면 스크롤 하단에 이만큼 여백을 둬야 마지막 카드가 가려지지 않는다.
+export const tabBarClearance = 112;
 
 export const shadows = {
   card: {

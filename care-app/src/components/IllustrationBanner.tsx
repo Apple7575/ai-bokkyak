@@ -17,7 +17,7 @@ export function IllustrationBanner({ source, height = 112, tone = "cream", image
       : colors.cardBg;
 
   return (
-    <View style={[styles.card, { height: Math.min(height, 124), backgroundColor }]} accessibilityElementsHidden>
+    <View style={[styles.card, { height: Math.min(height, 124), backgroundColor }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       <View style={styles.glow} />
       <Image
         source={source}

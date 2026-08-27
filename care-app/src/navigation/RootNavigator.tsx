@@ -54,7 +54,7 @@ function PatientTabs() {
       }}
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: "홈", tabBarIcon: ({ color, focused }) => <TabIconBackground focused={focused}><CareHomeIcon size={27} color={color} accent={focused ? colors.coral : color} /></TabIconBackground> }} />
-      <Tab.Screen name="Cabinet" component={CabinetScreen} options={{ title: "약 보관함", tabBarIcon: ({ color, focused }) => <TabIconBackground focused={focused}><CareCabinetIcon size={27} color={color} accent={focused ? colors.coral : color} /></TabIconBackground> }} />
+      <Tab.Screen name="Cabinet" component={CabinetScreen} options={{ title: "내 약장", tabBarIcon: ({ color, focused }) => <TabIconBackground focused={focused}><CareCabinetIcon size={27} color={color} accent={focused ? colors.coral : color} /></TabIconBackground> }} />
       <Tab.Screen name="Record" component={RecordScreen} options={{ title: "복약 기록", tabBarIcon: ({ color, focused }) => <TabIconBackground focused={focused}><CareRecordIcon size={27} color={color} accent={focused ? colors.coral : color} /></TabIconBackground> }} />
       <Tab.Screen name="More" component={SettingsScreen} options={{ title: "더보기", tabBarIcon: ({ color, focused }) => <TabIconBackground focused={focused}><CareMoreIcon size={27} color={color} accent={focused ? colors.coral : color} /></TabIconBackground> }} />
     </Tab.Navigator>

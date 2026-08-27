@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
   skipBtn: { width: 60, height: 44, alignItems: "flex-end", justifyContent: "center" },
   progressWrap: { flex: 1, alignItems: "center" },
   segRow: { flexDirection: "row", gap: 6 },
-  seg: { width: 26, height: 5, borderRadius: 3, backgroundColor: "#DCE4EF" },
+  seg: { width: 26, height: 5, borderRadius: 3, backgroundColor: colors.border },
   segOn: { backgroundColor: colors.primaryBlue },
   progressText: {
     marginTop: 6, fontSize: 13, fontWeight: "700", color: colors.textSecondary,
@@ -415,9 +415,9 @@ const styles = StyleSheet.create({
   micWrap: { alignItems: "center", gap: spacing.sm },
   micHalo: {
     width: 128, height: 128, borderRadius: 999, alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(100,116,139,0.10)",
+    backgroundColor: colors.canvasMuted,
   },
-  micHaloOn: { backgroundColor: "rgba(37,99,235,0.16)" },
+  micHaloOn: { backgroundColor: colors.primarySoft },
   micCircle: {
     width: 92, height: 92, borderRadius: 999, backgroundColor: colors.cardBg,
     alignItems: "center", justifyContent: "center",

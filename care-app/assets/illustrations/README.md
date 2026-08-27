@@ -22,14 +22,10 @@ clean alpha edges, no text, no logos, and no watermark.
   neatly organized with a few unbranded containers and one weekly organizer.
 - `intake-complete.png`: Natural older hands holding one cream water cup and one
   closed coral pill organizer, with a soft teal completion ribbon.
-- `record-calendar.png`: A tactile paper calendar with large teal check marks,
-  coral pen, water glass, and a weekly pill organizer.
 - `medicine-search.png`: A deep-teal magnifying glass over an amber medicine
   bottle and one simple capsule card with sage leaves.
 - `interaction-safety.png`: Two unbranded medicine containers separated by a
   central deep-teal protective shield and coral ribbon.
-- `settings-accessibility.png`: Natural older hands adjusting one large tactile
-  teal dial on a simple cream control.
 - `privacy-lock.png`: A light-oak keepsake box with a teal shield lock and a
   folded cream document.
 - `alarm-sound.png`: A woven teal tabletop speaker with layered coral, sage,
@@ -40,8 +36,6 @@ clean alpha edges, no text, no logos, and no watermark.
   a closed weekly organizer in soft evening light.
 - `ocr-envelope.png`: A cream medicine envelope inside teal camera-focus corners
   with a large coral shutter button and no readable writing.
-- `medicine-detail.png`: An amber medicine bottle, closed weekly organizer,
-  cream water cup, and eucalyptus sprig arranged as a clear still life.
 - `record-progress-accent.png`: A compact weekly organizer with three teal
   completion tokens and a small sage sprout, composed as a transparent corner accent.
 - `settings-dial-accent.png`: An older Korean hand turning a large tactile teal

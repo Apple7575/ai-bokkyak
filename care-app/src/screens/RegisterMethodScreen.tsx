@@ -1,5 +1,5 @@
 import React from "react";
-import { Image, View, Text, Pressable, StyleSheet } from "react-native";
+import { Image, View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { ListChecks, Camera, Search, ChevronRight } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
@@ -12,6 +12,8 @@ export function RegisterMethodScreen() {
   return (
     <View style={styles.screen}>
       <ScreenHeader title="약 등록" />
+      {/* 작은 폰·큰 글씨에서도 세 번째 선택지까지 닿도록 스크롤 가능하게 */}
+      <ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.header}>
         <View style={styles.introCard}>
           <View style={styles.introCopy}>
@@ -70,11 +72,13 @@ export function RegisterMethodScreen() {
           <ChevronRight size={20} color={colors.textSecondary} />
         </Pressable>
       </View>
+      </ScrollView>
     </View>
   );
 }
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
+  scroll: { paddingBottom: spacing.xl },
   header: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
@@ -83,7 +87,7 @@ const styles = StyleSheet.create({
   introCard: { minHeight: 142, padding: spacing.md, borderRadius: radii.card, backgroundColor: colors.coralSoft, overflow: "hidden", justifyContent: "center", ...shadows.card },
   introCopy: { width: "62%", zIndex: 1 },
   title: { fontSize: 28, fontWeight: "800", color: colors.primaryNavy, lineHeight: 36, letterSpacing: -0.7 },
-  subtitle: { fontSize: 17, lineHeight: 24, color: colors.textSecondary, marginTop: spacing.xs },
+  subtitle: { fontSize: fontSizes.body, lineHeight: 26, color: colors.textSecondary, marginTop: spacing.xs },
   art: { position: "absolute", width: 180, height: 132, right: -22, bottom: -3 },
   body: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, gap: spacing.md },
   card: {

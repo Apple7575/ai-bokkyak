@@ -23,7 +23,11 @@ export function CompletionFeedback({
   onDoneRef.current = onDone;
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible) {
+      // 되돌리기로 일찍 닫힌 경우 5초짜리 JS 애니메이션이 남지 않게 정리
+      progress.stopAnimation();
+      return;
+    }
     scale.setValue(0.65);
     opacity.setValue(0);
     progress.setValue(1);

@@ -12,7 +12,7 @@ import { lookupIngredients, fetchContraindications } from "../lib/drugData";
 import { allIngredients, matchFindings, MedIngredients, Finding } from "../lib/interactions";
 import { groupByMedicine, describeDoses, describeRepeat, MedGroup } from "../lib/medSummary";
 import { tabLayout } from "../lib/cabinetTabs";
-import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
+import { colors, fontSizes, spacing, radii, minTouch, tabBarClearance } from "../theme/tokens";
 
 const CABINET_ART = require("../../assets/illustrations/medicine-cabinet.png");
 
@@ -97,7 +97,7 @@ export function CabinetScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={[styles.list, { paddingBottom: spacing.xl + insets.bottom }]}>
+      <ScrollView contentContainerStyle={[styles.list, { paddingBottom: tabBarClearance + insets.bottom }]}>
         {/* 요약 5칸 — 필터 탭과 같은 구분을 같은 순서로 (전체·처방약·일반약·건기식·미분류) */}
         <View style={styles.summary}>
           {FILTERS.map((f) => (
