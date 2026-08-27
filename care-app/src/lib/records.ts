@@ -21,11 +21,43 @@ export async function recordIntake(args: {
   });
 }
 
-// 완료 직후 "잘못 눌렀어요"로 되돌릴 때만 사용한다. 삭제 범위는 해당 환자·일정·
-// 예정 시각 한 건으로 제한해 다른 복약 기록에 영향을 주지 않는다.
-export async function undoIntake(args: {
+// 되돌리기용 이전 슬롯 상태. 같은 (schedule, 시각) 행은 하나뿐이므로(설계 결정 #2)
+// 재발화·재탭으로 이미 snoozed/skipped 행이 있을 수 있다 — 완료로 덮어쓰기 전에 읽어 둔다.
+export type PriorIntake = {
+  status: IntakeStatus; response_method: "음성" | "버튼" | null; responded_at: string | null;
+} | null;
+
+export async function readIntake(args: {
   patientId: string; scheduleId: string; scheduledFor: Date;
+}): Promise<PriorIntake> {
+  const { data, error } = await supabase
+    .from("intake_records")
+    .select("status,response_method,responded_at")
+    .eq("patient_id", args.patientId)
+    .eq("schedule_id", args.scheduleId)
+    .eq("scheduled_for", args.scheduledFor.toISOString())
+    .maybeSingle();
+  if (error) throw error;
+  return data ?? null;
+}
+
+// 완료 직후 "잘못 눌렀어요"로 되돌릴 때만 사용한다. 완료 전에 이 슬롯에 있던 응답
+// (snoozed/skipped 등)이 있었으면 그 상태로 되돌리고, 없었으면 행을 지운다.
+// 범위는 해당 환자·일정·예정 시각 한 건으로 제한해 다른 복약 기록에 영향을 주지 않는다.
+export async function undoIntake(args: {
+  patientId: string; scheduleId: string; scheduledFor: Date; previous: PriorIntake;
 }): Promise<void> {
+  if (args.previous) {
+    const { error } = await supabase.from("intake_records").upsert({
+      patient_id: args.patientId, schedule_id: args.scheduleId,
+      scheduled_for: args.scheduledFor.toISOString(),
+      status: args.previous.status,
+      response_method: args.previous.response_method,
+      responded_at: args.previous.responded_at,
+    }, { onConflict: "schedule_id,scheduled_for" });
+    if (error) throw error;
+    return;
+  }
   const { error } = await supabase
     .from("intake_records")
     .delete()

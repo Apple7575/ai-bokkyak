@@ -8,7 +8,7 @@ import { CompletionFeedback } from "../components/CompletionFeedback";
 import { MedicineMark } from "../components/MedicineMark";
 import { supabase, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
-import { recordIntake, undoIntake } from "../lib/records";
+import { PriorIntake, readIntake, recordIntake, undoIntake } from "../lib/records";
 import { logAlarmEvent } from "../lib/analytics";
 import { stopAlarm } from "../lib/notifications";
 import { startRinging, stopRinging } from "../lib/alarmRinger";
@@ -27,7 +27,7 @@ export function AlarmScreen() {
   const savedRef = useRef(false);
   const undoneRef = useRef(false);
   const finishRequestedRef = useRef(false);
-  const completionArgsRef = useRef<{ patientId: string; scheduleId: string; scheduledFor: Date } | null>(null);
+  const completionArgsRef = useRef<{ patientId: string; scheduleId: string; scheduledFor: Date; previous: PriorIntake } | null>(null);
   const ready = !scheduleId || !!schedule;
   const tod = schedule?.time_of_day || "복약";
 
@@ -91,10 +91,14 @@ export function AlarmScreen() {
       savedRef.current = false;
       undoneRef.current = false;
       finishRequestedRef.current = false;
-      completionArgsRef.current = { patientId: pid, scheduleId, scheduledFor: slot };
+      completionArgsRef.current = { patientId: pid, scheduleId, scheduledFor: slot, previous: null };
       setCompletionVisible(true);
     }
     try {
+      if (status === "completed") {
+        // 재발화·재탭으로 이 슬롯에 이미 응답(미루기/건너뛰기)이 있으면 되돌리기 때 복원해야 한다.
+        completionArgsRef.current!.previous = await readIntake({ patientId: pid, scheduleId, scheduledFor: slot });
+      }
       await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status, method: "버튼" });
       await stopAlarm(scheduleId);
     } catch {
@@ -108,7 +112,7 @@ export function AlarmScreen() {
       if (undoneRef.current) {
         // 저장 중에 되돌리기를 눌렀던 경우 — 여기서 삭제를 수행한 뒤에야 버튼을 연다.
         try {
-          await undoIntake({ patientId: pid, scheduleId, scheduledFor: slot });
+          await undoIntake({ patientId: pid, scheduleId, scheduledFor: slot, previous: completionArgsRef.current?.previous ?? null });
           savedRef.current = false;
         } catch {
           Alert.alert("되돌리지 못했어요", "기록 화면에서 복용 기록을 확인해 주세요.");
