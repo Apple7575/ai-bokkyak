@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, TextInput, StyleSheet, Alert, ScrollView, Pressable } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { User, Eye, MessageCircle } from "lucide-react-native";
+import { User, Eye, MessageCircle, ClipboardCheck } from "lucide-react-native";
 import { Logo } from "../components/Logo";
 import { setPatient } from "../lib/storage";
 import { supabase } from "../lib/supabase";
 import { enterDemo } from "../lib/demo";
 import { signInWithKakao } from "../lib/kakaoAuth";
 import { sanitizeBirthPart, birthError, buildBirthDate } from "../lib/birthInput";
+import { loadDraft, commitQuickCheckDraft } from "../lib/quickCheckDraft";
 import { colors, fontSizes, spacing, radii, minTouch, shadows } from "../theme/tokens";
 
 // 로고 이미지는 여백이 거의 없는 정사각형이라 카드 안쪽에 패딩을 준다.
@@ -19,8 +20,12 @@ const LOGO_SIZE = 80;
 // 복약 정보는 가입 직후 음성 안내(VoiceGuide)에서 화면 터치로 받는다.
 export function RoleSelectScreen() {
   const nav = useNavigation<any>();
+  const route = useRoute<any>();
   const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
+  // "1분 복용 점검"을 마치고 온 경우 — 가입하면 초안이 서버로 옮겨지고 결과 전체가 열린다.
+  const [hasDraft, setHasDraft] = useState(false);
+  const kakaoAutoStarted = useRef(false);
   const [gender, setGender] = useState<"남" | "여" | null>(null);
   const [saving, setSaving] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
@@ -32,6 +37,39 @@ export function RoleSelectScreen() {
 
   // 화면에 바로 보여줄 생년월일 오류(없으면 null).
   const birthMsg = birthError(birthY, birthM, birthD);
+
+  useEffect(() => {
+    let alive = true;
+    void loadDraft().then((d) => { if (alive) setHasDraft(Boolean(d?.findings)); });
+    return () => { alive = false; };
+  }, []);
+
+  // 결과 화면의 "카카오로 계속하기"에서 왔으면 카카오 로그인을 바로 연다(한 번만).
+  useEffect(() => {
+    if (route.params?.from === "quickCheck" && route.params?.kakao && !kakaoAutoStarted.current) {
+      kakaoAutoStarted.current = true;
+      void startWithKakao();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 가입/로그인이 끝난 뒤 — 점검 초안이 있으면 서버에 옮기고 결과 전체를 보여 준다.
+  // 없으면 평소대로. 저장 실패는 알리되 흐름을 막지 않는다(초안은 남아 다음에 다시 시도).
+  async function finish(patientId: string, fallback: { name: string }[]) {
+    try {
+      const committed = await commitQuickCheckDraft(patientId);
+      if (committed?.findings) {
+        nav.reset({ index: 0, routes: [
+          { name: "Tabs" },
+          { name: "QuickCheckResult", params: { unlocked: true, findings: committed.findings } },
+        ] });
+        return;
+      }
+    } catch {
+      Alert.alert("점검 결과를 저장하지 못했어요", "나중에 다시 시도할 수 있어요.");
+    }
+    nav.reset({ index: 0, routes: fallback });
+  }
 
   // 입력한 생년월일을 검증해 "YYYY-MM-DD"로. 비어 있으면 null(선택 입력).
   // 적었는데 형식이 틀리면 undefined를 돌려 저장을 막는다 — 조용히 버리면
@@ -62,7 +100,7 @@ export function RoleSelectScreen() {
       if (error || !data) { Alert.alert("등록 실패", error?.message ?? ""); setSaving(false); return; }
       await setPatient(data.id);
       // 가입 직후 음성 가이드로 복용 알람을 설정한다(사전 녹음 인출 + 화면 터치).
-      nav.reset({ index: 0, routes: [{ name: "Tabs" }, { name: "VoiceGuide" }] });
+      await finish(data.id, [{ name: "Tabs" }, { name: "VoiceGuide" }]);
     } catch {
       Alert.alert("등록 실패", "인터넷 연결을 확인해 주세요.");
       setSaving(false);
@@ -90,7 +128,7 @@ export function RoleSelectScreen() {
       if (found) {
         // 기기를 바꿔도 약과 기록이 따라온다.
         await setPatient(found.id);
-        nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
+        await finish(found.id, [{ name: "Tabs" }]);
         return;
       }
 
@@ -114,7 +152,7 @@ export function RoleSelectScreen() {
         }).select().single();
       if (error || !data) throw error ?? new Error("insert 실패");
       await setPatient(data.id);
-      nav.reset({ index: 0, routes: [{ name: "Tabs" }, { name: "VoiceGuide" }] });
+      await finish(data.id, [{ name: "Tabs" }, { name: "VoiceGuide" }]);
     } catch {
       Alert.alert("가입에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
       setKakaoBusy(false);
@@ -141,6 +179,14 @@ export function RoleSelectScreen() {
       style={styles.scroll}
       contentContainerStyle={[styles.c, { paddingTop: spacing.xl }]}
     >
+      {/* 점검 결과 대기 배너 — 가입하면 바로 열린다는 걸 알린다 */}
+      {hasDraft ? (
+        <View style={styles.draftBanner}>
+          <ClipboardCheck size={22} color={colors.primaryNavy} />
+          <Text style={styles.draftText}>점검 결과가 저장을 기다리고 있어요 · 가입하면 바로 볼 수 있어요</Text>
+        </View>
+      ) : null}
+
       {/* Brand — 스플래시와 같은 로고 이미지를 쓴다(아이콘 대체) */}
       <View style={styles.brand}>
         <View style={styles.logo}>
@@ -246,6 +292,11 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
   scroll: { flex: 1 },
   c: { padding: spacing.lg, paddingBottom: spacing.xl, flexGrow: 1, justifyContent: "center" },
+  draftBanner: {
+    flexDirection: "row", alignItems: "center", gap: spacing.sm,
+    backgroundColor: colors.sunshineSoft, borderRadius: radii.card, padding: spacing.md, marginBottom: spacing.lg,
+  },
+  draftText: { flex: 1, fontSize: fontSizes.body, lineHeight: 26, fontWeight: "700", color: colors.primaryNavy },
   brand: { alignItems: "center", marginBottom: spacing.xl },
   logo: {
     width: LOGO_CARD, height: LOGO_CARD, borderRadius: radii.hero, backgroundColor: colors.surfaceRaised,

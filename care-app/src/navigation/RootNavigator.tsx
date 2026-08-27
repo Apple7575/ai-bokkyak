@@ -28,6 +28,9 @@ import { PrivacyScreen } from "../screens/PrivacyScreen";
 import { CabinetScreen } from "../screens/CabinetScreen";
 import { MedicineDetailScreen } from "../screens/MedicineDetailScreen";
 import { InteractionScreen } from "../screens/InteractionScreen";
+import { QuickCheckInputScreen } from "../screens/QuickCheckInputScreen";
+import { QuickCheckAnalyzingScreen } from "../screens/QuickCheckAnalyzingScreen";
+import { QuickCheckResultScreen } from "../screens/QuickCheckResultScreen";
 import { CareCabinetIcon, CareHomeIcon, CareMoreIcon, CareRecordIcon } from "../components/CareIcons";
 import { colors, shadows } from "../theme/tokens";
 
@@ -116,6 +119,9 @@ export function RootNavigator() {
       <Stack.Screen name="Privacy" component={PrivacyScreen} />
       <Stack.Screen name="MedicineDetail" component={MedicineDetailScreen} />
       <Stack.Screen name="Interaction" component={InteractionScreen} />
+      <Stack.Screen name="QuickCheckInput" component={QuickCheckInputScreen} />
+      <Stack.Screen name="QuickCheckAnalyzing" component={QuickCheckAnalyzingScreen} options={{ animation: "fade" }} />
+      <Stack.Screen name="QuickCheckResult" component={QuickCheckResultScreen} />
     </Stack.Navigator>
   );
 }

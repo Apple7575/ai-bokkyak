@@ -61,3 +61,15 @@ create policy anon_all on patients for all using (true) with check (true);
 create policy anon_all on schedules for all using (true) with check (true);
 create policy anon_all on intake_records for all using (true) with check (true);
 create policy anon_all on alarm_events for all using (true) with check (true);
+
+-- "1분 복용 점검" 결과 (자세한 설명은 migrate-quick-check.sql).
+create table quick_check_results (
+  id uuid primary key default gen_random_uuid(),
+  patient_id uuid not null references patients(id) on delete cascade,
+  items jsonb not null,                   -- { supplements, medicines, names }
+  findings jsonb not null,                -- Finding[] (interactions.ts)
+  created_at timestamptz not null default now()
+);
+create index quick_check_results_patient_idx on quick_check_results (patient_id, created_at);
+alter table quick_check_results enable row level security;
+create policy anon_all on quick_check_results for all using (true) with check (true);

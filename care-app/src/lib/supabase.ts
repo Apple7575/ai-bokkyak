@@ -40,3 +40,9 @@ export type IntakeRecord = {
   response_method: "음성" | "버튼" | null; responded_at: string | null;
   created_at: string;
 };
+export type QuickCheckResult = {
+  id: string; patient_id: string;
+  items: { supplements: string[]; medicines: string[]; names: string[] };
+  findings: import("./interactions").Finding[];
+  created_at: string;
+};

@@ -1,0 +1,49 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "./supabase";
+import { QuickCheckDraft, EMPTY_DRAFT, checkItems } from "./quickCheck";
+
+// 가입 전 "1분 복용 점검" 초안을 기기에 보관한다.
+// 가입이 끝나면 commitQuickCheckDraft()가 서버(quick_check_results)에 옮기고 지운다.
+
+const KEY = "quickcheck.draft.v1";
+
+export async function loadDraft(): Promise<QuickCheckDraft | null> {
+  const raw = await AsyncStorage.getItem(KEY);
+  if (!raw) return null;
+  try {
+    const p = JSON.parse(raw) as Partial<QuickCheckDraft>;
+    return {
+      ...EMPTY_DRAFT,
+      supplements: Array.isArray(p.supplements) ? p.supplements : [],
+      medicines: Array.isArray(p.medicines) ? p.medicines : [],
+      findings: Array.isArray(p.findings) ? p.findings : null,
+      analyzedAt: typeof p.analyzedAt === "string" ? p.analyzedAt : null,
+    };
+  } catch {
+    return null; // 깨진 값은 없는 것으로
+  }
+}
+
+export async function saveDraft(draft: QuickCheckDraft): Promise<void> {
+  await AsyncStorage.setItem(KEY, JSON.stringify(draft));
+}
+
+export async function clearDraft(): Promise<void> {
+  await AsyncStorage.removeItem(KEY);
+}
+
+// 가입/로그인 직후 호출. 점검을 마친 초안이 있으면 서버에 한 줄 남기고 초안을 지운다.
+// 저장한 초안을 돌려주고, 저장할 것이 없으면 null. 실패는 삼키지 않고 던진다 —
+// 호출자가 Alert로 알리고 초안은 그대로 남겨 다음에 다시 시도할 수 있게.
+export async function commitQuickCheckDraft(patientId: string): Promise<QuickCheckDraft | null> {
+  const draft = await loadDraft();
+  if (!draft || !draft.findings) return null;
+  const { error } = await supabase.from("quick_check_results").insert({
+    patient_id: patientId,
+    items: { supplements: draft.supplements, medicines: draft.medicines, names: checkItems(draft) },
+    findings: draft.findings,
+  });
+  if (error) throw error;
+  await clearDraft();
+  return draft;
+}

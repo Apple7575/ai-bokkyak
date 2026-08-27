@@ -29,6 +29,12 @@ export function OnboardingScreen() {
     return () => { cancelled = true; void stopSpeaking(); };
   }, []);
 
+  // 가입 전 "1분 복용 점검"으로. 점검 화면들은 가입 화면 위에 쌓여 뒤로 가기가 자연스럽다.
+  async function startQuickCheck() {
+    await setOnboarded();
+    await stopSpeaking();
+    nav.reset({ index: 0, routes: [{ name: "RoleSelect" }, { name: "QuickCheckInput" }] });
+  }
   async function start() {
     await setOnboarded();
     await stopSpeaking();
@@ -61,7 +67,8 @@ export function OnboardingScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: spacing.lg + insets.bottom }]}>
-        <BigButton label="내 정보 등록하기" onPress={() => void start()} showArrow />
+        <BigButton label="내 복용 1분 점검하기" onPress={() => void startQuickCheck()} showArrow />
+        <BigButton label="복용 알람부터 시작하기" variant="secondary" onPress={() => void start()} />
       </View>
     </View>
   );
