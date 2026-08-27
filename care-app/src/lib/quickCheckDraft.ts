@@ -17,6 +17,7 @@ export async function loadDraft(): Promise<QuickCheckDraft | null> {
       supplements: Array.isArray(p.supplements) ? p.supplements : [],
       medicines: Array.isArray(p.medicines) ? p.medicines : [],
       findings: Array.isArray(p.findings) ? p.findings : null,
+      unmatched: Array.isArray(p.unmatched) ? p.unmatched : [],
       analyzedAt: typeof p.analyzedAt === "string" ? p.analyzedAt : null,
     };
   } catch {
@@ -40,7 +41,7 @@ export async function commitQuickCheckDraft(patientId: string): Promise<QuickChe
   if (!draft || !draft.findings) return null;
   const { error } = await supabase.from("quick_check_results").insert({
     patient_id: patientId,
-    items: { supplements: draft.supplements, medicines: draft.medicines, names: checkItems(draft) },
+    items: { supplements: draft.supplements, medicines: draft.medicines, names: checkItems(draft), unmatched: draft.unmatched },
     findings: draft.findings,
   });
   if (error) throw error;

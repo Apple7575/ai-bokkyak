@@ -1,7 +1,7 @@
 export type RootStackParamList = {
   Splash: undefined;
   Onboarding: undefined;
-  RoleSelect: { from?: "quickCheck"; kakao?: boolean } | undefined;
+  RoleSelect: { from?: "quickCheck"; kakao?: boolean; kakaoAt?: number } | undefined;
   Tabs: undefined;
   VoiceGuide: undefined;
   RegisterMethod: undefined;
@@ -21,7 +21,7 @@ export type RootStackParamList = {
   QuickCheckInput: undefined;
   QuickCheckAnalyzing: undefined;
   // findings: 가입 직후 초안이 서버로 옮겨져(지워져) 기기에 없으므로 RoleSelect가 넘겨준다.
-  QuickCheckResult: { unlocked?: boolean; findings?: import("../lib/interactions").Finding[] } | undefined;
+  QuickCheckResult: { unlocked?: boolean; findings?: import("../lib/interactions").Finding[]; unmatched?: string[] } | undefined;
 };
 export type TabParamList = {
   Home: undefined;

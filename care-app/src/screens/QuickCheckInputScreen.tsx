@@ -29,7 +29,8 @@ const STEP_META: Record<Step, {
     presets: SUPPLEMENT_PRESETS, none: NONE_SUPPLEMENT,
   },
   medicines: {
-    n: 2, title: "지금 드시는 약이 있나요?", sub: "해당하는 것을 모두 눌러 주세요.",
+    n: 2, title: "지금 드시는 약이 있나요?",
+    sub: "해당하는 것을 모두 눌러 주세요. 약 봉투에 적힌 제품 이름으로 검색하면 더 정확히 점검돼요.",
     presets: MEDICINE_PRESETS, none: NONE_MEDICINE,
   },
 };
@@ -41,6 +42,8 @@ export function QuickCheckInputScreen() {
   const [supplements, setSupplements] = useState<string[]>([]);
   const [medicines, setMedicines] = useState<string[]>([]);
   const [panel, setPanel] = useState<Panel>("none");
+  // 저장 중 두 번 눌러 점검 화면이 두 번 열리지 않게(입력을 잠그는 게 아니라 재진입만 막는다).
+  const nextBusy = useRef(false);
 
   // 앞서 고르다 만 초안이 있으면 되살린다(앱을 껐다 켜도 처음부터 다시 고르지 않게).
   useEffect(() => {
@@ -72,18 +75,21 @@ export function QuickCheckInputScreen() {
   function skip() { nav.reset({ index: 0, routes: [{ name: "RoleSelect" }] }); }
 
   async function next() {
-    if (!canNext) return;
+    if (!canNext || nextBusy.current) return;
     if (step === "supplements") { setStep("medicines"); setPanel("none"); return; }
     const draft = { ...EMPTY_DRAFT, supplements, medicines };
     if (checkItems(draft).length === 0) {
       Alert.alert("확인할 약이나 영양제를 하나 이상 골라 주세요");
       return;
     }
+    nextBusy.current = true;
     try {
       await saveDraft(draft);
     } catch {
       Alert.alert("저장하지 못했어요", "기기 저장 공간을 확인하고 다시 시도해 주세요.");
       return;
+    } finally {
+      nextBusy.current = false;
     }
     nav.navigate("QuickCheckAnalyzing");
   }

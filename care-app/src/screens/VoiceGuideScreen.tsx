@@ -177,7 +177,7 @@ export function VoiceGuideScreen() {
         }
       }
       void logGuideEvent({ step: "done", ...stats.current });
-      nav.reset({ index: 0, routes: [{ name: "Tabs" }, { name: "RegisterMethod" }] });
+      nav.reset({ index: 1, routes: [{ name: "Tabs" }, { name: "RegisterMethod" }] });
     } catch {
       Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
       setSaving(false);

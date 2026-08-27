@@ -21,12 +21,20 @@ export type QuickCheckDraft = {
   supplements: string[];
   medicines: string[];
   findings: Finding[] | null;   // null = 아직 점검 안 함
+  /** 식약처 자료에서 제품을 찾지 못해 점검하지 못한 이름들 ("혈압약" 같은 종류명 등) */
+  unmatched: string[];
   analyzedAt: string | null;    // ISO 시각
 };
 
 export const EMPTY_DRAFT: QuickCheckDraft = {
-  supplements: [], medicines: [], findings: null, analyzedAt: null,
+  supplements: [], medicines: [], findings: null, unmatched: [], analyzedAt: null,
 };
+
+// lookupIngredients 결과에서 성분을 하나도 못 찾은 이름. 이 이름들은 대조에서 빠졌으므로
+// "이상 없음"이 아니라 "점검하지 못함"으로 알려야 한다 — 종류명 프리셋은 대부분 여기 걸린다.
+export function unmatchedNames(names: string[], ingredientsByName: Record<string, string[]>): string[] {
+  return names.filter((n) => !(ingredientsByName[n] && ingredientsByName[n].length > 0));
+}
 
 // 칩을 누른다. "없음"은 나머지를 전부 지우고 혼자 남는다(다시 누르면 빈 목록).
 // 실제 항목을 고르면 "없음"은 빠지고 그 항목이 토글된다.

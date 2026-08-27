@@ -3,7 +3,6 @@ import { Animated, Image, Pressable, ScrollView, StyleSheet, Text, View, useWind
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowRight, HeartPulse } from "lucide-react-native";
-import { setOnboarded } from "../lib/storage";
 import { cardSizes } from "../lib/splashLayout";
 import { colors, fontSizes, radii, shadows, spacing } from "../theme/tokens";
 
@@ -22,9 +21,9 @@ export function SplashScreen() {
     return () => animation.stop();
   }, [intro]);
 
-  async function start() {
-    await setOnboarded();
-    nav.reset({ index: 0, routes: [{ name: "RoleSelect" }] });
+  // 시작하기 → 기능 소개(Onboarding). 온보딩 완료 표시는 Onboarding 화면이 한다.
+  function start() {
+    nav.reset({ index: 0, routes: [{ name: "Onboarding" }] });
   }
 
   return (

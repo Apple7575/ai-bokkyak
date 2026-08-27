@@ -8,6 +8,7 @@ import { Logo } from "../components/Logo";
 import { MedicineMark } from "../components/MedicineMark";
 import { supabase, Schedule, IntakeRecord } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
+import { commitQuickCheckDraft } from "../lib/quickCheckDraft";
 import { nextNotificationTime, todaySlot } from "../lib/schedule";
 import { hasExactAlarm } from "../lib/alarmPermissions";
 import { MedKind } from "../lib/medKind";
@@ -55,9 +56,22 @@ export function HomeScreen() {
   const [alarmOk, setAlarmOk] = useState(true);
   const [warnCount, setWarnCount] = useState(0);
 
+  // 가입 직후 점검 결과 저장에 실패해 기기에 남은 초안이 있으면 홈이 뜰 때마다 다시 시도한다.
+  // 성공하면 결과 전체를 보여 준다. 실패는 조용히 — 다음 진입 때 또 시도한다.
+  const retryDraft = useCallback(async (pid: string) => {
+    try {
+      const committed = await commitQuickCheckDraft(pid);
+      if (committed?.findings) {
+        nav.navigate("QuickCheckResult", { unlocked: true, findings: committed.findings, unmatched: committed.unmatched });
+      }
+    } catch { /* 다음 진입 때 재시도 */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const load = useCallback(async () => {
     const pid = await getPatientId();
     if (!pid) return;
+    void retryDraft(pid);
     const { data } = await supabase.from("schedules").select("*")
       .eq("patient_id", pid).eq("active", true).order("hour");
     const all = (data ?? []) as Schedule[];

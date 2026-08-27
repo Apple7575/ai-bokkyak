@@ -1,6 +1,6 @@
 import {
   SUPPLEMENT_PRESETS, MEDICINE_PRESETS, NONE_SUPPLEMENT, NONE_MEDICINE,
-  toggleItem, addItem, checkItems, splitResult,
+  toggleItem, addItem, checkItems, splitResult, unmatchedNames,
 } from "../lib/quickCheck";
 import type { Finding } from "../lib/interactions";
 
@@ -76,5 +76,15 @@ describe("splitResult", () => {
   it("3건: 첫 건 + 잠금 2", () => {
     const a = f("A", "B");
     expect(splitResult([a, f("C", "D"), f("E", "F")])).toEqual({ shown: a, lockedCount: 2 });
+  });
+
+  describe("unmatchedNames", () => {
+    it("성분이 비었거나 없는 이름만 돌려준다", () => {
+      expect(unmatchedNames(["혈압약", "노바스크정", "오메가3"], { "노바스크정": ["amlodipine"], "오메가3": [] }))
+        .toEqual(["혈압약", "오메가3"]);
+    });
+    it("전부 찾았으면 빈 배열", () => {
+      expect(unmatchedNames(["A"], { A: ["x"] })).toEqual([]);
+    });
   });
 });

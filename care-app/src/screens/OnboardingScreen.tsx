@@ -33,7 +33,7 @@ export function OnboardingScreen() {
   async function startQuickCheck() {
     await setOnboarded();
     await stopSpeaking();
-    nav.reset({ index: 0, routes: [{ name: "RoleSelect" }, { name: "QuickCheckInput" }] });
+    nav.reset({ index: 1, routes: [{ name: "RoleSelect" }, { name: "QuickCheckInput" }] });
   }
   async function start() {
     await setOnboarded();

@@ -24,8 +24,9 @@ export function RoleSelectScreen() {
   const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
   // "1분 복용 점검"을 마치고 온 경우 — 가입하면 초안이 서버로 옮겨지고 결과 전체가 열린다.
-  const [hasDraft, setHasDraft] = useState(false);
-  const kakaoAutoStarted = useRef(false);
+  const [draftState, setDraftState] = useState<"none" | "unfinished" | "ready">("none");
+  const hasDraft = draftState === "ready";
+  const kakaoAutoStarted = useRef<number | null>(null);
   const [gender, setGender] = useState<"남" | "여" | null>(null);
   const [saving, setSaving] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
@@ -40,18 +41,21 @@ export function RoleSelectScreen() {
 
   useEffect(() => {
     let alive = true;
-    void loadDraft().then((d) => { if (alive) setHasDraft(Boolean(d?.findings)); });
+    void loadDraft().then((d) => { if (alive) setDraftState(!d ? "none" : d.findings ? "ready" : "unfinished"); });
     return () => { alive = false; };
   }, []);
 
-  // 결과 화면의 "카카오로 계속하기"에서 왔으면 카카오 로그인을 바로 연다(한 번만).
+  // 결과 화면의 "카카오로 계속하기"에서 왔으면 카카오 로그인을 바로 연다.
+  // 이 화면은 결과 화면 아래에 이미 있어서 navigate 시 리마운트되지 않고 params만 바뀐다 —
+  // 그래서 params(kakaoAt)에 반응하고, 같은 요청을 두 번 열지 않게 시각으로 구분한다.
+  const kakaoAt: number | undefined = route.params?.kakaoAt;
   useEffect(() => {
-    if (route.params?.from === "quickCheck" && route.params?.kakao && !kakaoAutoStarted.current) {
-      kakaoAutoStarted.current = true;
+    if (route.params?.from === "quickCheck" && route.params?.kakao && kakaoAt && kakaoAutoStarted.current !== kakaoAt) {
+      kakaoAutoStarted.current = kakaoAt;
       void startWithKakao();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [kakaoAt]);
 
   // 가입/로그인이 끝난 뒤 — 점검 초안이 있으면 서버에 옮기고 결과 전체를 보여 준다.
   // 없으면 평소대로. 저장 실패는 알리되 흐름을 막지 않는다(초안은 남아 다음에 다시 시도).
@@ -59,16 +63,17 @@ export function RoleSelectScreen() {
     try {
       const committed = await commitQuickCheckDraft(patientId);
       if (committed?.findings) {
-        nav.reset({ index: 0, routes: [
+        nav.reset({ index: 1, routes: [
           { name: "Tabs" },
-          { name: "QuickCheckResult", params: { unlocked: true, findings: committed.findings } },
+          { name: "QuickCheckResult", params: { unlocked: true, findings: committed.findings, unmatched: committed.unmatched } },
         ] });
         return;
       }
     } catch {
-      Alert.alert("점검 결과를 저장하지 못했어요", "나중에 다시 시도할 수 있어요.");
+      // 초안은 기기에 남는다. 홈 화면이 뜰 때마다 다시 저장을 시도한다(HomeScreen).
+      Alert.alert("점검 결과를 저장하지 못했어요", "홈 화면에서 자동으로 다시 시도해요.");
     }
-    nav.reset({ index: 0, routes: fallback });
+    nav.reset({ index: fallback.length - 1, routes: fallback });
   }
 
   // 입력한 생년월일을 검증해 "YYYY-MM-DD"로. 비어 있으면 null(선택 입력).
@@ -185,6 +190,13 @@ export function RoleSelectScreen() {
           <ClipboardCheck size={22} color={colors.primaryNavy} />
           <Text style={styles.draftText}>점검 결과가 저장을 기다리고 있어요 · 가입하면 바로 볼 수 있어요</Text>
         </View>
+      ) : null}
+      {/* 점검을 고르다 말고 앱이 꺼진 경우 — 되돌아갈 길을 준다 */}
+      {draftState === "unfinished" ? (
+        <Pressable onPress={() => nav.navigate("QuickCheckInput")} style={({ pressed }) => [styles.draftBanner, pressed && { opacity: 0.85 }]} accessibilityRole="button">
+          <ClipboardCheck size={22} color={colors.primaryNavy} />
+          <Text style={styles.draftText}>고르다 만 1분 점검이 있어요 · 이어서 하기</Text>
+        </Pressable>
       ) : null}
 
       {/* Brand — 스플래시와 같은 로고 이미지를 쓴다(아이콘 대체) */}

@@ -6,7 +6,7 @@ import { Check, ShieldCheck } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
 import { lookupIngredients, fetchContraindications } from "../lib/drugData";
 import { allIngredients, matchFindings, Finding, MedIngredients } from "../lib/interactions";
-import { checkItems } from "../lib/quickCheck";
+import { checkItems, unmatchedNames } from "../lib/quickCheck";
 import { loadDraft, saveDraft } from "../lib/quickCheckDraft";
 import { colors, fontSizes, spacing, radii, shadows } from "../theme/tokens";
 
@@ -18,25 +18,31 @@ const STEPS = ["약과 영양제 조합 확인", "성분 확인", "주의 조합
 const MIN_MS = 2400;
 const STEP_MS = MIN_MS / STEPS.length;
 
-async function analyze(names: string[]): Promise<{ ok: true; findings: Finding[] } | { ok: false }> {
-  if (names.length < 2) return { ok: true, findings: [] };
+type Analysis = { ok: true; findings: Finding[]; unmatched: string[] } | { ok: false };
+
+// 자료에서 제품을 못 찾은 이름(unmatched)은 대조에서 빠진다. 빈 성분으로 대조하면
+// "이상 없음"이 나와 버리므로 결과 화면이 이 목록을 반드시 보여 준다.
+async function analyze(names: string[]): Promise<Analysis> {
   const ing = await lookupIngredients(names);
   if (!ing.ready) return { ok: false };
-  const meds: MedIngredients[] = names.map((n) => ({ scheduleId: n, name: n, ingredients: ing.data[n] ?? [] }));
+  const unmatched = unmatchedNames(names, ing.data);
+  const matched = names.filter((n) => !unmatched.includes(n));
+  if (matched.length < 2) return { ok: true, findings: [], unmatched };
+  const meds: MedIngredients[] = matched.map((n) => ({ scheduleId: n, name: n, ingredients: ing.data[n] }));
   const rules = await fetchContraindications(allIngredients(meds));
   if (!rules.ready) return { ok: false };
-  return { ok: true, findings: matchFindings(meds, rules.data) };
+  return { ok: true, findings: matchFindings(meds, rules.data), unmatched };
 }
 
 export function QuickCheckAnalyzingScreen() {
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [done, setDone] = useState(0);          // 켜진 체크 개수
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<null | "network" | "storage">(null);
   const [attempt, setAttempt] = useState(0);
 
   const run = useCallback(async (alive: () => boolean) => {
-    setFailed(false);
+    setFailed(null);
     setDone(0);
     // 체크리스트는 시간에 맞춰 켠다(조회 진행과 무관 — 조회는 보통 더 빨리 끝난다).
     const timers = STEPS.map((_, i) => setTimeout(() => { if (alive()) setDone(i + 1); }, STEP_MS * (i + 1)));
@@ -45,23 +51,31 @@ export function QuickCheckAnalyzingScreen() {
       const draft = await loadDraft();
       if (!draft) throw new Error("no draft");
       const r = await analyze(checkItems(draft));
+      if (!alive()) return;
+      // 실패는 바로 알린다 — 최소 표시 시간은 성공했을 때만 채운다.
+      if (!r.ok) { timers.forEach(clearTimeout); setFailed("network"); return; }
+      try {
+        await saveDraft({ ...draft, findings: r.findings, unmatched: r.unmatched, analyzedAt: new Date().toISOString() });
+      } catch {
+        timers.forEach(clearTimeout);
+        if (alive()) setFailed("storage");
+        return;
+      }
       const wait = Math.max(0, MIN_MS - (Date.now() - started));
       await new Promise((res) => setTimeout(res, wait));
-      if (!alive()) return;
-      if (!r.ok) { timers.forEach(clearTimeout); setFailed(true); return; }
-      await saveDraft({ ...draft, findings: r.findings, analyzedAt: new Date().toISOString() });
       if (!alive()) return;
       nav.replace("QuickCheckResult");
     } catch {
       timers.forEach(clearTimeout);
-      if (alive()) setFailed(true);
+      if (alive()) setFailed("network");
     }
+    return () => timers.forEach(clearTimeout);
   }, [nav]);
 
   useEffect(() => {
     let alive = true;
-    void run(() => alive);
-    return () => { alive = false; };
+    const cleanup = run(() => alive);
+    return () => { alive = false; void cleanup.then((c) => c && c()); };
   }, [run, attempt]);
 
   return (
@@ -73,9 +87,11 @@ export function QuickCheckAnalyzingScreen() {
           </View>
           <Text style={styles.title}>{failed ? "점검을 마치지 못했어요" : "복용 조합을 점검하고 있어요"}</Text>
           <Text style={styles.sub}>
-            {failed
-              ? "인터넷 연결을 확인하고 다시 시도해 주세요. 지금 건너뛰어도 가입 후 다시 점검할 수 있어요."
-              : "식약처 병용금기 자료와 대조합니다. 잠시만 기다려 주세요."}
+            {failed === "storage"
+              ? "결과를 기기에 저장하지 못했어요. 저장 공간을 확인하고 다시 시도해 주세요."
+              : failed === "network"
+                ? "인터넷 연결을 확인하고 다시 시도해 주세요. 지금 건너뛰어도 가입 후 다시 점검할 수 있어요."
+                : "식약처 병용금기 자료와 대조합니다. 잠시만 기다려 주세요."}
           </Text>
         </View>
 
