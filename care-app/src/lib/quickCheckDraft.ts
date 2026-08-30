@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "./supabase";
 import { QuickCheckDraft, EMPTY_DRAFT, checkItems } from "./quickCheck";
+import { isQuickFinding } from "./quickCheckRules";
 
 // 가입 전 "1분 복용 점검" 초안을 기기에 보관한다.
 // 가입이 끝나면 commitQuickCheckDraft()가 서버(quick_check_results)에 옮기고 지운다.
@@ -20,7 +21,9 @@ export async function loadDraft(): Promise<QuickCheckDraft | null> {
         age: typeof p.profile?.age === "string" ? p.profile.age : null,
         conditions: Array.isArray(p.profile?.conditions) ? p.profile.conditions : [],
       },
-      findings: Array.isArray(p.findings) ? p.findings : null,
+      // 이전 빌드(DUR Finding[]: medA/medB, kind 없음)로 저장된 초안은 결과 화면에서 kind 조회가
+      // 깨지므로 버린다 — 점검을 다시 하면 된다.
+      findings: Array.isArray(p.findings) && p.findings.every(isQuickFinding) ? p.findings : null,
       unmatched: Array.isArray(p.unmatched) ? p.unmatched : [],
       analyzedAt: typeof p.analyzedAt === "string" ? p.analyzedAt : null,
       durUnavailable: p.durUnavailable === true,

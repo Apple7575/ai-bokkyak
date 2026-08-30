@@ -66,9 +66,14 @@ export const RULES: Rule[] = [
     basis: "SSRI–NSAID GI bleeding risk",
   },
   {
-    kind: "priority", a: "오메가3", b: "통증·소염제", tag: TAG.priority,
-    message: "둘 다 피가 잘 멎지 않게 할 수 있어, 함께 드시면 멍이나 출혈이 잦아지는지 확인이 필요해요.",
-    basis: "omega-3 antiplatelet effect + NSAID bleeding tendency",
+    kind: "priority", a: "임신·수유 중", b: "혈압약", tag: TAG.priority,
+    message: "일부 혈압약은 임신 중에 태아에게 위험할 수 있어요. 반드시 의료진과 확인해 주세요.",
+    basis: "ACE inhibitors / ARBs fetotoxic (2nd–3rd trimester); many antihypertensives need review in pregnancy",
+  },
+  {
+    kind: "priority", a: "간질환", b: "고지혈증약", tag: TAG.priority,
+    message: "간이 좋지 않을 때는 고지혈증약이 간에 부담을 줄 수 있어 확인이 필요해요.",
+    basis: "statins contraindicated in active liver disease / unexplained persistent transaminase elevation",
   },
   {
     kind: "priority", a: "임신·수유 중", b: "여드름약", tag: TAG.priority,
@@ -186,6 +191,11 @@ export const RULES: Rule[] = [
     message: "여드름약 종류에 따라 피임약과 함께 드시는 방법이 달라요. 복용 방법 확인이 필요해요.",
     basis: "isotretinoin requires reliable contraception; some antibiotics/OC interaction advice",
   },
+  {
+    kind: "caution", a: "오메가3", b: "통증·소염제", tag: TAG.caution,
+    message: "둘 다 피가 잘 멎지 않게 할 수 있어, 함께 드시면 멍이나 출혈이 잦아지는지 확인해 주세요.",
+    basis: "omega-3 mild antiplatelet effect + NSAID bleeding tendency (clinically minor; reviewer downgraded from priority)",
+  },
 ];
 
 export type RuleInput = {
@@ -221,4 +231,13 @@ export function sortFindings(findings: QuickFinding[]): QuickFinding[] {
     .map((f, i) => ({ f, i }))
     .sort((x, y) => (KIND_ORDER.indexOf(x.f.kind) - KIND_ORDER.indexOf(y.f.kind)) || (x.i - y.i))
     .map((x) => x.f);
+}
+
+// 저장된 값이 이 빌드의 QuickFinding 모양인지(구버전 DUR Finding[] 구분용).
+export function isQuickFinding(v: unknown): v is QuickFinding {
+  if (!v || typeof v !== "object") return false;
+  const f = v as Partial<QuickFinding>;
+  return typeof f.kind === "string" && (KIND_ORDER as readonly string[]).includes(f.kind)
+    && typeof f.title === "string" && typeof f.message === "string"
+    && (f.source === "rule" || f.source === "dur");
 }

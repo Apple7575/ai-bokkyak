@@ -66,7 +66,7 @@ export function RoleSelectScreen() {
       if (committed?.findings) {
         nav.reset({ index: 1, routes: [
           { name: "Tabs" },
-          { name: "QuickCheckResult", params: { unlocked: true, findings: committed.findings, unmatched: committed.unmatched, checked: checkedCount(committed) } },
+          { name: "QuickCheckResult", params: { unlocked: true, findings: committed.findings, unmatched: committed.unmatched, checked: checkedCount(committed), durUnavailable: committed.durUnavailable === true } },
         ] });
         return;
       }

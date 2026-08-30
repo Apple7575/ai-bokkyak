@@ -9,7 +9,8 @@
 |---|---|---|---|---|---|---|
 | priority | 우선 확인 필요 | 통증·소염제 × 혈압약 | 우선 확인 필요 | 진통·소염제를 오래 드시면 혈압약 효과가 줄고 신장에 부담이 갈 수 있어 확인이 필요해요. | NSAID–antihypertensive (ACEi/ARB/diuretic) BP attenuation, renal risk |  |
 | priority | 우선 확인 필요 | 항우울제 × 통증·소염제 | 우선 확인 필요 | 함께 드시면 위장 출혈 위험이 높아질 수 있어 확인이 필요해요. | SSRI–NSAID GI bleeding risk |  |
-| priority | 우선 확인 필요 | 오메가3 × 통증·소염제 | 우선 확인 필요 | 둘 다 피가 잘 멎지 않게 할 수 있어, 함께 드시면 멍이나 출혈이 잦아지는지 확인이 필요해요. | omega-3 antiplatelet effect + NSAID bleeding tendency |  |
+| priority | 우선 확인 필요 | 임신·수유 중 × 혈압약 | 우선 확인 필요 | 일부 혈압약은 임신 중에 태아에게 위험할 수 있어요. 반드시 의료진과 확인해 주세요. | ACE inhibitors / ARBs fetotoxic (2nd–3rd trimester); many antihypertensives need review in pregnancy |  |
+| priority | 우선 확인 필요 | 간질환 × 고지혈증약 | 우선 확인 필요 | 간이 좋지 않을 때는 고지혈증약이 간에 부담을 줄 수 있어 확인이 필요해요. | statins contraindicated in active liver disease / unexplained persistent transaminase elevation |  |
 | priority | 우선 확인 필요 | 임신·수유 중 × 여드름약 | 우선 확인 필요 | 일부 여드름약은 임신·수유 중에 태아나 아기에게 위험할 수 있어요. 반드시 의료진과 확인해 주세요. | isotretinoin teratogenicity; tetracyclines contraindicated in pregnancy |  |
 | priority | 우선 확인 필요 | 임신·수유 중 × 고지혈증약 | 우선 확인 필요 | 고지혈증약은 임신·수유 중에 권하지 않는 경우가 많아요. 반드시 의료진과 확인해 주세요. | statins contraindicated/not recommended in pregnancy and lactation |  |
 | priority | 우선 확인 필요 | 신장질환 × 통증·소염제 | 우선 확인 필요 | 신장이 약한 분이 진통·소염제를 드시면 신장 기능이 더 나빠질 수 있어 확인이 필요해요. | NSAID nephrotoxicity in CKD |  |
@@ -32,6 +33,7 @@
 | caution | 주의사항 | 60대 이상 × 통증·소염제 | 주의사항 | 진통·소염제를 오래 드시면 위장과 신장에 부담이 될 수 있어요. 장기 복용 중이라면 확인이 필요해요. | Beers criteria: chronic NSAID use in older adults — GI bleeding, renal |  |
 | caution | 주의사항 | 홍삼 × 혈압약 | 주의사항 | 홍삼은 사람에 따라 혈압을 변하게 할 수 있어요. 혈압약과 함께 드시면 혈압을 자주 재 보고 확인이 필요해요. | ginseng may alter blood pressure; monitor with antihypertensives |  |
 | caution | 주의사항 | 여드름약 × 피임약 | 주의사항 | 여드름약 종류에 따라 피임약과 함께 드시는 방법이 달라요. 복용 방법 확인이 필요해요. | isotretinoin requires reliable contraception; some antibiotics/OC interaction advice |  |
+| caution | 주의사항 | 오메가3 × 통증·소염제 | 주의사항 | 둘 다 피가 잘 멎지 않게 할 수 있어, 함께 드시면 멍이나 출혈이 잦아지는지 확인해 주세요. | omega-3 mild antiplatelet effect + NSAID bleeding tendency (clinically minor; reviewer downgraded from priority) | 리뷰에서 priority→caution 하향 |
 
 총 25개 규칙.
 

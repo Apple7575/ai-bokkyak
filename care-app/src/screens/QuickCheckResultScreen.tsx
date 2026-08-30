@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, Pressable, Modal, ActivityIndicator, Share, Alert } from "react-native";
+import { View, Text, ScrollView, StyleSheet, Pressable, Modal, ActivityIndicator, Share, Alert, Platform } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Lock, ShieldCheck, Stethoscope, MessageCircle, User, X, SearchX, ChevronRight } from "lucide-react-native";
@@ -85,7 +85,7 @@ export function QuickCheckResultScreen() {
         : d ? countChecked(d) : 0;
       if (!alive) return;
       if (!findings) { setState({ phase: "empty" }); return; }
-      setState({ phase: "ok", findings, unlocked, unmatched, checkedCount: checked, durUnavailable: Boolean(!paramFindings && d?.durUnavailable) });
+      setState({ phase: "ok", findings, unlocked, unmatched, checkedCount: checked, durUnavailable: paramFindings ? Boolean(route.params?.durUnavailable) : Boolean(d?.durUnavailable) });
     })();
     return () => { alive = false; };
   }, [route.params]);
@@ -102,7 +102,7 @@ export function QuickCheckResultScreen() {
   async function share() {
     setSheet(null);
     try {
-      await Share.share({ message: buildQuickCheckShareMessage() });
+      await Share.share({ message: buildQuickCheckShareMessage(Platform.OS) });
     } catch (e) {
       Alert.alert("보내지 못했어요", e instanceof Error && e.message ? e.message : "잠시 후 다시 시도해 주세요.");
     }
@@ -339,14 +339,14 @@ const styles = StyleSheet.create({
   cardTop: { borderColor: colors.secondaryBlue, borderWidth: 1.5 },
   tagRow: { flexDirection: "row", alignItems: "center" },
   tag: { alignSelf: "flex-start", borderRadius: radii.pill, paddingHorizontal: 12, minHeight: 32, justifyContent: "center", marginRight: "auto" },
-  tagText: { fontSize: 16, fontWeight: "700" },
+  tagText: { fontSize: 18, fontWeight: "700" },
   cardTitle: { fontSize: 23, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.4, marginTop: spacing.sm + 4 },
   cardMsg: { fontSize: 19, lineHeight: 29, fontWeight: "600", color: colors.text, marginTop: spacing.sm },
-  source: { fontSize: 16, color: colors.textSecondary, marginTop: spacing.sm },
+  source: { fontSize: 18, color: colors.textSecondary, marginTop: spacing.sm },
   pharmRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexWrap: "wrap" },
   pharmPill: { backgroundColor: colors.successSoft, borderRadius: radii.pill, paddingHorizontal: 12, minHeight: 32, justifyContent: "center" },
-  pharmPillText: { fontSize: 16, fontWeight: "700", color: colors.successGreen },
-  pharmNote: { flex: 1, fontSize: 16, lineHeight: 24, fontWeight: "600", color: colors.textSecondary, minWidth: 160 },
+  pharmPillText: { fontSize: 18, fontWeight: "700", color: colors.successGreen },
+  pharmNote: { flex: 1, fontSize: 18, lineHeight: 24, fontWeight: "600", color: colors.textSecondary, minWidth: 160 },
 
   lockedBox: { backgroundColor: colors.cardBg, borderRadius: radii.card, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, ...shadows.card },
   lockedRow: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 56, borderBottomWidth: 1, borderBottomColor: colors.canvasMuted },
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
 
   group: { gap: spacing.md },
   actions: { marginTop: spacing.sm, gap: spacing.sm },
-  actionsNote: { textAlign: "center", fontSize: 16, fontWeight: "600", color: colors.textSecondary },
+  actionsNote: { textAlign: "center", fontSize: 18, fontWeight: "600", color: colors.textSecondary },
 
   shareBox: { backgroundColor: colors.successSoft, borderWidth: 1.5, borderColor: colors.border, borderRadius: radii.card, padding: spacing.md, gap: spacing.sm, marginTop: spacing.sm },
   shareTitle: { fontSize: 21, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.4 },
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
   notice: { flexDirection: "row", gap: spacing.sm, alignItems: "flex-start", backgroundColor: colors.lightBlueBg, borderRadius: radii.card, padding: spacing.md },
   noticeText: { flex: 1, fontSize: 19, color: colors.primaryNavy, lineHeight: 28 },
   noticeStrong: { fontWeight: "800" },
-  disclaimer: { fontSize: 15, lineHeight: 22, color: colors.textSecondary, textAlign: "center" },
+  disclaimer: { fontSize: 18, lineHeight: 22, color: colors.textSecondary, textAlign: "center" },
 
   backdrop: { flex: 1, backgroundColor: colors.overlayStrong },
   sheet: { backgroundColor: colors.surfaceRaised, borderTopLeftRadius: radii.hero, borderTopRightRadius: radii.hero, padding: spacing.lg, gap: spacing.md, ...shadows.floating },
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
   sheetTitle: { flex: 1, fontSize: 22, lineHeight: 32, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.4 },
   sheetClose: { width: 44, height: 44, alignItems: "flex-end", justifyContent: "center" },
   sheetSub: { fontSize: fontSizes.body, lineHeight: 26, color: colors.textSecondary, marginTop: -spacing.sm },
-  sheetCaption: { fontSize: 16, fontWeight: "600", color: colors.textSecondary, textAlign: "center" },
+  sheetCaption: { fontSize: 18, fontWeight: "600", color: colors.textSecondary, textAlign: "center" },
   kakaoBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, minHeight: minTouch, borderRadius: radii.pill, backgroundColor: colors.kakao },
   kakaoText: { fontSize: fontSizes.emphasis, fontWeight: "800", color: colors.kakaoInk },
   otherBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, minHeight: minTouch, borderRadius: radii.pill, backgroundColor: colors.surfaceRaised, borderWidth: 1.5, borderColor: colors.border },

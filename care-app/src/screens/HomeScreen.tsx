@@ -72,7 +72,7 @@ export function HomeScreen() {
       const committed = await commitQuickCheckDraft(pid);
       setDraftPending(false);
       if (committed?.findings) {
-        nav.navigate("QuickCheckResult", { unlocked: true, findings: committed.findings, unmatched: committed.unmatched, checked: checkedCount(committed) });
+        nav.navigate("QuickCheckResult", { unlocked: true, findings: committed.findings, unmatched: committed.unmatched, checked: checkedCount(committed), durUnavailable: committed.durUnavailable === true });
       }
     } catch {
       setDraftPending(true);

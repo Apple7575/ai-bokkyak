@@ -20,7 +20,7 @@ export type RootStackParamList = {
   QuickCheckInput: undefined;
   QuickCheckAnalyzing: undefined;
   // findings: 가입 직후 초안이 서버로 옮겨져(지워져) 기기에 없으므로 RoleSelect가 넘겨준다.
-  QuickCheckResult: { unlocked?: boolean; findings?: import("../lib/quickCheckRules").QuickFinding[]; unmatched?: string[]; checked?: number } | undefined;
+  QuickCheckResult: { unlocked?: boolean; findings?: import("../lib/quickCheckRules").QuickFinding[]; unmatched?: string[]; checked?: number; durUnavailable?: boolean } | undefined;
 };
 export type TabParamList = {
   Home: undefined;
