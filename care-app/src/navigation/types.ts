@@ -1,6 +1,5 @@
 export type RootStackParamList = {
-  Splash: undefined;
-  Onboarding: undefined;
+  Intro: undefined;
   RoleSelect: { from?: "quickCheck"; kakao?: boolean; kakaoAt?: number } | undefined;
   Tabs: undefined;
   VoiceGuide: undefined;

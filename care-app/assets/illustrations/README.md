@@ -12,8 +12,6 @@ clean alpha edges, no text, no logos, and no watermark.
 
 ## Final prompt set
 
-- `onboarding-seniors.png`: A dignified Korean senior woman and man, waist-up,
-  smiling naturally while holding one weekly pill organizer; exactly two people.
 - `home-medication.png`: A horizontal still life of one weekly pill organizer,
   an analog clock, coral pouch, and eucalyptus leaves in warm morning light.
 - `voice-companion.png`: A Korean senior woman speaking comfortably beside one

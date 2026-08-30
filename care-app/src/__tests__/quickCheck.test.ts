@@ -1,5 +1,5 @@
 import {
-  SUPPLEMENT_PRESETS, MEDICINE_PRESETS, NONE_SUPPLEMENT, NONE_MEDICINE,
+  SUPPLEMENT_PRESETS, SUPPLEMENT_MORE, MEDICINE_PRESETS, AGES, CONDS, NONE_SUPPLEMENT, NONE_MEDICINE, NONE_CONDITION,
   toggleItem, addItem, checkItems, splitResult, unmatchedNames, checkedCount, EMPTY_DRAFT,
 } from "../lib/quickCheck";
 import type { Finding } from "../lib/interactions";
@@ -8,11 +8,38 @@ const f = (a: string, b: string): Finding => ({
   medA: a, medB: b, ingredientA: "x", ingredientB: "y", reason: null, notice_no: null,
 });
 
-describe("presets", () => {
-  it("영양제·복용약 각 9개, 중복 없음", () => {
-    expect(SUPPLEMENT_PRESETS).toHaveLength(9);
+describe("presets (시안 V8 그대로)", () => {
+  it("영양제 8개 + 더 보기 4개, 복용약 9개, 서로 중복 없음", () => {
+    expect(SUPPLEMENT_PRESETS).toHaveLength(8);
+    expect(SUPPLEMENT_MORE).toHaveLength(4);
     expect(MEDICINE_PRESETS).toHaveLength(9);
-    expect(new Set([...SUPPLEMENT_PRESETS, ...MEDICINE_PRESETS]).size).toBe(18);
+    expect(new Set([...SUPPLEMENT_PRESETS, ...SUPPLEMENT_MORE, ...MEDICINE_PRESETS]).size).toBe(21);
+  });
+  it("영양제 목록은 시안 순서", () => {
+    expect([...SUPPLEMENT_PRESETS]).toEqual(["오메가3", "비타민D", "마그네슘", "유산균", "종합비타민", "철분", "루테인", "밀크씨슬"]);
+    expect([...SUPPLEMENT_MORE]).toEqual(["콜라겐", "아연", "홍삼", "단백질보충제"]);
+  });
+  it("복용약 목록은 시안 순서(피임약·항우울제·여드름약 포함)", () => {
+    expect([...MEDICINE_PRESETS]).toEqual(["갑상선약", "혈압약", "고지혈증약", "위장약", "통증·소염제", "알레르기약", "피임약", "항우울제", "여드름약"]);
+  });
+  it("연령대 5개, 해당 항목 4개(마지막이 해당 없음)", () => {
+    expect([...AGES]).toEqual(["20대", "30대", "40대", "50대", "60대 이상"]);
+    expect([...CONDS]).toEqual(["임신·수유 중", "신장질환", "간질환", NONE_CONDITION]);
+  });
+  it("빈 초안의 profile은 연령 없음·항목 없음", () => {
+    expect(EMPTY_DRAFT.profile).toEqual({ age: null, conditions: [] });
+  });
+});
+
+describe("toggleItem — 해당 항목(해당 없음)", () => {
+  it("해당 없음을 고르면 나머지를 지우고 혼자 남는다", () => {
+    expect(toggleItem(["신장질환", "간질환"], NONE_CONDITION, NONE_CONDITION)).toEqual([NONE_CONDITION]);
+  });
+  it("해당 없음이 켜진 상태에서 항목을 고르면 해당 없음이 빠진다", () => {
+    expect(toggleItem([NONE_CONDITION], "임신·수유 중", NONE_CONDITION)).toEqual(["임신·수유 중"]);
+  });
+  it("항목은 여러 개 고를 수 있다", () => {
+    expect(toggleItem(["신장질환"], "간질환", NONE_CONDITION)).toEqual(["신장질환", "간질환"]);
   });
 });
 
@@ -23,7 +50,7 @@ describe("toggleItem", () => {
     expect(toggleItem(on, "오메가3", NONE_SUPPLEMENT)).toEqual([]);
   });
   it("없음을 고르면 나머지를 지우고 혼자 남는다", () => {
-    expect(toggleItem(["오메가3", "칼슘"], NONE_SUPPLEMENT, NONE_SUPPLEMENT)).toEqual([NONE_SUPPLEMENT]);
+    expect(toggleItem(["오메가3", "마그네슘"], NONE_SUPPLEMENT, NONE_SUPPLEMENT)).toEqual([NONE_SUPPLEMENT]);
   });
   it("없음을 다시 누르면 빈 목록", () => {
     expect(toggleItem([NONE_SUPPLEMENT], NONE_SUPPLEMENT, NONE_SUPPLEMENT)).toEqual([]);
@@ -32,8 +59,8 @@ describe("toggleItem", () => {
     expect(toggleItem([NONE_MEDICINE], "혈압약", NONE_MEDICINE)).toEqual(["혈압약"]);
   });
   it("순서를 보존한다", () => {
-    const l = toggleItem(toggleItem(["칼슘"], "철분", NONE_SUPPLEMENT), "오메가3", NONE_SUPPLEMENT);
-    expect(l).toEqual(["칼슘", "철분", "오메가3"]);
+    const l = toggleItem(toggleItem(["루테인"], "철분", NONE_SUPPLEMENT), "오메가3", NONE_SUPPLEMENT);
+    expect(l).toEqual(["루테인", "철분", "오메가3"]);
   });
 });
 

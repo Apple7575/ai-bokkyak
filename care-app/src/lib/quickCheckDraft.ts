@@ -16,6 +16,10 @@ export async function loadDraft(): Promise<QuickCheckDraft | null> {
       ...EMPTY_DRAFT,
       supplements: Array.isArray(p.supplements) ? p.supplements : [],
       medicines: Array.isArray(p.medicines) ? p.medicines : [],
+      profile: {
+        age: typeof p.profile?.age === "string" ? p.profile.age : null,
+        conditions: Array.isArray(p.profile?.conditions) ? p.profile.conditions : [],
+      },
       findings: Array.isArray(p.findings) ? p.findings : null,
       unmatched: Array.isArray(p.unmatched) ? p.unmatched : [],
       analyzedAt: typeof p.analyzedAt === "string" ? p.analyzedAt : null,
@@ -41,7 +45,11 @@ export async function commitQuickCheckDraft(patientId: string): Promise<QuickChe
   if (!draft || !draft.findings) return null;
   const { error } = await supabase.from("quick_check_results").insert({
     patient_id: patientId,
-    items: { supplements: draft.supplements, medicines: draft.medicines, names: checkItems(draft), unmatched: draft.unmatched },
+    // profile(연령대·해당 항목)은 기록용 — 분석에는 쓰지 않는다(quickCheck.ts 참고).
+    items: {
+      supplements: draft.supplements, medicines: draft.medicines, names: checkItems(draft),
+      unmatched: draft.unmatched, profile: draft.profile,
+    },
     findings: draft.findings,
   });
   if (error) throw error;

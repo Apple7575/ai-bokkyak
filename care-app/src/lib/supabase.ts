@@ -42,7 +42,11 @@ export type IntakeRecord = {
 };
 export type QuickCheckResult = {
   id: string; patient_id: string;
-  items: { supplements: string[]; medicines: string[]; names: string[] };
+  items: {
+    supplements: string[]; medicines: string[]; names: string[]; unmatched?: string[];
+    /** 연령대·해당 항목 — 기록용, 분석에는 쓰지 않는다 */
+    profile?: { age: string | null; conditions: string[] };
+  };
   findings: import("./interactions").Finding[];
   created_at: string;
 };

@@ -6,8 +6,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RootStackParamList, TabParamList } from "./types";
 import { getPatientId, getOnboarded } from "../lib/storage";
-import { OnboardingScreen } from "../screens/OnboardingScreen";
-import { SplashScreen } from "../screens/SplashScreen";
+import { IntroScreen } from "../screens/IntroScreen";
 import { RoleSelectScreen } from "../screens/RoleSelectScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { RecordScreen } from "../screens/RecordScreen";
@@ -90,7 +89,7 @@ export function RootNavigator() {
   const initialRouteName: keyof RootStackParamList = alarmSid
     ? "Alarm"
     : !init.signedUp && !init.onboarded
-      ? "Splash"
+      ? "Intro"
       : !init.signedUp
         ? "RoleSelect"
         : "Tabs";
@@ -100,8 +99,7 @@ export function RootNavigator() {
       initialRouteName={initialRouteName}
       screenOptions={{ headerShown: false, contentStyle: styles.stack, animation: "slide_from_right" }}
     >
-      <Stack.Screen name="Splash" component={SplashScreen} />
-      <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+      <Stack.Screen name="Intro" component={IntroScreen} />
       <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
       <Stack.Screen name="Tabs" component={PatientTabs} />
       <Stack.Screen name="VoiceGuide" component={VoiceGuideScreen} />
