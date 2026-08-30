@@ -71,3 +71,9 @@ export function splitResult(findings: Finding[]): { shown: Finding | null; locke
     lockedCount: Math.max(0, findings.length - 1),
   };
 }
+
+// 실제로 대조한 이름 수 = 고른 이름 − 자료에서 못 찾은 이름. 결과 화면이 "이상 없음"을
+// 말해도 되는지(2개 이상 대조했는지) 판단하는 데 쓴다.
+export function checkedCount(draft: QuickCheckDraft): number {
+  return Math.max(0, checkItems(draft).length - draft.unmatched.length);
+}

@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, Pressable, Image } from "react-native";
+import { View, Text, ScrollView, StyleSheet, Pressable, Image, Alert } from "react-native";
 import notifee from "@notifee/react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,13 +9,14 @@ import { MedicineMark } from "../components/MedicineMark";
 import { supabase, Schedule, IntakeRecord } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { commitQuickCheckDraft } from "../lib/quickCheckDraft";
+import { checkedCount } from "../lib/quickCheck";
 import { nextNotificationTime, todaySlot } from "../lib/schedule";
 import { hasExactAlarm } from "../lib/alarmPermissions";
 import { MedKind } from "../lib/medKind";
 import { getKindMap, resolveKind } from "../lib/medStore";
 import { lookupIngredients, fetchContraindications } from "../lib/drugData";
 import { allIngredients, matchFindings, MedIngredients } from "../lib/interactions";
-import { colors, fontSizes, spacing, radii, shadows, tabBarClearance } from "../theme/tokens";
+import { colors, fontSizes, spacing, radii, shadows, tabBarClearance, minTouch } from "../theme/tokens";
 
 const HOME_ART = require("../../assets/illustrations/home-medication.png");
 
@@ -57,14 +58,20 @@ export function HomeScreen() {
   const [warnCount, setWarnCount] = useState(0);
 
   // 가입 직후 점검 결과 저장에 실패해 기기에 남은 초안이 있으면 홈이 뜰 때마다 다시 시도한다.
-  // 성공하면 결과 전체를 보여 준다. 실패는 조용히 — 다음 진입 때 또 시도한다.
-  const retryDraft = useCallback(async (pid: string) => {
+  // 성공하면 결과 전체를 보여 준다. 실패하면 배너로 알리고 "다시 시도" 버튼을 준다 —
+  // 자동 재시도 실패는 조용히 넘기되(진입마다 Alert가 뜨면 성가시다), 수동 시도는 Alert로.
+  const [draftPending, setDraftPending] = useState(false);
+  const retryDraft = useCallback(async (pid: string, manual = false) => {
     try {
       const committed = await commitQuickCheckDraft(pid);
+      setDraftPending(false);
       if (committed?.findings) {
-        nav.navigate("QuickCheckResult", { unlocked: true, findings: committed.findings, unmatched: committed.unmatched });
+        nav.navigate("QuickCheckResult", { unlocked: true, findings: committed.findings, unmatched: committed.unmatched, checked: checkedCount(committed) });
       }
-    } catch { /* 다음 진입 때 재시도 */ }
+    } catch {
+      setDraftPending(true);
+      if (manual) Alert.alert("점검 결과를 저장하지 못했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -173,6 +180,23 @@ export function HomeScreen() {
             정확한 복약 알람을 위해 '알람 및 리마인더' 권한이 필요해요. 눌러서 설정 열기
           </Text>
         </Pressable>
+      ) : null}
+
+      {/* 가입 때 저장 못 한 1분 점검 결과 — 자동 재시도 실패 시에만 보인다 */}
+      {draftPending ? (
+        <View style={styles.warnCard}>
+          <View style={styles.warnHead}>
+            <AlertTriangle size={22} color={colors.warningOrange} />
+            <Text style={styles.warnTitle}>점검 결과를 아직 저장하지 못했어요</Text>
+          </View>
+          <Pressable
+            onPress={() => { void getPatientId().then((pid) => { if (pid) void retryDraft(pid, true); }); }}
+            style={({ pressed }) => [styles.draftRetryBtn, pressed && { opacity: 0.85 }]}
+            accessibilityRole="button"
+          >
+            <Text style={styles.draftRetryText}>다시 저장하기</Text>
+          </Pressable>
+        </View>
       ) : null}
 
       {/* ① 다음 복약 시간 + ② 음성 AI 진입 */}
@@ -381,6 +405,8 @@ const styles = StyleSheet.create({
     borderRadius: radii.card, padding: spacing.md,
   },
   warnHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  draftRetryBtn: { marginTop: spacing.sm, minHeight: minTouch, borderRadius: radii.pill, backgroundColor: colors.primaryBlue, alignItems: "center", justifyContent: "center" },
+  draftRetryText: { fontSize: fontSizes.emphasis, fontWeight: "800", color: colors.white },
   warnTitle: { fontSize: 21, fontWeight: "800", color: colors.text, flex: 1 },
   warnDesc: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 4, marginBottom: spacing.md },
   warnBtn: {

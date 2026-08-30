@@ -6,7 +6,7 @@ import { AlertTriangle, Lock, ShieldCheck, Stethoscope, MessageCircle, User, X, 
 import { BigButton } from "../components/BigButton";
 import { getPatientId } from "../lib/storage";
 import { Finding } from "../lib/interactions";
-import { checkItems, splitResult } from "../lib/quickCheck";
+import { checkedCount as countChecked, splitResult } from "../lib/quickCheck";
 import { loadDraft } from "../lib/quickCheckDraft";
 import { DISCLAIMER } from "../lib/voiceScript";
 import { colors, fontSizes, spacing, radii, minTouch, shadows } from "../theme/tokens";
@@ -40,10 +40,13 @@ export function QuickCheckResultScreen() {
       const d = await loadDraft();
       const findings = paramFindings ?? d?.findings ?? null;
       const unmatched = paramFindings ? paramUnmatched : (d?.unmatched ?? []);
-      const total = d ? checkItems(d).length : unmatched.length + (findings?.length ?? 0);
+      // 가입 후에는 commit이 초안을 지우므로 대조한 이름 수도 params로 받는다.
+      const checked = paramFindings
+        ? (typeof route.params?.checked === "number" ? route.params.checked : 0)
+        : d ? countChecked(d) : 0;
       if (!alive) return;
       if (!findings) { setState({ phase: "empty" }); return; }
-      setState({ phase: "ok", findings, unlocked, unmatched, checkedCount: Math.max(0, total - unmatched.length) });
+      setState({ phase: "ok", findings, unlocked, unmatched, checkedCount: checked });
     })();
     return () => { alive = false; };
   }, [route.params]);

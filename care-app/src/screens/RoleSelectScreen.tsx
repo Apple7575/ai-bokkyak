@@ -10,6 +10,7 @@ import { enterDemo } from "../lib/demo";
 import { signInWithKakao } from "../lib/kakaoAuth";
 import { sanitizeBirthPart, birthError, buildBirthDate } from "../lib/birthInput";
 import { loadDraft, commitQuickCheckDraft } from "../lib/quickCheckDraft";
+import { checkedCount } from "../lib/quickCheck";
 import { colors, fontSizes, spacing, radii, minTouch, shadows } from "../theme/tokens";
 
 // 로고 이미지는 여백이 거의 없는 정사각형이라 카드 안쪽에 패딩을 준다.
@@ -65,7 +66,7 @@ export function RoleSelectScreen() {
       if (committed?.findings) {
         nav.reset({ index: 1, routes: [
           { name: "Tabs" },
-          { name: "QuickCheckResult", params: { unlocked: true, findings: committed.findings, unmatched: committed.unmatched } },
+          { name: "QuickCheckResult", params: { unlocked: true, findings: committed.findings, unmatched: committed.unmatched, checked: checkedCount(committed) } },
         ] });
         return;
       }
