@@ -23,6 +23,7 @@ export async function loadDraft(): Promise<QuickCheckDraft | null> {
       findings: Array.isArray(p.findings) ? p.findings : null,
       unmatched: Array.isArray(p.unmatched) ? p.unmatched : [],
       analyzedAt: typeof p.analyzedAt === "string" ? p.analyzedAt : null,
+      durUnavailable: p.durUnavailable === true,
     };
   } catch {
     return null; // 깨진 값은 없는 것으로

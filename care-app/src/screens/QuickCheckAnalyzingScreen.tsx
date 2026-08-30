@@ -6,23 +6,26 @@ import { Check, ShieldCheck } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
 import { lookupIngredients, fetchContraindications } from "../lib/drugData";
 import { allIngredients, matchFindings, Finding, MedIngredients } from "../lib/interactions";
-import { checkItems, unmatchedNames } from "../lib/quickCheck";
+import { checkItems, customNames, mergeFindings, unmatchedNames, QuickCheckDraft, QuickFinding } from "../lib/quickCheck";
+import { applyRules } from "../lib/quickCheckRules";
 import { loadDraft, saveDraft } from "../lib/quickCheckDraft";
 import { colors, fontSizes, spacing, radii, shadows } from "../theme/tokens";
 
-// 점검 중 화면 — 실제 DUR 병용금기 조회(InteractionScreen과 같은 경로)를 돌리면서
-// 4단계 체크리스트를 순서대로 켠다. 조회가 순식간에 끝나도 최소 시간은 보여 준다 —
-// 바로 넘어가면 "정말 봤나?" 싶어진다.
+// 점검 중 화면 — 두 갈래를 돌리면서 4단계 체크리스트를 순서대로 켠다.
+//  · 종류명 칩 + 기본 정보 → 상식 규칙(applyRules, 기기 안에서 즉시)
+//  · 제품명(검색·사진) → 식약처 DUR 병용금기(InteractionScreen과 같은 경로)
+// 조회가 순식간에 끝나도 최소 시간은 보여 준다 — 바로 넘어가면 "정말 봤나?" 싶어진다.
 
 const STEPS = ["약과 영양제 조합 확인", "성분 확인", "주의 조합 대조", "결과 정리"] as const;
 const MIN_MS = 2400;
 const STEP_MS = MIN_MS / STEPS.length;
 
-type Analysis = { ok: true; findings: Finding[]; unmatched: string[] } | { ok: false };
+type DurResult = { ok: true; findings: Finding[]; unmatched: string[] } | { ok: false };
 
-// 자료에서 제품을 못 찾은 이름(unmatched)은 대조에서 빠진다. 빈 성분으로 대조하면
-// "이상 없음"이 나와 버리므로 결과 화면이 이 목록을 반드시 보여 준다.
-async function analyze(names: string[]): Promise<Analysis> {
+// 제품명만 DUR로 대조한다. 자료에서 못 찾은 이름(unmatched)은 대조에서 빠진다 — 빈 성분으로
+// 대조하면 "이상 없음"이 나와 버리므로 결과 화면이 이 목록을 반드시 보여 준다.
+async function analyzeDur(names: string[]): Promise<DurResult> {
+  if (names.length === 0) return { ok: true, findings: [], unmatched: [] };
   const ing = await lookupIngredients(names);
   if (!ing.ready) return { ok: false };
   const unmatched = unmatchedNames(names, ing.data);
@@ -32,6 +35,24 @@ async function analyze(names: string[]): Promise<Analysis> {
   const rules = await fetchContraindications(allIngredients(meds));
   if (!rules.ready) return { ok: false };
   return { ok: true, findings: matchFindings(meds, rules.data), unmatched };
+}
+
+type Analysis = { ok: true; findings: QuickFinding[]; unmatched: string[]; durUnavailable: boolean } | { ok: false };
+
+// 규칙은 기기 안에서 항상 된다. DUR이 실패해도 규칙 결과가 있으면 durUnavailable 표시로 넘어가고,
+// 보여 줄 것이 하나도 없을 때만 실패로 친다.
+async function analyze(draft: QuickCheckDraft): Promise<Analysis> {
+  const ruleFindings = applyRules({ supplements: draft.supplements, medicines: draft.medicines, profile: draft.profile });
+  const custom = customNames(checkItems(draft));
+  let dur: DurResult;
+  try {
+    dur = await analyzeDur(custom);
+  } catch {
+    dur = { ok: false };
+  }
+  if (dur.ok) return { ok: true, findings: mergeFindings(ruleFindings, dur.findings), unmatched: dur.unmatched, durUnavailable: false };
+  if (ruleFindings.length === 0) return { ok: false };
+  return { ok: true, findings: mergeFindings(ruleFindings, []), unmatched: [], durUnavailable: true };
 }
 
 export function QuickCheckAnalyzingScreen() {
@@ -50,12 +71,15 @@ export function QuickCheckAnalyzingScreen() {
     try {
       const draft = await loadDraft();
       if (!draft) throw new Error("no draft");
-      const r = await analyze(checkItems(draft));
+      const r = await analyze(draft);
       if (!alive()) return;
       // 실패는 바로 알린다 — 최소 표시 시간은 성공했을 때만 채운다.
       if (!r.ok) { timers.forEach(clearTimeout); setFailed("network"); return; }
       try {
-        await saveDraft({ ...draft, findings: r.findings, unmatched: r.unmatched, analyzedAt: new Date().toISOString() });
+        await saveDraft({
+          ...draft, findings: r.findings, unmatched: r.unmatched, durUnavailable: r.durUnavailable,
+          analyzedAt: new Date().toISOString(),
+        });
       } catch {
         timers.forEach(clearTimeout);
         if (alive()) setFailed("storage");
@@ -91,7 +115,7 @@ export function QuickCheckAnalyzingScreen() {
               ? "결과를 기기에 저장하지 못했어요. 저장 공간을 확인하고 다시 시도해 주세요."
               : failed === "network"
                 ? "인터넷 연결을 확인하고 다시 시도해 주세요. 지금 건너뛰어도 가입 후 다시 점검할 수 있어요."
-                : "식약처 병용금기 자료와 대조합니다. 잠시만 기다려 주세요."}
+                : "약과 영양제 조합을 확인하고 식약처 자료와 대조합니다. 잠시만 기다려 주세요."}
           </Text>
         </View>
 

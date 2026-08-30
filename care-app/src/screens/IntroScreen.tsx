@@ -3,7 +3,7 @@ import {
   AccessibilityInfo, Animated, BackHandler, Easing, Pressable, ScrollView, StyleSheet, Text, View, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Check, ClipboardList, Leaf, Link2, Package, Pill } from "lucide-react-native";
+import { Check, ClipboardList, Gauge, Info, Layers, Leaf, Link2, Package, Pill, Plus } from "lucide-react-native";
 import { Logo } from "../components/Logo";
 import { INTRO_SLIDES, SKIP_TARGET_INDEX, dotState, nextIndex, prevIndex } from "../lib/introSlides";
 import { setOnboarded } from "../lib/storage";
@@ -275,6 +275,14 @@ function Onboarding2({ onNext }: { onNext: () => void }) {
 }
 
 // ── 5. 1분 복용 점검 ────────────────────────────────────────────────────────
+// 예시 카드의 4행 — 시안 V8 그대로(문구·색·등장 지연 2.25s/2.5s/2.75s/3.0s).
+const EXAMPLE_ROWS: { Icon: typeof Link2; label: string; status: string; tone: "danger" | "ok" | "muted"; delay: number }[] = [
+  { Icon: Link2, label: "상호작용", status: "함께 복용 시 주의", tone: "danger", delay: 2250 },
+  { Icon: Layers, label: "중복 성분", status: "중복 성분 확인", tone: "danger", delay: 2500 },
+  { Icon: Gauge, label: "과다 복용", status: "이상 없음", tone: "ok", delay: 2750 },
+  { Icon: Info, label: "주의사항", status: "복용 방법 확인 필요", tone: "muted", delay: 3000 },
+];
+
 function Onboarding3({ onNext }: { onNext: () => void }) {
   return (
     <View style={styles.onb}>
@@ -295,19 +303,24 @@ function Onboarding3({ onNext }: { onNext: () => void }) {
           </View>
           <View style={styles.exampleBarTrack}><Reveal delay={1000} duration={1050} kind="bar" style={styles.exampleBarFill} /></View>
           <View style={styles.exampleDivider} />
-          <Reveal delay={2250} duration={450} style={styles.exampleRow}>
-            <View style={styles.exampleIcon}><Link2 size={18} color={colors.primaryBlue} /></View>
-            <Text style={styles.exampleRowLabel}>함께 복용 시 주의</Text>
-            <View style={styles.exampleRowRight}>
-              <View style={styles.redDot} />
-              <Text style={styles.exampleRowStatus}>확인 필요</Text>
-            </View>
-          </Reveal>
-          <View style={styles.exampleDivider} />
-          <Reveal delay={3400} duration={450} style={styles.exampleFoot}>
-            <Text style={styles.exampleFootCount}>확인 필요 2건</Text>
-            <View style={styles.blueTag}><Text style={styles.blueTagText}>약사 확인 권장</Text></View>
-          </Reveal>
+          <View style={styles.exampleRows}>
+            {EXAMPLE_ROWS.map(({ Icon, label, status, tone, delay }) => (
+              <Reveal key={label} delay={delay} duration={450} style={styles.exampleRow}>
+                <View style={styles.exampleIcon}><Icon size={18} color={colors.primaryBlue} /></View>
+                <Text style={styles.exampleRowLabel}>{label}</Text>
+                <View style={styles.exampleRowRight}>
+                  {tone === "danger" ? <View style={styles.redDot} /> : null}
+                  {tone === "ok" ? <Check size={16} strokeWidth={3} color={colors.successGreen} /> : null}
+                  <Text style={[styles.exampleRowStatus, tone === "danger" && styles.statusDanger, tone === "ok" && styles.statusOk]}>{status}</Text>
+                </View>
+              </Reveal>
+            ))}
+          </View>
+          <View style={styles.exampleDividerTight} />
+          <View style={styles.exampleFoot}>
+            <Reveal delay={3400} duration={450}><Text style={styles.exampleFootCount}>확인 필요 2건</Text></Reveal>
+            <Reveal delay={3600} duration={400} kind="pop"><View style={styles.blueTag}><Text style={styles.blueTagText}>약사 확인 권장</Text></View></Reveal>
+          </View>
         </Reveal>
       </ScrollView>
       <NextButton onPress={onNext} />
@@ -315,27 +328,45 @@ function Onboarding3({ onNext }: { onNext: () => void }) {
   );
 }
 
-// ── 6. 병용금기 기준 점검 (약사 연결·공유 동의는 회의 결정으로 제거, 문구 교체) ──
+// ── 6. 약사 연결 (시안 V8 그대로 — 곧 만들 지역 약사 연결 기능의 예시 그림. 알약 태그는 눌리지 않는다) ──
 function Onboarding4({ onNext }: { onNext: () => void }) {
   return (
     <View style={styles.onb}>
       <ScrollView contentContainerStyle={styles.onbTop} showsVerticalScrollIndicator={false}>
-        <Reveal delay={50}>
+        <Reveal delay={100} duration={550}>
           <Text style={styles.onb4Title}>
-            식약처 <Text style={styles.bandGreen}>병용금기 기준</Text>으로{"\n"}
-            점검하고, 확인이 필요한{"\n"}
-            조합은 <Text style={styles.accentGreen}>약사 확인</Text>을{"\n"}
-            권해드립니다.
+            <Text style={styles.bandGreen}>약사가 설계한 기준</Text>으로{"\n"}
+            점검하고, 필요한 순간에는{"\n"}
+            <Text style={styles.accentGreen}>지역 약사</Text>와 연결됩니다.
           </Text>
         </Reveal>
-        <Reveal delay={800} duration={500} style={styles.compactCard}>
-          <Reveal delay={2000} duration={450} kind="pop"><View style={styles.compactIcon}><ClipboardList size={20} color={colors.primaryBlue} /></View></Reveal>
-          <View style={styles.compactCopy}>
-            <Text style={styles.compactTitle}>복용 점검 결과</Text>
-            <Text style={styles.compactSub}>함께 복용 시 주의</Text>
-          </View>
-          <Reveal delay={3000} duration={400} kind="pop"><View style={styles.redTag}><Text style={styles.redTagText}>확인 필요 2건</Text></View></Reveal>
-        </Reveal>
+        <View style={styles.flow}>
+          <Reveal delay={800} duration={500} style={styles.compactCard}>
+            <View style={styles.compactIcon}><ClipboardList size={20} color={colors.primaryBlue} /></View>
+            <View style={styles.compactCopy}>
+              <Text style={styles.compactTitle}>복용 점검 결과</Text>
+              <Text style={styles.compactSub}>상호작용 · 중복 성분</Text>
+            </View>
+            <View style={styles.redTag}><Text style={styles.redTagText}>확인 필요 2건</Text></View>
+          </Reveal>
+          <Reveal delay={1350} duration={350} kind="line" style={styles.connector} />
+          <Reveal delay={1550} duration={450} style={styles.consentRow}>
+            <View style={styles.consentRing}>
+              <Reveal delay={2000} duration={450} kind="pop" style={styles.consentCheck}><Check size={14} strokeWidth={3} color={colors.white} /></Reveal>
+            </View>
+            <Text style={styles.consentText}>내 복용 정보 공유 동의</Text>
+          </Reveal>
+          <Reveal delay={2350} duration={350} kind="line" style={styles.connector} />
+          <Reveal delay={2600} duration={500} style={styles.pharmacyCard}>
+            <View style={styles.pharmacyIcon}><Plus size={22} strokeWidth={4} color={colors.successGreen} /></View>
+            <View style={styles.compactCopy}>
+              <Text style={styles.compactTitle}>봄뜰약국 · 이수진 약사</Text>
+              <Text style={styles.compactSub}>우리동네 지역 약국</Text>
+            </View>
+            <Reveal delay={3000} duration={400} kind="pop"><View style={styles.greenTag}><Text style={styles.greenTagText}>상담 연결</Text></View></Reveal>
+          </Reveal>
+          <Reveal delay={3300} duration={500}><Text style={styles.flowCaption}>복용 정보는 사용자 동의 후 공유됩니다.</Text></Reveal>
+        </View>
       </ScrollView>
       <NextButton onPress={onNext} />
     </View>
@@ -463,12 +494,16 @@ const styles = StyleSheet.create({
   exampleBarTrack: { marginTop: 10, height: 8, borderRadius: 4, backgroundColor: colors.canvasMuted, overflow: "hidden" },
   exampleBarFill: { height: 8, borderRadius: 4, backgroundColor: colors.primaryBlue },
   exampleDivider: { height: 1, backgroundColor: colors.canvasMuted, marginTop: spacing.md },
-  exampleRow: { height: 52, flexDirection: "row", alignItems: "center", gap: 12, marginTop: 4 },
+  exampleRows: { marginTop: 4 },
+  exampleRow: { height: 52, flexDirection: "row", alignItems: "center", gap: 12 },
   exampleIcon: { width: 34, height: 34, borderRadius: 10, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
   exampleRowLabel: { fontSize: fontSizes.body, fontWeight: "700", color: colors.primaryNavy },
   exampleRowRight: { marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: 6 },
   redDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.dangerRed },
-  exampleRowStatus: { fontSize: 18, fontWeight: "700", color: colors.dangerRed },
+  exampleRowStatus: { fontSize: 18, fontWeight: "700", color: colors.textSecondary },
+  statusDanger: { color: colors.dangerRed },
+  statusOk: { color: colors.successGreen },
+  exampleDividerTight: { height: 1, backgroundColor: colors.canvasMuted, marginTop: 4 },
   exampleFoot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 14 },
   exampleFootCount: { fontSize: 18, fontWeight: "800", color: colors.dangerRed },
   blueTag: { height: 30, paddingHorizontal: 12, borderRadius: 15, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
@@ -476,13 +511,24 @@ const styles = StyleSheet.create({
 
   // 6
   onb4Title: { fontSize: 27, lineHeight: 40, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.6 },
-  compactCard: { marginTop: spacing.lg, backgroundColor: colors.white, borderRadius: 16, paddingVertical: 14, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", gap: 12, ...shadows.card },
+  flow: { marginTop: spacing.lg },
+  compactCard: { backgroundColor: colors.white, borderRadius: 16, paddingVertical: 14, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", gap: 12, ...shadows.card },
   compactIcon: { width: 38, height: 38, borderRadius: 11, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
   compactCopy: { flex: 1 },
   compactTitle: { fontSize: 18, fontWeight: "700", color: colors.primaryNavy },
   compactSub: { marginTop: 1, fontSize: 18, fontWeight: "600", color: colors.textSecondary },
   redTag: { height: 26, paddingHorizontal: 10, borderRadius: 13, backgroundColor: colors.dangerSoft, alignItems: "center", justifyContent: "center" },
   redTagText: { fontSize: 18, fontWeight: "700", color: colors.dangerRed },
+  connector: { width: 2, height: 20, backgroundColor: colors.border, alignSelf: "center", marginVertical: 4 },
+  consentRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9 },
+  consentRing: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.canvasMuted },
+  consentCheck: { position: "absolute", top: 0, left: 0, width: 28, height: 28, borderRadius: 14, backgroundColor: colors.successGreen, alignItems: "center", justifyContent: "center" },
+  consentText: { fontSize: 18, fontWeight: "700", color: colors.primaryNavy },
+  pharmacyCard: { backgroundColor: colors.white, borderRadius: 16, paddingVertical: 14, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1.5, borderColor: colors.successSoft },
+  pharmacyIcon: { width: 44, height: 44, borderRadius: 13, backgroundColor: colors.successSoft, alignItems: "center", justifyContent: "center" },
+  greenTag: { height: 26, paddingHorizontal: 10, borderRadius: 13, backgroundColor: colors.successSoft, alignItems: "center", justifyContent: "center" },
+  greenTagText: { fontSize: 18, fontWeight: "700", color: colors.successGreen },
+  flowCaption: { marginTop: spacing.md, textAlign: "center", fontSize: 18, fontWeight: "600", color: colors.textSecondary },
 
   // 7
   ctaCenter: { flexGrow: 1, alignItems: "center", justifyContent: "center", paddingBottom: spacing.md },

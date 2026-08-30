@@ -47,6 +47,7 @@ export type QuickCheckResult = {
     /** 연령대·해당 항목 — 기록용, 분석에는 쓰지 않는다 */
     profile?: { age: string | null; conditions: string[] };
   };
-  findings: import("./interactions").Finding[];
+  /** 규칙(source "rule") + 식약처 DUR(source "dur") 결과 — quickCheckRules.QuickFinding[] */
+  findings: import("./quickCheckRules").QuickFinding[];
   created_at: string;
 };

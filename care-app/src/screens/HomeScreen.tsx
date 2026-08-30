@@ -4,7 +4,6 @@ import notifee from "@notifee/react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Bell, User, Clock, Pencil, Volume2, ChevronRight, AlertTriangle } from "lucide-react-native";
-import { Logo } from "../components/Logo";
 import { MedicineMark } from "../components/MedicineMark";
 import { supabase, Schedule, IntakeRecord } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
@@ -165,9 +164,8 @@ export function HomeScreen() {
       style={styles.scroll}
       contentContainerStyle={[styles.c, { paddingTop: spacing.md, paddingBottom: tabBarClearance + insets.bottom }]}
     >
-      {/* 브랜드 헤더 */}
+      {/* 상단 액션 줄 — 로고는 뺐다(PM 요청 2026-08-27) */}
       <View style={styles.brandRow}>
-        <Logo size={40} />
         <View style={{ flex: 1 }} />
         <View style={styles.iconBtn}><Bell size={22} color={colors.primaryBlue} /></View>
         <Pressable
