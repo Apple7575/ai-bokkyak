@@ -63,7 +63,10 @@ export function HomeScreen() {
   const [draftPending, setDraftPending] = useState(false);
   // 한 번에 하나만 — commit은 단순 insert라 동시에 두 번 돌면 결과 행이 중복된다.
   const draftInFlight = useRef(false);
+  // 자동 시도가 도는 중에 버튼을 누르면 그 시도의 결과를 사용자에게 알려야 한다(버튼이 먹통처럼 보이지 않게).
+  const alertOnFail = useRef(false);
   const retryDraft = useCallback(async (pid: string, manual = false) => {
+    if (manual) alertOnFail.current = true;
     if (draftInFlight.current) return;
     draftInFlight.current = true;
     try {
@@ -74,9 +77,10 @@ export function HomeScreen() {
       }
     } catch {
       setDraftPending(true);
-      if (manual) Alert.alert("점검 결과를 저장하지 못했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
+      if (alertOnFail.current) Alert.alert("점검 결과를 저장하지 못했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
     } finally {
       draftInFlight.current = false;
+      alertOnFail.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
