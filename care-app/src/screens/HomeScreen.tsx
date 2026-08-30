@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, Pressable, Image, Alert } from "react-native";
 import notifee from "@notifee/react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -61,7 +61,11 @@ export function HomeScreen() {
   // 성공하면 결과 전체를 보여 준다. 실패하면 배너로 알리고 "다시 시도" 버튼을 준다 —
   // 자동 재시도 실패는 조용히 넘기되(진입마다 Alert가 뜨면 성가시다), 수동 시도는 Alert로.
   const [draftPending, setDraftPending] = useState(false);
+  // 한 번에 하나만 — commit은 단순 insert라 동시에 두 번 돌면 결과 행이 중복된다.
+  const draftInFlight = useRef(false);
   const retryDraft = useCallback(async (pid: string, manual = false) => {
+    if (draftInFlight.current) return;
+    draftInFlight.current = true;
     try {
       const committed = await commitQuickCheckDraft(pid);
       setDraftPending(false);
@@ -71,6 +75,8 @@ export function HomeScreen() {
     } catch {
       setDraftPending(true);
       if (manual) Alert.alert("점검 결과를 저장하지 못했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
+    } finally {
+      draftInFlight.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
