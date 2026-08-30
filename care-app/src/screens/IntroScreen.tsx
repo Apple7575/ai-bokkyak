@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  AccessibilityInfo, Animated, BackHandler, Pressable, ScrollView, StyleSheet, Text, View,
-} from "react-native";
+  AccessibilityInfo, Animated, BackHandler, Pressable, ScrollView, StyleSheet, Text, View, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Check, ClipboardList, Leaf, Link2, Package, Pill } from "lucide-react-native";
@@ -90,6 +89,11 @@ export function IntroScreen() {
     clearAuto();
     try {
       await setOnboarded();
+    } catch {
+      // 온보딩 완료 표시는 다음 실행에 인트로를 다시 보일지만 정한다 — 진행은 막지 않되 알린다.
+      Alert.alert("설정을 저장하지 못했어요", "다음에 앱을 열면 소개 화면이 한 번 더 보일 수 있어요.");
+    }
+    try {
       await stopSpeaking();
       nav.reset({ index: routes.length - 1, routes });
     } finally {
@@ -338,8 +342,8 @@ const styles = StyleSheet.create({
   dots: { flexDirection: "row", alignItems: "center", gap: 6 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.border },
   dotOn: { width: 22, backgroundColor: colors.primaryBlue },
-  skipBtn: { width: 84, height: 48, alignItems: "flex-end", justifyContent: "center", paddingHorizontal: 12 },
-  skipText: { fontSize: 16, fontWeight: "600", color: colors.textSecondary },
+  skipBtn: { minWidth: 84, minHeight: minTouch, alignItems: "flex-end", justifyContent: "center", paddingHorizontal: 12 },
+  skipText: { fontSize: fontSizes.body, fontWeight: "600", color: colors.textSecondary },
 
   // 공통 서식
   accentBlue: { color: colors.primaryBlue },
@@ -348,7 +352,7 @@ const styles = StyleSheet.create({
   accentRed: { color: colors.dangerRed },
   bandGreen: { backgroundColor: colors.successSoft },
   bandOrange: { backgroundColor: colors.warningSoft },
-  tapHint: { position: "absolute", bottom: spacing.lg, alignSelf: "center", fontSize: 15, fontWeight: "600", color: colors.textSecondary },
+  tapHint: { position: "absolute", bottom: spacing.lg, alignSelf: "center", fontSize: fontSizes.body, fontWeight: "600", color: colors.textSecondary },
   pressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
 
   // 1
@@ -376,12 +380,12 @@ const styles = StyleSheet.create({
   tiles: { flexDirection: "row", marginTop: 30 },
   tile: { flex: 1, alignItems: "center", gap: 6 },
   tileIcon: { width: 56, height: 56, borderRadius: 18, alignItems: "center", justifyContent: "center" },
-  tileLabel: { fontSize: 14, fontWeight: "700", color: colors.textSecondary },
+  tileLabel: { fontSize: 18, fontWeight: "700", color: colors.textSecondary },
   joinLines: { flexDirection: "row", justifyContent: "space-evenly", height: 34, paddingHorizontal: spacing.xl },
   joinLine: { width: 1.5, height: "100%", backgroundColor: colors.border },
   pillRow: { alignItems: "center" },
   pill: { height: 44, paddingHorizontal: 17, borderRadius: 22, backgroundColor: colors.primarySoft, borderWidth: 1.5, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: 8 },
-  pillText: { fontSize: 16.5, fontWeight: "800", color: colors.primaryBlue, letterSpacing: -0.3 },
+  pillText: { fontSize: 18, fontWeight: "800", color: colors.primaryBlue, letterSpacing: -0.3 },
   onb1Body: { marginTop: 28, textAlign: "center", fontSize: fontSizes.emphasis, lineHeight: 33, fontWeight: "700", color: colors.text, letterSpacing: -0.5 },
   onb1BodyAccent: { color: colors.primaryBlue, fontWeight: "800" },
 
@@ -394,7 +398,7 @@ const styles = StyleSheet.create({
   onb3Big: { fontSize: 36, color: colors.primaryBlue, letterSpacing: -1.2 },
   exampleCard: { marginTop: 18, backgroundColor: colors.white, borderRadius: 18, paddingVertical: spacing.md, paddingHorizontal: 18, ...shadows.card },
   exampleHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  exampleHeadText: { fontSize: 15, fontWeight: "700", color: colors.textSecondary },
+  exampleHeadText: { fontSize: 18, fontWeight: "700", color: colors.textSecondary },
   checkDot: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.successGreen, alignItems: "center", justifyContent: "center" },
   exampleBarTrack: { marginTop: 10, height: 8, borderRadius: 4, backgroundColor: colors.canvasMuted, overflow: "hidden" },
   exampleBarFill: { height: 8, borderRadius: 4, backgroundColor: colors.primaryBlue },
@@ -404,21 +408,21 @@ const styles = StyleSheet.create({
   exampleRowLabel: { fontSize: fontSizes.body, fontWeight: "700", color: colors.primaryNavy },
   exampleRowRight: { marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: 6 },
   redDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.dangerRed },
-  exampleRowStatus: { fontSize: 15.5, fontWeight: "700", color: colors.dangerRed },
+  exampleRowStatus: { fontSize: 18, fontWeight: "700", color: colors.dangerRed },
   exampleFoot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 14 },
-  exampleFootCount: { fontSize: 17, fontWeight: "800", color: colors.dangerRed },
+  exampleFootCount: { fontSize: 18, fontWeight: "800", color: colors.dangerRed },
   blueTag: { height: 30, paddingHorizontal: 12, borderRadius: 15, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
-  blueTagText: { fontSize: 14, fontWeight: "700", color: colors.primaryBlue },
+  blueTagText: { fontSize: 18, fontWeight: "700", color: colors.primaryBlue },
 
   // 6
   onb4Title: { fontSize: 27, lineHeight: 40, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.6 },
   compactCard: { marginTop: spacing.lg, backgroundColor: colors.white, borderRadius: 16, paddingVertical: 14, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", gap: 12, ...shadows.card },
   compactIcon: { width: 38, height: 38, borderRadius: 11, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
   compactCopy: { flex: 1 },
-  compactTitle: { fontSize: 17, fontWeight: "700", color: colors.primaryNavy },
-  compactSub: { marginTop: 1, fontSize: 14, fontWeight: "600", color: colors.textSecondary },
+  compactTitle: { fontSize: 18, fontWeight: "700", color: colors.primaryNavy },
+  compactSub: { marginTop: 1, fontSize: 18, fontWeight: "600", color: colors.textSecondary },
   redTag: { height: 26, paddingHorizontal: 10, borderRadius: 13, backgroundColor: colors.dangerSoft, alignItems: "center", justifyContent: "center" },
-  redTagText: { fontSize: 14, fontWeight: "700", color: colors.dangerRed },
+  redTagText: { fontSize: 18, fontWeight: "700", color: colors.dangerRed },
 
   // 7
   ctaCenter: { flexGrow: 1, alignItems: "center", justifyContent: "center", paddingBottom: spacing.md },
@@ -427,10 +431,10 @@ const styles = StyleSheet.create({
   ctaTitle: { marginTop: 10, textAlign: "center", fontSize: 30, lineHeight: 43, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.9 },
   ctaSub: { marginTop: 12, textAlign: "center", fontSize: fontSizes.body, fontWeight: "600", color: colors.textSecondary, letterSpacing: -0.3 },
   checkList: { marginTop: 20, gap: 9, alignSelf: "stretch" },
-  checkRow: { height: 48, paddingHorizontal: 20, borderRadius: 24, backgroundColor: colors.white, borderWidth: 1.5, borderColor: colors.successSoft, flexDirection: "row", alignItems: "center", gap: 9 },
-  checkText: { fontSize: 17.5, fontWeight: "700", color: colors.primaryNavy, letterSpacing: -0.3 },
+  checkRow: { minHeight: minTouch, paddingHorizontal: 20, borderRadius: 24, backgroundColor: colors.white, borderWidth: 1.5, borderColor: colors.successSoft, flexDirection: "row", alignItems: "center", gap: 9 },
+  checkText: { fontSize: fontSizes.body, fontWeight: "700", color: colors.primaryNavy, letterSpacing: -0.3 },
   ctaPrimary: { height: 62, borderRadius: 31, backgroundColor: colors.primaryBlue, alignItems: "center", justifyContent: "center", ...shadows.floating },
   ctaPrimaryText: { color: colors.white, fontSize: 21, fontWeight: "800", letterSpacing: -0.3 },
-  ctaSecondary: { height: 50, marginTop: spacing.sm, alignItems: "center", justifyContent: "center" },
-  ctaSecondaryText: { color: colors.textSecondary, fontSize: 16.5, fontWeight: "600" },
+  ctaSecondary: { minHeight: minTouch, marginTop: spacing.sm, alignItems: "center", justifyContent: "center", borderRadius: radii.pill, backgroundColor: colors.primarySoft },
+  ctaSecondaryText: { color: colors.primaryNavy, fontSize: fontSizes.emphasis, fontWeight: "700" },
 });
