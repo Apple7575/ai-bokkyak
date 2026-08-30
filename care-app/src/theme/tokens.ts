@@ -8,22 +8,23 @@ export const colors = {
   cardBg: "#FFFFFF",
   border: "#D8E5F6",
   text: "#1F2937",
-  textSecondary: "#5B6B82",   // 흰 바탕 5.5:1, 연한 파랑 바탕에서도 4.9:1
-  successGreen: "#1F8A56",    // 흰 글씨 4.6:1
-  warningOrange: "#D97706",
-  dangerRed: "#D9463A",       // 흰 글씨 4.6:1
+  textSecondary: "#64748B",
+  successGreen: "#36B37E",
+  warningOrange: "#F5A623",
+  dangerRed: "#E25353",
   conditionPurple: "#8B5CF6",
   canvas: "#F4F7FB",
   canvasMuted: "#E8EEF7",
   surfaceRaised: "#FFFFFF",
   primarySoft: "#EBF2FF",
-  // 강조색(코랄 자리) — 파랑 팔레트에서는 진한 주황을 쓴다. 흰 글씨 4.5:1.
-  coral: "#C2410C",
-  coralSoft: "#FEF0E6",
-  sage: "#8FB4F7",
-  sageSoft: "#EAF1FE",
-  sunshine: "#D97706",
-  sunshineSoft: "#FEF3E2",
+  // 리디자인에서 생긴 보조 강조색 자리 — 옛 파랑 디자인에는 파랑 외 강조색이 없었으므로
+  // 전부 파랑 계열로 되돌린다. (coral/sage = 파랑, sunshine = 기존 warningOrange)
+  coral: "#2563EB",
+  coralSoft: "#EEF5FF",
+  sage: "#4F8EF7",
+  sageSoft: "#EEF5FF",
+  sunshine: "#F5A623",
+  sunshineSoft: "#FFF4DF",
   white: "#FFFFFF",
   overlay: "rgba(16,42,94,0.12)",
   overlayStrong: "rgba(16,42,94,0.28)",

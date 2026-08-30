@@ -373,8 +373,9 @@ const styles = StyleSheet.create({
   heroBadgeText: { color: colors.white, fontSize: 15, fontWeight: "700" },
   voiceBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
-    minHeight: 62, borderRadius: radii.pill, marginTop: spacing.lg,
-    backgroundColor: colors.coral, borderWidth: 0,
+    // 옛 디자인 그대로: 파란 히어로 위 반투명 흰 버튼
+    minHeight: 60, borderRadius: radii.button, marginTop: spacing.md,
+    backgroundColor: "rgba(255,255,255,0.22)", borderWidth: 1, borderColor: "rgba(255,255,255,0.45)",
   },
   voiceBtnText: { color: colors.white, fontSize: 20, fontWeight: "800" },
 
