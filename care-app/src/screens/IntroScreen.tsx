@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  AccessibilityInfo, Animated, BackHandler, Pressable, ScrollView, StyleSheet, Text, View, Alert } from "react-native";
+  AccessibilityInfo, Animated, BackHandler, Easing, Pressable, ScrollView, StyleSheet, Text, View, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Check, ClipboardList, Leaf, Link2, Package, Pill } from "lucide-react-native";
@@ -15,6 +15,45 @@ import { colors, fontSizes, minTouch, radii, shadows, spacing } from "../theme/t
 
 const GREETING = "만나서 반갑습니다. 큰 글씨와 친절한 음성으로 복약 관리를 도와드릴게요.";
 const FADE_MS = 220;
+
+// 움직임 줄이기 설정 — 모듈 단위로 한 번 읽어 Reveal이 공유한다(슬라이드마다 다시 묻지 않게).
+let reduceMotionGlobal = false;
+AccessibilityInfo.isReduceMotionEnabled().then((v) => { reduceMotionGlobal = v; }).catch(() => {});
+
+type RevealKind = "up" | "pop" | "fade" | "scale" | "line" | "bar";
+
+// 시안 V8의 요소별 등장 애니메이션(@keyframes bUp/bPop/bFade/bScale/bLine/bBar)을 그대로 옮긴 것.
+//  up   : 아래 16px에서 올라오며 나타남      pop  : 0.5배에서 1.12배로 튀었다가 제자리
+//  fade : 투명→불투명                        scale: 0.92배에서 커지며 나타남
+//  line : 세로로 그려짐(scaleY 0→1)         bar  : 진행 막대(width 5%→100%, 네이티브 드라이버 불가)
+// 지연·길이는 ms. 슬라이드가 바뀌면 컴포넌트가 새로 마운트되므로 매번 처음부터 재생된다.
+function Reveal({ delay = 0, duration = 500, kind = "up", style, children }: {
+  delay?: number; duration?: number; kind?: RevealKind; style?: any; children?: React.ReactNode;
+}) {
+  const t = useRef(new Animated.Value(reduceMotionGlobal ? 1 : 0)).current;
+  useEffect(() => {
+    if (reduceMotionGlobal) { t.setValue(1); return; }
+    const anim = Animated.timing(t, {
+      toValue: 1, duration, delay,
+      easing: kind === "pop" ? Easing.out(Easing.back(1.6)) : Easing.out(Easing.ease),
+      useNativeDriver: kind !== "bar",
+    });
+    anim.start();
+    return () => anim.stop();
+  }, [t, delay, duration, kind]);
+
+  if (kind === "bar") {
+    return <Animated.View style={[style, { width: t.interpolate({ inputRange: [0, 1], outputRange: ["5%", "100%"] }) }]}>{children}</Animated.View>;
+  }
+  const opacity = kind === "line" ? 1 : t.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0, 1, 1] });
+  const transform =
+    kind === "up" ? [{ translateY: t.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }]
+    : kind === "pop" ? [{ scale: t.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }) }]
+    : kind === "scale" ? [{ scale: t.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] }) }]
+    : kind === "line" ? [{ scaleY: t }]
+    : [];
+  return <Animated.View style={[style, { opacity, transform }]}>{children}</Animated.View>;
+}
 
 export function IntroScreen() {
   const nav = useNavigation<any>();
@@ -142,12 +181,14 @@ export function IntroScreen() {
 function Brand1({ onTap }: { onTap: () => void }) {
   return (
     <Pressable onPress={onTap} style={styles.brand1} accessibilityRole="button" accessibilityLabel="탭하여 계속">
-      <Text style={styles.brand1Big}>진짜 건강은</Text>
-      <Text style={styles.brand1Sub}>더 많이 먹는 것이 아니라,</Text>
-      <Text style={styles.brand1Line}>
-        <Text style={styles.bandGreen}>제대로 먹는 것</Text>에서{"\n"}시작됩니다.
-      </Text>
-      <Text style={styles.tapHint}>탭하여 계속</Text>
+      <Reveal delay={150} duration={600}><Text style={styles.brand1Big}>진짜 건강은</Text></Reveal>
+      <Reveal delay={1000} duration={600}><Text style={styles.brand1Sub}>더 많이 먹는 것이 아니라,</Text></Reveal>
+      <Reveal delay={1800} duration={650}>
+        <Text style={styles.brand1Line}>
+          <Text style={styles.bandGreen}>제대로 먹는 것</Text>에서{"\n"}시작됩니다.
+        </Text>
+      </Reveal>
+      <Reveal delay={2600} kind="fade" style={styles.tapHintWrap}><Text style={styles.tapHint}>탭하여 계속</Text></Reveal>
     </Pressable>
   );
 }
@@ -156,10 +197,10 @@ function Brand1({ onTap }: { onTap: () => void }) {
 function Brand2({ onTap }: { onTap: () => void }) {
   return (
     <Pressable onPress={onTap} style={styles.brand2} accessibilityRole="button" accessibilityLabel="탭하여 계속">
-      <View style={styles.logoRing}><Logo size={104} /></View>
-      <Text style={styles.brand2Title}>나에게 필요한 것만,{"\n"}<Text style={styles.accentBlue}>올바르게</Text></Text>
-      <Text style={styles.brand2Word}>모두의 복약</Text>
-      <Text style={styles.tapHint}>탭하여 계속</Text>
+      <Reveal delay={150} duration={550} kind="scale"><View style={styles.logoRing}><Logo size={104} /></View></Reveal>
+      <Reveal delay={550} duration={600}><Text style={styles.brand2Title}>나에게 필요한 것만,{"\n"}<Text style={styles.accentBlue}>올바르게</Text></Text></Reveal>
+      <Reveal delay={1100} duration={600}><Text style={styles.brand2Word}>모두의 복약</Text></Reveal>
+      <Reveal delay={1800} kind="fade" style={styles.tapHintWrap}><Text style={styles.tapHint}>탭하여 계속</Text></Reveal>
     </Pressable>
   );
 }
@@ -175,32 +216,38 @@ function Onboarding1({ onNext }: { onNext: () => void }) {
   return (
     <View style={styles.onb}>
       <ScrollView contentContainerStyle={styles.onbCenter} showsVerticalScrollIndicator={false}>
-        <Text style={styles.onb1Title}>
-          <Text style={styles.accentBlue}>영양제부터 처방약까지,</Text>{"\n"}
-          몸에서는 <Text style={styles.bandGreen}>하나의 복용 조합</Text>입니다.
-        </Text>
+        <Reveal delay={50}>
+          <Text style={styles.onb1Title}>
+            <Text style={styles.accentBlue}>영양제부터 처방약까지,</Text>{"\n"}
+            몸에서는 <Text style={styles.bandGreen}>하나의 복용 조합</Text>입니다.
+          </Text>
+        </Reveal>
         <View style={styles.tiles}>
-          {TILES.map(({ Icon, label, bg, color }) => (
-            <View key={label} style={styles.tile}>
+          {TILES.map(({ Icon, label, bg, color }, i) => (
+            <Reveal key={label} delay={300 + i * 200} duration={400} style={styles.tile}>
               <View style={[styles.tileIcon, { backgroundColor: bg }]}><Icon size={30} strokeWidth={2.2} color={color} /></View>
               <Text style={styles.tileLabel}>{label}</Text>
-            </View>
+            </Reveal>
           ))}
         </View>
-        <View style={styles.joinLines}>
+        <Reveal delay={1000} duration={450} kind="fade" style={styles.joinLines}>
           <View style={styles.joinLine} /><View style={styles.joinLine} /><View style={styles.joinLine} />
-        </View>
+        </Reveal>
         <View style={styles.pillRow}>
-          <View style={styles.pill}>
-            <Link2 size={18} color={colors.primaryBlue} />
-            <Text style={styles.pillText}>내 몸속 하나의 복용 조합</Text>
-          </View>
+          <Reveal delay={1300} duration={450} kind="pop">
+            <View style={styles.pill}>
+              <Link2 size={18} color={colors.primaryBlue} />
+              <Text style={styles.pillText}>내 몸속 하나의 복용 조합</Text>
+            </View>
+          </Reveal>
         </View>
-        <Text style={styles.onb1Body}>
-          효과 있는 복용은 결국{"\n"}
-          <Text style={styles.onb1BodyAccent}>나에게 필요한 것만 올바르게</Text>{"\n"}
-          먹는 것에서 시작됩니다.
-        </Text>
+        <Reveal delay={1900} duration={550}>
+          <Text style={styles.onb1Body}>
+            효과 있는 복용은 결국{"\n"}
+            <Text style={styles.onb1BodyAccent}>나에게 필요한 것만 올바르게</Text>{"\n"}
+            먹는 것에서 시작됩니다.
+          </Text>
+        </Reveal>
       </ScrollView>
       <NextButton onPress={onNext} />
     </View>
@@ -212,13 +259,15 @@ function Onboarding2({ onNext }: { onNext: () => void }) {
   return (
     <View style={styles.onb}>
       <ScrollView contentContainerStyle={styles.onbCenterLeft} showsVerticalScrollIndicator={false}>
-        <Text style={styles.onb2Lead}>건강을 위해 챙겨 먹는 약과 영양제.</Text>
+        <Reveal delay={150} duration={550}><Text style={styles.onb2Lead}>건강을 위해 챙겨 먹는 약과 영양제.</Text></Reveal>
+        <Reveal delay={550} duration={600}>
         <Text style={styles.onb2Title}>
           <Text style={styles.bandOrange}>불필요한 영양제</Text>는{"\n"}
           <Text style={styles.accentOrange}>낭비</Text>가 되고,{"\n"}
           잘못된 복용 조합은{"\n"}
           <Text style={styles.accentRed}>건강을 해칠 수 있습니다.</Text>
         </Text>
+        </Reveal>
       </ScrollView>
       <NextButton onPress={onNext} />
     </View>
@@ -230,34 +279,36 @@ function Onboarding3({ onNext }: { onNext: () => void }) {
   return (
     <View style={styles.onb}>
       <ScrollView contentContainerStyle={styles.onbTop} showsVerticalScrollIndicator={false}>
-        <Text style={styles.onb3Title}>
-          그래서,{"\n"}
-          <Text style={styles.onb3Big}>1분 복용 점검</Text>으로{"\n"}
-          불필요한 소비와{"\n"}
-          위험한 복용 조합을{"\n"}
-          한 번에 확인하세요.
-        </Text>
-        <View style={styles.exampleCard}>
+        <Reveal delay={50}>
+          <Text style={styles.onb3Title}>
+            그래서,{"\n"}
+            <Text style={styles.onb3Big}>1분 복용 점검</Text>으로{"\n"}
+            불필요한 소비와{"\n"}
+            위험한 복용 조합을{"\n"}
+            한 번에 확인하세요.
+          </Text>
+        </Reveal>
+        <Reveal delay={900} duration={550} style={styles.exampleCard}>
           <View style={styles.exampleHead}>
             <Text style={styles.exampleHeadText}>내 복용 정보 분석</Text>
-            <View style={styles.checkDot}><Check size={13} strokeWidth={3} color={colors.white} /></View>
+            <Reveal delay={2100} duration={400} kind="pop"><View style={styles.checkDot}><Check size={13} strokeWidth={3} color={colors.white} /></View></Reveal>
           </View>
-          <View style={styles.exampleBarTrack}><View style={styles.exampleBarFill} /></View>
+          <View style={styles.exampleBarTrack}><Reveal delay={1000} duration={1050} kind="bar" style={styles.exampleBarFill} /></View>
           <View style={styles.exampleDivider} />
-          <View style={styles.exampleRow}>
+          <Reveal delay={2250} duration={450} style={styles.exampleRow}>
             <View style={styles.exampleIcon}><Link2 size={18} color={colors.primaryBlue} /></View>
             <Text style={styles.exampleRowLabel}>함께 복용 시 주의</Text>
             <View style={styles.exampleRowRight}>
               <View style={styles.redDot} />
               <Text style={styles.exampleRowStatus}>확인 필요</Text>
             </View>
-          </View>
+          </Reveal>
           <View style={styles.exampleDivider} />
-          <View style={styles.exampleFoot}>
+          <Reveal delay={3400} duration={450} style={styles.exampleFoot}>
             <Text style={styles.exampleFootCount}>확인 필요 2건</Text>
             <View style={styles.blueTag}><Text style={styles.blueTagText}>약사 확인 권장</Text></View>
-          </View>
-        </View>
+          </Reveal>
+        </Reveal>
       </ScrollView>
       <NextButton onPress={onNext} />
     </View>
@@ -269,20 +320,22 @@ function Onboarding4({ onNext }: { onNext: () => void }) {
   return (
     <View style={styles.onb}>
       <ScrollView contentContainerStyle={styles.onbTop} showsVerticalScrollIndicator={false}>
-        <Text style={styles.onb4Title}>
-          식약처 <Text style={styles.bandGreen}>병용금기 기준</Text>으로{"\n"}
-          점검하고, 확인이 필요한{"\n"}
-          조합은 <Text style={styles.accentGreen}>약사 확인</Text>을{"\n"}
-          권해드립니다.
-        </Text>
-        <View style={styles.compactCard}>
-          <View style={styles.compactIcon}><ClipboardList size={20} color={colors.primaryBlue} /></View>
+        <Reveal delay={50}>
+          <Text style={styles.onb4Title}>
+            식약처 <Text style={styles.bandGreen}>병용금기 기준</Text>으로{"\n"}
+            점검하고, 확인이 필요한{"\n"}
+            조합은 <Text style={styles.accentGreen}>약사 확인</Text>을{"\n"}
+            권해드립니다.
+          </Text>
+        </Reveal>
+        <Reveal delay={800} duration={500} style={styles.compactCard}>
+          <Reveal delay={2000} duration={450} kind="pop"><View style={styles.compactIcon}><ClipboardList size={20} color={colors.primaryBlue} /></View></Reveal>
           <View style={styles.compactCopy}>
             <Text style={styles.compactTitle}>복용 점검 결과</Text>
             <Text style={styles.compactSub}>함께 복용 시 주의</Text>
           </View>
-          <View style={styles.redTag}><Text style={styles.redTagText}>확인 필요 2건</Text></View>
-        </View>
+          <Reveal delay={3000} duration={400} kind="pop"><View style={styles.redTag}><Text style={styles.redTagText}>확인 필요 2건</Text></View></Reveal>
+        </Reveal>
       </ScrollView>
       <NextButton onPress={onNext} />
     </View>
@@ -296,29 +349,35 @@ function Cta({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: (
   return (
     <View style={styles.onb}>
       <ScrollView contentContainerStyle={styles.ctaCenter} showsVerticalScrollIndicator={false}>
-        <View style={styles.logoRingSmall}><Logo size={56} /></View>
-        <Text style={styles.ctaLead}>불필요한 소비를 줄이고,</Text>
-        <Text style={styles.ctaTitle}>
-          <Text style={styles.bandGreen}>건강해지는 복용</Text>의{"\n"}첫걸음, 지금 시작해보세요.
-        </Text>
-        <Text style={styles.ctaSub}>1분이면 충분합니다.</Text>
+        <Reveal delay={150} duration={550} kind="scale"><View style={styles.logoRingSmall}><Logo size={56} /></View></Reveal>
+        <Reveal delay={750} duration={600}>
+          <Text style={styles.ctaLead}>불필요한 소비를 줄이고,</Text>
+          <Text style={styles.ctaTitle}>
+            <Text style={styles.bandGreen}>건강해지는 복용</Text>의{"\n"}첫걸음, 지금 시작해보세요.
+          </Text>
+        </Reveal>
+        <Reveal delay={1000} duration={550}><Text style={styles.ctaSub}>1분이면 충분합니다.</Text></Reveal>
         <View style={styles.checkList}>
-          {CHECKS.map((t) => (
-            <View key={t} style={styles.checkRow}>
+          {CHECKS.map((t, i) => (
+            <Reveal key={t} delay={1300 + i * 200} duration={500} style={styles.checkRow}>
               <View style={styles.checkDot}><Check size={13} strokeWidth={3} color={colors.white} /></View>
               <Text style={styles.checkText}>{t}</Text>
-            </View>
+            </Reveal>
           ))}
         </View>
       </ScrollView>
-      <Pressable onPress={onPrimary} accessibilityRole="button" accessibilityLabel="내 복용 1분 점검하기"
-        style={({ pressed }) => [styles.ctaPrimary, pressed && styles.pressed]}>
-        <Text style={styles.ctaPrimaryText}>내 복용 1분 점검하기</Text>
-      </Pressable>
-      <Pressable onPress={onSecondary} accessibilityRole="button" accessibilityLabel="복용 알람부터 시작하기"
-        style={({ pressed }) => [styles.ctaSecondary, pressed && { opacity: 0.7 }]}>
-        <Text style={styles.ctaSecondaryText}>복용 알람부터 시작하기</Text>
-      </Pressable>
+      <Reveal delay={1600} duration={550}>
+        <Pressable onPress={onPrimary} accessibilityRole="button" accessibilityLabel="내 복용 1분 점검하기"
+          style={({ pressed }) => [styles.ctaPrimary, pressed && styles.pressed]}>
+          <Text style={styles.ctaPrimaryText}>내 복용 1분 점검하기</Text>
+        </Pressable>
+      </Reveal>
+      <Reveal delay={1750} duration={550}>
+        <Pressable onPress={onSecondary} accessibilityRole="button" accessibilityLabel="복용 알람부터 시작하기"
+          style={({ pressed }) => [styles.ctaSecondary, pressed && { opacity: 0.7 }]}>
+          <Text style={styles.ctaSecondaryText}>복용 알람부터 시작하기</Text>
+        </Pressable>
+      </Reveal>
     </View>
   );
 }
@@ -352,7 +411,8 @@ const styles = StyleSheet.create({
   accentRed: { color: colors.dangerRed },
   bandGreen: { backgroundColor: colors.successSoft },
   bandOrange: { backgroundColor: colors.warningSoft },
-  tapHint: { position: "absolute", bottom: spacing.lg, alignSelf: "center", fontSize: fontSizes.body, fontWeight: "600", color: colors.textSecondary },
+  tapHintWrap: { position: "absolute", bottom: spacing.lg, alignSelf: "center" },
+  tapHint: { fontSize: fontSizes.body, fontWeight: "600", color: colors.textSecondary },
   pressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
 
   // 1
