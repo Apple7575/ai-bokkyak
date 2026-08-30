@@ -164,7 +164,16 @@ export function QuickCheckResultScreen() {
 
         {/* 제품명 대조를 못 한 경우 — 규칙 결과만으로 넘어왔다 */}
         {state.phase === "ok" && state.durUnavailable ? (
-          <Text style={styles.note}>인터넷 연결 문제로 제품명 자료 대조는 나중에 다시 시도해요.</Text>
+          <View style={styles.durNote}>
+            <Text style={styles.note}>
+              {unlocked
+                ? "인터넷 연결 문제로 제품명 자료 대조는 하지 못했어요. 약장에 등록하면 '함께 드실 때 주의'에서 다시 확인할 수 있어요."
+                : "인터넷 연결 문제로 제품명 자료 대조는 하지 못했어요. 연결을 확인하고 다시 대조해 보세요."}
+            </Text>
+            {!unlocked ? (
+              <BigButton label="제품명 다시 대조하기" variant="secondary" onPress={() => nav.replace("QuickCheckAnalyzing")} />
+            ) : null}
+          </View>
         ) : null}
 
         {/* 자료에서 못 찾은 제품명 — 성분을 알 수 없어 점검에서 빠진다 */}
@@ -323,6 +332,7 @@ const styles = StyleSheet.create({
   section: { fontSize: 21, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.4, marginTop: spacing.sm },
   divider: { height: 1, backgroundColor: colors.canvasMuted, marginVertical: spacing.sm },
   muted: { color: colors.textSecondary },
+  durNote: { gap: 4 },
   note: { fontSize: fontSizes.body, lineHeight: 26, color: colors.textSecondary },
 
   summary: { backgroundColor: colors.cardBg, borderRadius: radii.card, padding: spacing.md, ...shadows.card },

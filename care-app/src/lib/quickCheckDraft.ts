@@ -51,6 +51,7 @@ export async function commitQuickCheckDraft(patientId: string): Promise<QuickChe
     patient_id: patientId,
     // profile(연령대·해당 항목)은 기록용 — 분석에는 쓰지 않는다(quickCheck.ts 참고).
     items: {
+      durUnavailable: draft.durUnavailable === true,   // 제품명 대조를 못 한 채 저장된 결과인지
       supplements: draft.supplements, medicines: draft.medicines, names: checkItems(draft),
       unmatched: draft.unmatched, profile: draft.profile,
     },
