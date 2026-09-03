@@ -4,9 +4,9 @@ describe("INTRO_SLIDES", () => {
   it("슬라이드는 7장", () => {
     expect(INTRO_SLIDES).toHaveLength(7);
   });
-  it("앞 두 장은 브랜드 슬라이드이며 자동으로 넘어간다 (3800ms, 2600ms)", () => {
-    expect(INTRO_SLIDES[0]).toMatchObject({ kind: "brand", autoAdvanceMs: 3800, showBar: false });
-    expect(INTRO_SLIDES[1]).toMatchObject({ kind: "brand", autoAdvanceMs: 2600, showBar: false });
+  it("앞 두 장은 브랜드 슬라이드이며 자동으로 넘어가지 않는다 (탭 전용 — 피드백 2026-09-03)", () => {
+    expect(INTRO_SLIDES[0]).toMatchObject({ kind: "brand", autoAdvanceMs: null, showBar: false });
+    expect(INTRO_SLIDES[1]).toMatchObject({ kind: "brand", autoAdvanceMs: null, showBar: false });
   });
   it("3~6번은 온보딩 — 자동 진행 없음, 상단 바 표시", () => {
     for (const i of [2, 3, 4, 5]) {

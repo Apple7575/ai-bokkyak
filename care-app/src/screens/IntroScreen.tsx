@@ -7,13 +7,11 @@ import { Check, ClipboardList, Gauge, Info, Layers, Leaf, Link2, Package, Pill, 
 import { Logo } from "../components/Logo";
 import { INTRO_SLIDES, SKIP_TARGET_INDEX, dotState, nextIndex, prevIndex } from "../lib/introSlides";
 import { setOnboarded } from "../lib/storage";
-import { speak, stopSpeaking } from "../lib/tts";
 import { colors, fontSizes, minTouch, radii, shadows, spacing } from "../theme/tokens";
 
 // 인트로 — 시안 V8 화면 1~7 (브랜드 2장 → 온보딩 4장 → 시작 CTA)을 한 화면에서 넘긴다.
 // 옛 Splash + Onboarding 화면을 대체한다. 슬라이드 순서·자동 진행 시간은 lib/introSlides.ts.
 
-const GREETING = "만나서 반갑습니다. 큰 글씨와 친절한 음성으로 복약 관리를 도와드릴게요.";
 const FADE_MS = 220;
 
 // 움직임 줄이기 설정 — 모듈 단위로 한 번 읽어 Reveal이 공유한다(슬라이드마다 다시 묻지 않게).
@@ -65,12 +63,7 @@ export function IntroScreen() {
   const autoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const leaving = useRef(false);
 
-  // 인사 TTS — 느린 네트워크에서 화면 이탈 후 도착하면 다음 화면 위에서 재생되므로 취소 플래그로 가드.
-  useEffect(() => {
-    let cancelled = false;
-    speak(GREETING).then((ok) => { if (ok && cancelled) void stopSpeaking(); });
-    return () => { cancelled = true; void stopSpeaking(); };
-  }, []);
+  // 인사 TTS는 제거했다 (피드백 2026-09-03: 음성과 화면 문구가 달라 혼동을 준다).
 
   useEffect(() => {
     let alive = true;
@@ -133,7 +126,6 @@ export function IntroScreen() {
       Alert.alert("설정을 저장하지 못했어요", "다음에 앱을 열면 소개 화면이 한 번 더 보일 수 있어요.");
     }
     try {
-      await stopSpeaking();
       nav.reset({ index: routes.length - 1, routes });
     } finally {
       leaving.current = false;
@@ -178,15 +170,28 @@ export function IntroScreen() {
 }
 
 // ── 1. 브랜드 인트로 ────────────────────────────────────────────────────────
+// 형광펜 밑줄 — 글자 뒤 전체를 칠하지 않고 아래쪽에만 밴드를 깐다 (피드백 2026-09-03).
+// RN의 중첩 Text 배경은 줄 전체 높이를 칠하므로, 구절을 View로 감싸고 밴드를 절대배치한다.
+function HL({ band, children }: { band: string; children: React.ReactNode }) {
+  return (
+    <View style={styles.hlWrap}>
+      <View style={[styles.hlBand, { backgroundColor: band }]} />
+      {children}
+    </View>
+  );
+}
+
 function Brand1({ onTap }: { onTap: () => void }) {
   return (
     <Pressable onPress={onTap} style={styles.brand1} accessibilityRole="button" accessibilityLabel="탭하여 계속">
       <Reveal delay={150} duration={600}><Text style={styles.brand1Big}>진짜 건강은</Text></Reveal>
       <Reveal delay={1000} duration={600}><Text style={styles.brand1Sub}>더 많이 먹는 것이 아니라,</Text></Reveal>
       <Reveal delay={1800} duration={650}>
-        <Text style={styles.brand1Line}>
-          <Text style={styles.bandGreen}>제대로 먹는 것</Text>에서{"\n"}시작됩니다.
-        </Text>
+        <View style={[styles.hlRow, styles.brand1LineTop]}>
+          <HL band={colors.successSoft}><Text style={styles.brand1Line}>제대로 먹는 것</Text></HL>
+          <Text style={styles.brand1Line}>에서</Text>
+        </View>
+        <Text style={styles.brand1Line}>시작됩니다.</Text>
       </Reveal>
       <Reveal delay={2600} kind="fade" style={styles.tapHintWrap}><Text style={styles.tapHint}>탭하여 계속</Text></Reveal>
     </Pressable>
@@ -218,9 +223,13 @@ function Onboarding1({ onNext }: { onNext: () => void }) {
       <ScrollView contentContainerStyle={styles.onbCenter} showsVerticalScrollIndicator={false}>
         <Reveal delay={50}>
           <Text style={styles.onb1Title}>
-            <Text style={styles.accentBlue}>영양제부터 처방약까지,</Text>{"\n"}
-            몸에서는 <Text style={styles.bandGreen}>하나의 복용 조합</Text>입니다.
+            <Text style={styles.accentBlue}>영양제부터 처방약까지,</Text>
           </Text>
+          <View style={styles.hlRow}>
+            <Text style={[styles.onb1Title, styles.noTop]}>몸에서는 </Text>
+            <HL band={colors.successSoft}><Text style={[styles.onb1Title, styles.noTop]}>하나의 복용 조합</Text></HL>
+            <Text style={[styles.onb1Title, styles.noTop]}>입니다.</Text>
+          </View>
         </Reveal>
         <View style={styles.tiles}>
           {TILES.map(({ Icon, label, bg, color }, i) => (
@@ -261,8 +270,11 @@ function Onboarding2({ onNext }: { onNext: () => void }) {
       <ScrollView contentContainerStyle={styles.onbCenterLeft} showsVerticalScrollIndicator={false}>
         <Reveal delay={150} duration={550}><Text style={styles.onb2Lead}>건강을 위해 챙겨 먹는 약과 영양제.</Text></Reveal>
         <Reveal delay={550} duration={600}>
-        <Text style={styles.onb2Title}>
-          <Text style={styles.bandOrange}>불필요한 영양제</Text>는{"\n"}
+        <View style={[styles.hlRow, styles.onb2TitleTop]}>
+          <HL band={colors.warningSoft}><Text style={[styles.onb2Title, styles.noTop]}>불필요한 영양제</Text></HL>
+          <Text style={[styles.onb2Title, styles.noTop]}>는</Text>
+        </View>
+        <Text style={[styles.onb2Title, styles.noTop]}>
           <Text style={styles.accentOrange}>낭비</Text>가 되고,{"\n"}
           잘못된 복용 조합은{"\n"}
           <Text style={styles.accentRed}>건강을 해칠 수 있습니다.</Text>
@@ -334,8 +346,11 @@ function Onboarding4({ onNext }: { onNext: () => void }) {
     <View style={styles.onb}>
       <ScrollView contentContainerStyle={styles.onbTop} showsVerticalScrollIndicator={false}>
         <Reveal delay={100} duration={550}>
+          <View style={styles.hlRow}>
+            <HL band={colors.successSoft}><Text style={styles.onb4Title}>약사가 설계한 기준</Text></HL>
+            <Text style={styles.onb4Title}>으로</Text>
+          </View>
           <Text style={styles.onb4Title}>
-            <Text style={styles.bandGreen}>약사가 설계한 기준</Text>으로{"\n"}
             점검하고, 필요한 순간에는{"\n"}
             <Text style={styles.accentGreen}>지역 약사</Text>와 연결됩니다.
           </Text>
@@ -380,12 +395,16 @@ function Cta({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: (
   return (
     <View style={styles.onb}>
       <ScrollView contentContainerStyle={styles.ctaCenter} showsVerticalScrollIndicator={false}>
-        <Reveal delay={150} duration={550} kind="scale"><View style={styles.logoRingSmall}><Logo size={56} /></View></Reveal>
+        <Reveal delay={150} duration={550} kind="scale"><View style={styles.logoRingSmall}><Logo size={84} /></View></Reveal>
         <Reveal delay={750} duration={600}>
-          <Text style={styles.ctaLead}>불필요한 소비를 줄이고,</Text>
-          <Text style={styles.ctaTitle}>
-            <Text style={styles.bandGreen}>건강해지는 복용</Text>의{"\n"}첫걸음, 지금 시작해보세요.
-          </Text>
+          <View style={[styles.hlRowCenter, styles.ctaLeadTop]}>
+            <HL band={colors.warningSoft}><Text style={styles.ctaLead}>불필요한 소비를 줄이고,</Text></HL>
+          </View>
+          <View style={[styles.hlRowCenter, styles.ctaTitleTop]}>
+            <HL band={colors.successSoft}><Text style={[styles.ctaTitle, styles.noTop]}>건강해지는 복용</Text></HL>
+            <Text style={[styles.ctaTitle, styles.noTop]}>의</Text>
+          </View>
+          <Text style={[styles.ctaTitle, styles.noTop]}>첫걸음, 지금 시작해보세요.</Text>
         </Reveal>
         <Reveal delay={1000} duration={550}><Text style={styles.ctaSub}>1분이면 충분합니다.</Text></Reveal>
         <View style={styles.checkList}>
@@ -440,8 +459,12 @@ const styles = StyleSheet.create({
   accentGreen: { color: colors.successGreen },
   accentOrange: { color: colors.warningOrange },
   accentRed: { color: colors.dangerRed },
-  bandGreen: { backgroundColor: colors.successSoft },
-  bandOrange: { backgroundColor: colors.warningSoft },
+  // 형광펜 밑줄 밴드 — 줄 높이의 아래 1/3만 칠한다
+  hlWrap: { position: "relative", alignSelf: "flex-start" },
+  hlBand: { position: "absolute", left: -3, right: -3, bottom: "12%", height: "34%", borderRadius: 4 },
+  hlRow: { flexDirection: "row", alignItems: "flex-end", flexWrap: "wrap" },
+  hlRowCenter: { flexDirection: "row", alignItems: "flex-end", flexWrap: "wrap", justifyContent: "center" },
+  noTop: { marginTop: 0 },
   tapHintWrap: { position: "absolute", bottom: spacing.lg, alignSelf: "center" },
   tapHint: { fontSize: fontSizes.body, fontWeight: "600", color: colors.textSecondary },
   pressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
@@ -450,7 +473,8 @@ const styles = StyleSheet.create({
   brand1: { flex: 1, justifyContent: "center", paddingHorizontal: spacing.xl, paddingBottom: 48 },
   brand1Big: { fontSize: fontSizes.hero, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -1 },
   brand1Sub: { marginTop: spacing.md, fontSize: fontSizes.title, fontWeight: "500", color: colors.textSecondary, letterSpacing: -0.5 },
-  brand1Line: { marginTop: 14, fontSize: 34, lineHeight: 48, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -1 },
+  brand1LineTop: { marginTop: 14 },
+  brand1Line: { fontSize: 34, lineHeight: 48, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -1 },
 
   // 2
   brand2: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.xl, paddingBottom: 56 },
@@ -482,7 +506,8 @@ const styles = StyleSheet.create({
 
   // 4
   onb2Lead: { fontSize: fontSizes.emphasis, fontWeight: "600", color: colors.textSecondary, letterSpacing: -0.5 },
-  onb2Title: { marginTop: spacing.md, fontSize: 28, lineHeight: 42, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.8 },
+  onb2TitleTop: { marginTop: spacing.md },
+  onb2Title: { fontSize: 28, lineHeight: 42, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.8 },
 
   // 5
   onb3Title: { fontSize: 25, lineHeight: 36, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.6 },
@@ -532,8 +557,10 @@ const styles = StyleSheet.create({
 
   // 7
   ctaCenter: { flexGrow: 1, alignItems: "center", justifyContent: "center", paddingBottom: spacing.md },
-  logoRingSmall: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center", overflow: "hidden" },
-  ctaLead: { marginTop: spacing.lg, textAlign: "center", fontSize: 20, fontWeight: "600", color: colors.textSecondary, letterSpacing: -0.4 },
+  logoRingSmall: { width: 96, height: 96, borderRadius: 48, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  ctaLeadTop: { marginTop: spacing.lg },
+  ctaTitleTop: { marginTop: 10 },
+  ctaLead: { textAlign: "center", fontSize: 20, fontWeight: "700", color: colors.text, letterSpacing: -0.4 },
   ctaTitle: { marginTop: 10, textAlign: "center", fontSize: 30, lineHeight: 43, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.9 },
   ctaSub: { marginTop: 12, textAlign: "center", fontSize: fontSizes.body, fontWeight: "600", color: colors.textSecondary, letterSpacing: -0.3 },
   checkList: { marginTop: 20, gap: 9, alignSelf: "stretch" },

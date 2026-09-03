@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, TextInput, StyleSheet, Alert, ScrollView, Pressable } from "react-native";
+import { View, Text, TextInput, StyleSheet, Alert, ScrollView, Pressable, Keyboard } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { User, Eye, MessageCircle, ClipboardCheck } from "lucide-react-native";
@@ -28,6 +28,9 @@ export function RoleSelectScreen() {
   const [draftState, setDraftState] = useState<"none" | "unfinished" | "ready">("none");
   const hasDraft = draftState === "ready";
   const kakaoAutoStarted = useRef<number | null>(null);
+  // 생년월일 자동 이동 (피드백 2026-09-03): 년 4자리를 채우면 월로, 월이 확정되면 일로.
+  const birthMRef = useRef<TextInput>(null);
+  const birthDRef = useRef<TextInput>(null);
   const [gender, setGender] = useState<"남" | "여" | null>(null);
   const [saving, setSaving] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
@@ -234,23 +237,39 @@ export function RoleSelectScreen() {
           <TextInput
             style={[styles.input, styles.birthInput, { flex: 1.5 }, birthMsg && styles.inputBad]}
             value={birthY}
-            onChangeText={(t) => setBirthY(sanitizeBirthPart(t, "year", birthY))}
+            onChangeText={(t) => {
+              const v = sanitizeBirthPart(t, "year", birthY);
+              setBirthY(v);
+              if (v.length === 4) birthMRef.current?.focus();
+            }}
             placeholder="1954" placeholderTextColor={colors.textSecondary}
             keyboardType="number-pad" maxLength={4}
           />
           <Text style={styles.birthUnit}>년</Text>
           <TextInput
+            ref={birthMRef}
             style={[styles.input, styles.birthInput, birthMsg && styles.inputBad]}
             value={birthM}
-            onChangeText={(t) => setBirthM(sanitizeBirthPart(t, "month", birthM))}
+            onChangeText={(t) => {
+              const v = sanitizeBirthPart(t, "month", birthM);
+              setBirthM(v);
+              // 2~9는 한 자리로 월이 확정된다 (10·11·12만 두 자리)
+              if (v.length === 2 || (v.length === 1 && Number(v) >= 2)) birthDRef.current?.focus();
+            }}
             placeholder="3" placeholderTextColor={colors.textSecondary}
             keyboardType="number-pad" maxLength={2}
           />
           <Text style={styles.birthUnit}>월</Text>
           <TextInput
+            ref={birthDRef}
             style={[styles.input, styles.birthInput, birthMsg && styles.inputBad]}
             value={birthD}
-            onChangeText={(t) => setBirthD(sanitizeBirthPart(t, "day", birthD))}
+            onChangeText={(t) => {
+              const v = sanitizeBirthPart(t, "day", birthD);
+              setBirthD(v);
+              // 4~9는 한 자리로 일이 확정된다 — 키보드를 내려 가입 버튼이 보이게
+              if (v.length === 2 || (v.length === 1 && Number(v) >= 4)) Keyboard.dismiss();
+            }}
             placeholder="1" placeholderTextColor={colors.textSecondary}
             keyboardType="number-pad" maxLength={2}
           />
