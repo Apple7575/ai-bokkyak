@@ -225,7 +225,8 @@ function Onboarding1({ onNext }: { onNext: () => void }) {
           <Text style={styles.onb1Title}>
             <Text style={styles.accentBlue}>영양제부터 처방약까지,</Text>
           </Text>
-          <View style={styles.hlRow}>
+          {/* 제목이 가운데 정렬이라 줄바꿈돼도 가운데를 유지하도록 hlRowCenter */}
+          <View style={styles.hlRowCenter}>
             <Text style={[styles.onb1Title, styles.noTop]}>몸에서는 </Text>
             <HL band={colors.successSoft}><Text style={[styles.onb1Title, styles.noTop]}>하나의 복용 조합</Text></HL>
             <Text style={[styles.onb1Title, styles.noTop]}>입니다.</Text>
