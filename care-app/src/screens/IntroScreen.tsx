@@ -16,7 +16,10 @@ const FADE_MS = 220;
 
 // 움직임 줄이기 설정 — 모듈 단위로 한 번 읽어 Reveal이 공유한다(슬라이드마다 다시 묻지 않게).
 let reduceMotionGlobal = false;
-AccessibilityInfo.isReduceMotionEnabled().then((v) => { reduceMotionGlobal = v; }).catch(() => {});
+// 비동기 조회가 끝나기 전에 애니메이션이 시작되지 않도록, 시작 전 반드시 이 프라미스를 기다린다.
+const reduceMotionReady: Promise<boolean> = AccessibilityInfo.isReduceMotionEnabled()
+  .then((v) => { reduceMotionGlobal = v; return v; })
+  .catch(() => false);
 
 type RevealKind = "up" | "pop" | "fade" | "scale" | "line" | "bar";
 
@@ -30,14 +33,19 @@ function Reveal({ delay = 0, duration = 500, kind = "up", style, children }: {
 }) {
   const t = useRef(new Animated.Value(reduceMotionGlobal ? 1 : 0)).current;
   useEffect(() => {
-    if (reduceMotionGlobal) { t.setValue(1); return; }
-    const anim = Animated.timing(t, {
-      toValue: 1, duration, delay,
-      easing: kind === "pop" ? Easing.out(Easing.back(1.6)) : Easing.out(Easing.ease),
-      useNativeDriver: kind !== "bar",
+    let cancelled = false;
+    let anim: Animated.CompositeAnimation | null = null;
+    void reduceMotionReady.then((rm) => {
+      if (cancelled) return;
+      if (rm) { t.setValue(1); return; }
+      anim = Animated.timing(t, {
+        toValue: 1, duration, delay,
+        easing: kind === "pop" ? Easing.out(Easing.back(1.6)) : Easing.out(Easing.ease),
+        useNativeDriver: kind !== "bar",
+      });
+      anim.start();
     });
-    anim.start();
-    return () => anim.stop();
+    return () => { cancelled = true; anim?.stop(); };
   }, [t, delay, duration, kind]);
 
   if (kind === "bar") {
@@ -179,16 +187,21 @@ function HL({ band, delay = 0, children }: { band: string; delay?: number; child
   const t = useRef(new Animated.Value(reduceMotionGlobal ? 1 : 0)).current;
   const started = useRef(false);
   useEffect(() => {
-    if (reduceMotionGlobal) { t.setValue(1); return; }
     if (w === 0 || started.current) return;
-    started.current = true;
-    const anim = Animated.timing(t, {
-      toValue: 1, duration: 650, delay,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: false, // width 애니메이션이라 JS 드라이버
+    let cancelled = false;
+    let anim: Animated.CompositeAnimation | null = null;
+    void reduceMotionReady.then((rm) => {
+      if (cancelled || started.current) return;
+      started.current = true;
+      if (rm) { t.setValue(1); return; }
+      anim = Animated.timing(t, {
+        toValue: 1, duration: 650, delay,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: false, // width 애니메이션이라 JS 드라이버
+      });
+      anim.start();
     });
-    anim.start();
-    return () => anim.stop();
+    return () => { cancelled = true; anim?.stop(); };
   }, [t, w, delay]);
   return (
     <View style={styles.hlWrap} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
