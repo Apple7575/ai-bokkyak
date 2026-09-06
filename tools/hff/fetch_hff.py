@@ -72,8 +72,7 @@ def csv_to_jsonl(service: str, csv_path: str, out_path: str) -> int:
         reader = _csv.DictReader(f, delimiter=delim)
         with open(out_path, "w", encoding="utf-8") as o:
             for row in reader:
-                o.write(json.dumps(row, ensure_ascii=False) + "
-")
+                o.write(json.dumps(row, ensure_ascii=False) + "\n")
                 n += 1
     print(f"{service}: CSV {n}건 → {out_path}")
     return n
@@ -90,7 +89,6 @@ def main() -> None:
     if len(sys.argv) not in (2, 3):
         raise SystemExit("사용법: python tools/hff/fetch_hff.py <인증키> [CHNG_DT(YYYYMMDD, 7일 이내)]")
     key = sys.argv[1].strip()
-    global BASE_SUFFIX
     chng = f"/CHNG_DT={sys.argv[2]}" if len(sys.argv) == 3 else ""
     def dl(service):
         return download(key, service, os.path.join(out, f"{service}.jsonl"), chng)
