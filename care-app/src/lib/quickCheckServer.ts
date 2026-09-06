@@ -7,6 +7,7 @@
 
 import { supabase } from "./supabase";
 import { QuickFinding, sortFindings } from "./quickCheckRules";
+import { substanceName } from "./substanceNames";
 
 export type ServerResolved = {
   input: string;
@@ -101,10 +102,14 @@ function messageOf(f: Pick<ServerFinding, "summary" | "what_happens" | "what_to_
 const UNMAPPED_CAP = 8;
 const DUR_FALLBACK_MESSAGE = "식약처 병용금기 고시에 함께 쓰지 말라고 되어 있는 조합이에요.";
 
-/** 서버 응답을 앱의 QuickFinding 목록으로 옮긴다(정렬 포함). 순수 함수. */
+/** 서버 응답을 앱의 QuickFinding 목록으로 옮긴다(정렬 포함). 순수 함수.
+ *  · unresolved: 아무 데서도 못 찾은 **입력 이름** — 결과 화면의 "점검하지 못한 항목"이자
+ *    checkedCount 계산 단위(입력 이름과 같은 단위여야 한다).
+ *  · unmappedIngredients: 제품은 찾았지만 성분 매핑이 없던 **원료명**(중복 제거, 8개까지) —
+ *    입력 이름이 아니므로 unmatched에 섞지 않는다. */
 export function serverToFindings(
   res: ServerCheckResult
-): { findings: QuickFinding[]; unmatched: string[]; unresolved: string[] } {
+): { findings: QuickFinding[]; unresolved: string[]; unmappedIngredients: string[] } {
   const ruleFindings: QuickFinding[] = res.findings.map((f) => ({
     kind: kindOf(f),
     a: f.matched[0] ?? "",
@@ -117,22 +122,27 @@ export function serverToFindings(
     evidenceLevel: f.evidence_level,
     minSeparationHours: f.min_separation_hours ?? null,
   }));
-  // DUR 행에는 입력 이름이 없다 — 성분명을 제목으로 쓴다.
-  const durFindings: QuickFinding[] = res.dur.map((d) => ({
-    kind: "priority",
-    a: d.ingredient_a,
-    b: d.ingredient_b,
-    title: `${d.ingredient_a} × ${d.ingredient_b}`,
-    message: d.reason ?? DUR_FALLBACK_MESSAGE,
-    tag: "함께 복용 시 주의",
-    source: "dur",
-    notice_no: d.notice_no,
-  }));
+  // DUR 행에는 입력 이름이 없다 — 성분명을 제목으로 쓴다. 서버는 영문 코드로 주므로
+  // 한국어 이름으로 바꿔 보여 준다(모르는 코드는 그대로).
+  const durFindings: QuickFinding[] = res.dur.map((d) => {
+    const a = substanceName(d.ingredient_a);
+    const b = substanceName(d.ingredient_b);
+    return {
+      kind: "priority" as const,
+      a,
+      b,
+      title: `${a} × ${b}`,
+      message: d.reason ?? DUR_FALLBACK_MESSAGE,
+      tag: "함께 복용 시 주의",
+      source: "dur" as const,
+      notice_no: d.notice_no,
+    };
+  });
   // unmapped를 "제품: 원료"로 다 늘어놓으면 너무 길다 — 원료명만 중복 제거해 8개까지.
-  const unmatched = [...new Set(res.unmapped.map((u) => u.ingredient))].slice(0, UNMAPPED_CAP);
+  const unmappedIngredients = [...new Set(res.unmapped.map((u) => u.ingredient))].slice(0, UNMAPPED_CAP);
   return {
     findings: sortFindings([...ruleFindings, ...durFindings]),
-    unmatched,
     unresolved: res.unresolved,
+    unmappedIngredients,
   };
 }

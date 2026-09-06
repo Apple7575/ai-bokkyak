@@ -25,6 +25,10 @@ export async function loadDraft(): Promise<QuickCheckDraft | null> {
       // 깨지므로 버린다 — 점검을 다시 하면 된다.
       findings: Array.isArray(p.findings) && p.findings.every(isQuickFinding) ? p.findings : null,
       unmatched: Array.isArray(p.unmatched) ? p.unmatched : [],
+      // 서버 판정 전용 — 없거나 깨진 값이면 undefined(로컬 판정·구버전 초안).
+      unmappedIngredients: Array.isArray(p.unmappedIngredients)
+        ? p.unmappedIngredients.filter((s): s is string => typeof s === "string")
+        : undefined,
       analyzedAt: typeof p.analyzedAt === "string" ? p.analyzedAt : null,
       durUnavailable: p.durUnavailable === true,
       // 판정 주체 — 모르는 값(구버전·깨진 값)은 버린다.
@@ -56,6 +60,8 @@ export async function commitQuickCheckDraft(patientId: string): Promise<QuickChe
       durUnavailable: draft.durUnavailable === true,   // 제품명 대조를 못 한 채 저장된 결과인지
       supplements: draft.supplements, medicines: draft.medicines, names: checkItems(draft),
       unmatched: draft.unmatched, profile: draft.profile,
+      // 서버 판정 전용(성분 매핑 없던 원료명) — 로컬 판정이면 빈 배열.
+      unmappedIngredients: draft.unmappedIngredients ?? [],
     },
     findings: draft.findings,
   });

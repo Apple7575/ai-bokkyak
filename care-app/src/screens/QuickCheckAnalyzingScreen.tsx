@@ -41,7 +41,10 @@ async function analyzeDur(names: string[]): Promise<DurResult> {
 }
 
 type Analysis =
-  | { ok: true; findings: QuickFinding[]; unmatched: string[]; durUnavailable: boolean; engine: "server" | "local" }
+  | {
+      ok: true; findings: QuickFinding[]; unmatched: string[]; durUnavailable: boolean;
+      engine: "server" | "local"; unmappedIngredients?: string[];
+    }
   | { ok: false };
 
 // 1) 서버 판정(quick_check_v1) 먼저 — 검수된 문구를 그대로 받는다. 실패(throw)하면
@@ -55,8 +58,10 @@ async function analyze(draft: QuickCheckDraft): Promise<Analysis> {
     const mapped = serverToFindings(res);
     return {
       ok: true, findings: mapped.findings,
-      // 못 찾은 입력(unresolved) + 성분 매핑 없는 원료(unmatched)를 "점검하지 못한 항목"으로.
-      unmatched: [...new Set([...mapped.unresolved, ...mapped.unmatched])],
+      // unmatched는 **입력 이름**만(unresolved) — checkedCount가 입력 이름 수에서 빼는 단위라
+      // 원료명을 섞으면 계산이 깨진다. 원료명은 unmappedIngredients로 따로 싣는다.
+      unmatched: mapped.unresolved,
+      unmappedIngredients: mapped.unmappedIngredients,
       durUnavailable: false, engine: "server",
     };
   } catch {
@@ -98,6 +103,8 @@ export function QuickCheckAnalyzingScreen() {
       try {
         await saveDraft({
           ...draft, findings: r.findings, unmatched: r.unmatched, durUnavailable: r.durUnavailable,
+          // 로컬 판정이면 undefined — 이전 서버 판정의 값이 남지 않게 항상 덮어쓴다.
+          unmappedIngredients: r.unmappedIngredients,
           engine: r.engine, analyzedAt: new Date().toISOString(),
         });
       } catch {

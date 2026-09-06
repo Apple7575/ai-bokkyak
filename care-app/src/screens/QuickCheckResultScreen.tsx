@@ -23,8 +23,12 @@ import { colors, fontSizes, spacing, radii, minTouch, shadows } from "../theme/t
 type State =
   | { phase: "loading" }
   | { phase: "empty" }
-  // unmatched: 자료에서 못 찾아 대조에서 빠진 제품명. checkedCount: 실제로 대조한 이름 수.
-  | { phase: "ok"; findings: QuickFinding[]; unlocked: boolean; unmatched: string[]; checkedCount: number; durUnavailable: boolean };
+  // unmatched: 자료에서 못 찾아 대조에서 빠진 입력 이름. checkedCount: 실제로 대조한 이름 수.
+  // unmappedIngredients·engine은 가입 전 초안에서만 읽는다(가입 후에는 안 보여 준다).
+  | {
+      phase: "ok"; findings: QuickFinding[]; unlocked: boolean; unmatched: string[]; checkedCount: number;
+      durUnavailable: boolean; unmappedIngredients: string[]; engine?: "server" | "local";
+    };
 
 // kind별 태그 색 — 요약 카드 점(우선=빨강, 시간=파랑, 중복=주황)과 같은 계열.
 const KIND_COLOR: Record<RuleKind, { fg: string; bg: string }> = {
@@ -98,7 +102,13 @@ export function QuickCheckResultScreen() {
         : d ? countChecked(d) : 0;
       if (!alive) return;
       if (!findings) { setState({ phase: "empty" }); return; }
-      setState({ phase: "ok", findings, unlocked, unmatched, checkedCount: checked, durUnavailable: paramFindings ? Boolean(route.params?.durUnavailable) : Boolean(d?.durUnavailable) });
+      setState({
+        phase: "ok", findings, unlocked, unmatched, checkedCount: checked,
+        durUnavailable: paramFindings ? Boolean(route.params?.durUnavailable) : Boolean(d?.durUnavailable),
+        // 가입 전 초안에서만 — 가입 후(params 경로)에는 보여 주지 않는다.
+        unmappedIngredients: paramFindings ? [] : (d?.unmappedIngredients ?? []),
+        engine: paramFindings ? undefined : d?.engine,
+      });
     })();
     return () => { alive = false; };
   }, [route.params]);
@@ -124,6 +134,10 @@ export function QuickCheckResultScreen() {
   const findings = state.phase === "ok" ? state.findings : [];
   const unlocked = state.phase === "ok" && state.unlocked;
   const unmatched = state.phase === "ok" ? state.unmatched : [];
+  const unmappedIngredients = state.phase === "ok" ? state.unmappedIngredients : [];
+  // 서버 판정에 연결하지 못해 로컬 규칙으로만 본 경우 — 가입 전에만 알린다.
+  // durUnavailable 안내와 겹치면 이 안내가 더 넓은 사실이므로 이것만 보여 준다.
+  const localFallbackNote = state.phase === "ok" && !state.unlocked && state.engine === "local";
   // 대조한 이름이 2개 미만이면 조합 점검 자체가 성립하지 않는다 — "이상 없음"이라 하면 안 된다.
   const nothingChecked = state.phase === "ok" && state.checkedCount < 2;
   const summary = summarize(findings);
@@ -175,8 +189,16 @@ export function QuickCheckResultScreen() {
           </View>
         ) : null}
 
-        {/* 제품명 대조를 못 한 경우 — 규칙 결과만으로 넘어왔다 */}
-        {state.phase === "ok" && state.durUnavailable ? (
+        {/* 서버 점검 폴백 고지 — 로컬 규칙으로만 확인했음을 숨기지 않는다(가입 전만) */}
+        {localFallbackNote ? (
+          <View style={styles.durNote}>
+            <Text style={styles.note}>서버 점검에 연결하지 못해 기기에 저장된 기본 규칙으로만 확인했어요.</Text>
+            <BigButton label="다시 점검하기" variant="secondary" onPress={() => nav.replace("QuickCheckAnalyzing")} />
+          </View>
+        ) : null}
+
+        {/* 제품명 대조를 못 한 경우 — 규칙 결과만으로 넘어왔다. 위 폴백 고지가 있으면 그걸로 갈음. */}
+        {state.phase === "ok" && state.durUnavailable && !localFallbackNote ? (
           <View style={styles.durNote}>
             <Text style={styles.note}>
               {unlocked
@@ -201,6 +223,11 @@ export function QuickCheckResultScreen() {
               식약처 자료에서 제품을 찾지 못해 성분을 알 수 없었어요. 약 봉투나 통에 적힌 제품 이름으로 검색하면 확인할 수 있어요.
             </Text>
           </View>
+        ) : null}
+
+        {/* 제품은 찾았지만 성분 매핑이 없던 원료 — 점검 단위(입력 이름)가 아니라 따로 알린다(가입 전만) */}
+        {state.phase === "ok" && !unlocked && unmappedIngredients.length > 0 ? (
+          <Text style={styles.note}>{`성분을 확인하지 못한 원료: ${unmappedIngredients.join(" · ")}`}</Text>
         ) : null}
 
         {state.phase === "ok" && summary.total === 0 && !nothingChecked ? (

@@ -37,8 +37,11 @@ export type QuickCheckDraft = {
   medicines: string[];
   profile: QuickCheckProfile;
   findings: QuickFinding[] | null;   // null = 아직 점검 안 함 (규칙 + DUR 합친 것, 정렬됨)
-  /** 직접 입력·검색한 제품명 중 식약처 자료에서 찾지 못한 이름. 종류명 칩은 규칙이 맡으므로 여기 들어오지 않는다. */
+  /** 직접 입력·검색한 제품명 중 식약처 자료에서 찾지 못한 이름. 종류명 칩은 규칙이 맡으므로 여기 들어오지 않는다.
+   *  서버 판정에서는 unresolved(아무 데서도 못 찾은 입력 이름)가 들어온다 — checkedCount와 같은 단위. */
   unmatched: string[];
+  /** 서버 판정 전용: 제품은 찾았지만 성분 매핑이 없던 원료명(입력 이름 아님, 8개까지). 없으면 undefined. */
+  unmappedIngredients?: string[];
   analyzedAt: string | null;    // ISO 시각
   /** 제품명 DUR 대조를 네트워크 문제로 못 했지만 규칙 결과는 있어 넘어간 경우 */
   durUnavailable?: boolean;

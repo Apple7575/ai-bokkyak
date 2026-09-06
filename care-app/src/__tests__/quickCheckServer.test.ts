@@ -86,17 +86,26 @@ describe("serverToFindings — 문구·제목", () => {
 });
 
 describe("serverToFindings — DUR 행", () => {
-  it("성분명 제목·우선 확인·notice_no 전달", () => {
+  it("영문 성분 코드를 한국어 이름으로 바꿔 제목·a·b에 쓴다", () => {
     const r = serverToFindings({
       ...EMPTY,
-      dur: [{ ingredient_a: "심바스타틴", ingredient_b: "이트라코나졸", reason: "병용 시 근병증 위험", notice_no: "제2020-45호" }],
+      dur: [{ ingredient_a: "omega3", ingredient_b: "ginkgo_biloba", reason: "병용 시 출혈 위험", notice_no: "제2020-45호" }],
     });
     expect(r.findings).toHaveLength(1);
     expect(r.findings[0]).toMatchObject({
       kind: "priority", source: "dur", tag: "함께 복용 시 주의",
-      a: "심바스타틴", b: "이트라코나졸", title: "심바스타틴 × 이트라코나졸",
-      message: "병용 시 근병증 위험", notice_no: "제2020-45호",
+      a: "오메가-3", b: "은행잎", title: "오메가-3 × 은행잎",
+      message: "병용 시 출혈 위험", notice_no: "제2020-45호",
     });
+  });
+  it("모르는 코드는 그대로 보여 준다(폴백)", () => {
+    const r = serverToFindings({
+      ...EMPTY,
+      dur: [{ ingredient_a: "unknown_code_x", ingredient_b: "magnesium", reason: null, notice_no: null }],
+    });
+    expect(r.findings[0].a).toBe("unknown_code_x");
+    expect(r.findings[0].b).toBe("마그네슘");
+    expect(r.findings[0].title).toBe("unknown_code_x × 마그네슘");
   });
   it("reason이 없으면 고시 기본 문구", () => {
     const r = serverToFindings({
@@ -120,17 +129,26 @@ describe("serverToFindings — DUR 행", () => {
 });
 
 describe("serverToFindings — 점검하지 못한 항목", () => {
-  it("unmapped는 원료명만 중복 제거해 8개까지", () => {
+  it("unmapped는 원료명만 중복 제거해 8개까지 unmappedIngredients로", () => {
     const unmapped = Array.from({ length: 12 }, (_, i) => ({ product: `제품${i}`, ingredient: `원료${i % 10}` }));
     const r = serverToFindings({ ...EMPTY, unmapped });
-    expect(r.unmatched).toHaveLength(8);
-    expect(new Set(r.unmatched).size).toBe(8);
-    expect(r.unmatched[0]).toBe("원료0");
+    expect(r.unmappedIngredients).toHaveLength(8);
+    expect(new Set(r.unmappedIngredients).size).toBe(8);
+    expect(r.unmappedIngredients[0]).toBe("원료0");
     // "제품: 원료" 형태로 늘어놓지 않는다.
-    expect(r.unmatched.every((s) => !s.includes(":"))).toBe(true);
+    expect(r.unmappedIngredients.every((s) => !s.includes(":"))).toBe(true);
   });
   it("unresolved는 그대로 돌려준다", () => {
     const r = serverToFindings({ ...EMPTY, unresolved: ["이상한이름", "또다른이름"] });
     expect(r.unresolved).toEqual(["이상한이름", "또다른이름"]);
+  });
+  it("원료명(unmapped)이 unresolved에 섞이지 않는다 — checkedCount 단위는 입력 이름", () => {
+    const r = serverToFindings({
+      ...EMPTY,
+      unresolved: ["이상한이름"],
+      unmapped: [{ product: "제품A", ingredient: "특이원료" }],
+    });
+    expect(r.unresolved).toEqual(["이상한이름"]);
+    expect(r.unmappedIngredients).toEqual(["특이원료"]);
   });
 });
