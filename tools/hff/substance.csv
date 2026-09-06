@@ -1,0 +1,240 @@
+﻿id,code,name_ko
+1,ezetimibe,에제티미브
+2,metformin,메트포르민
+3,alendronate,알렌드로네이트
+4,vitamin_d,비타민 D
+5,calcium,칼슘
+6,vitamin_b12,비타민 B12
+7,magnesium,마그네슘
+8,coenzyme_q10,코엔자임 Q10
+9,statin,스타틴
+10,melatonin,멜라토닌
+11,folate,엽산
+12,omega3,오메가-3
+13,caffeine,카페인
+14,beta_carotene,베타카로틴
+15,vitamin_a,비타민 A
+16,garcinia_cambogia,가르시니아
+17,green_tea_extract,녹차 카테킨
+18,cissus,시서스
+19,banaba_leaf,바나바잎
+20,bitter_melon,여주
+21,resistant_maltodextrin,난소화성 말토덱스트린
+22,antidiabetic_drug,혈당강하제
+23,red_yeast_rice,홍국
+24,phytosterol,식물스테롤
+25,nattokinase,나토키나제
+26,ginkgo_biloba,은행잎
+27,beta_glucan,베타글루칸
+28,zinc,아연
+29,vitamin_c,비타민 C
+30,probiotics,프로바이오틱스
+31,vitamin_e,비타민 E
+32,polyphenol,폴리페놀
+33,curcumin,커큐민
+34,resveratrol,레스베라트롤
+35,prebiotics,프리바이오틱스
+36,ginger,생강
+37,honeysuckle,인동덩굴
+38,milk_thistle,밀크씨슬
+39,n_acetylcysteine,NAC
+40,hovenia_dulcis,헛개나무
+41,phosphatidylserine,포스파티딜세린
+42,rhodiola,홍경천
+43,ashwagandha,아슈와간다
+44,l_theanine,테아닌
+45,vitamin_k2,비타민 K2
+46,glucosamine,글루코사민
+47,msm,MSM
+48,boswellia,보스웰리아
+49,leucine,류신
+50,hmb,HMB
+51,bisphosphonate,비스포스포네이트
+52,isoflavone,이소플라본
+53,gamma_linolenic_acid,감마리놀렌산
+54,saw_palmetto,쏘팔메토
+55,collagen,콜라겐
+56,lutein,루테인
+57,tamoxifen,타목시펜
+58,anticoagulant,항응고제
+59,antiplatelet,항혈소판제
+60,immunosuppressant,면역억제제
+61,korean_red_ginseng,홍삼
+62,vitamin_b_complex,비타민 B군
+63,beta_blocker,베타차단제
+64,diuretic,이뇨제
+65,antihypertensive,혈압약
+66,zeaxanthin,지아잔틴
+67,hypnotic,수면제
+68,antidepressant,항우울제
+69,warfarin,와파린
+70,hyaluronic_acid,히알루론산
+71,astaxanthin,아스타잔틴
+72,black_cohosh,블랙코호시
+73,sulfonylurea,설폰요소제
+74,insulin,인슐린
+75,copper,구리
+76,lovastatin,로바스타틴
+77,atorvastatin,아토르바스타틴
+78,glimepiride,글리메피리드
+79,amoxicillin,아목시실린
+80,saccharomyces_boulardii,사카로마이세스 보울라디
+81,lactobacillus_rhamnosus_gg,락토바실러스 람노서스 GG
+82,antibiotic,항생제
+83,antithrombotic,항혈전제
+84,ginseng,인삼
+85,aspirin,아스피린
+86,ppi,PPI
+87,h2_blocker,H2차단제
+88,bismuth,비스무트
+89,protein,단백질
+90,nmn,NMN
+91,spermidine,스퍼미딘
+92,st_johns_wort,세인트존스워트
+93,iron,철분
+94,iodine,요오드
+95,amlodipine,암로디핀
+96,ssri,SSRI
+97,snri,SNRI
+98,digoxin,디곡신
+99,anticancer_drug,항암제
+100,nifedipine,니페디핀
+101,calcium_channel_blocker,칼슘통로차단제
+102,grapefruit,자몽
+103,vitamin_k,비타민 K
+104,garlic,마늘
+105,cranberry,크랜베리
+106,undenatured_type_2_collagen,비변성 II형 콜라겐
+107,losartan,로사르탄
+108,arb,ARB
+109,psyllium,차전자피
+110,potassium,칼륨
+111,furosemide,푸로세미드
+112,loop_diuretic,루프이뇨제
+113,thiamine,티아민
+114,licorice,감초
+115,clopidogrel,클로피도그렐
+116,amiodarone,아미오다론
+117,kelp,켈프
+118,hydrochlorothiazide,히드로클로로티아지드
+119,thiazide_diuretic,티아지드 이뇨제
+120,tart_cherry,타트체리 추출물
+121,niacin,나이아신
+122,apixaban,아픽사반
+123,doac,DOAC
+124,policosanol,폴리코사놀
+125,semaglutide,세마글루타이드
+126,glp1_agonist,GLP-1 수용체작용제
+127,chromium,크롬
+128,levothyroxine,레보티록신
+129,biotin,비오틴
+130,sglt2_inhibitor,SGLT2 억제제
+131,dapagliflozin,다파글리플로진
+132,febuxostat,페북소스타트
+133,dpp4_inhibitor,DPP-4 억제제
+134,alpha_lipoic_acid,알파리포산
+135,methimazole,메티마졸
+136,prednisolone,프레드니솔론
+137,glucocorticoid,글루코코르티코이드
+138,inositol,이노시톨
+139,esa,적혈구조혈자극제
+140,erythropoietin,에리트로포이에틴
+141,darbepoetin,다베포에틴
+142,carnitine,카르니틴
+143,starfruit,스타프루트
+144,phosphorus,인
+145,tacrolimus,타크로리무스
+146,mycophenolate_mofetil,미코페놀레이트 모페틸
+147,echinacea,에키네시아
+148,vitamin_b6,비타민 B6
+149,tamsulosin,탐스로신
+150,alpha_blocker,α차단제
+151,pumpkin_seed_extract,호박씨 추출물
+152,antimuscarinic,항무스카린제
+153,potassium_citrate,구연산칼륨
+154,tolvaptan,톨밥탄
+155,levodopa,레보도파
+156,carbidopa,카르비도파
+157,kava,카바
+158,escitalopram,에스시탈로프람
+159,five_htp,5-HTP
+160,tryptophan,트립토판
+161,benzodiazepine,벤조디아제핀
+162,valerian,발레리안
+163,topiramate,토피라메이트
+164,propranolol,프로프라놀롤
+165,vitamin_b2,비타민 B2
+166,valproic_acid,발프로산
+167,carbamazepine,카르바마제핀
+168,anticonvulsant,항경련제
+169,donepezil,도네페질
+170,cholinesterase_inhibitor,콜린에스터라제 억제제
+171,anticholinergic,항콜린성 약물
+172,interferon,인터페론
+173,s1p_modulator,S1P조절제
+174,immunomodulator,면역조절제
+175,duloxetine,둘록세틴
+176,methylphenidate,메틸페니데이트
+177,citrus_aurantium,시트러스 아우란티움
+178,glycine,글리신
+179,pregabalin,프레가발린
+180,methotrexate,메토트렉세이트
+181,allopurinol,알로푸리놀
+182,nsaid,NSAID
+183,orlistat,오를리스타트
+184,chondroitin,콘드로이틴
+185,peppermint_oil,페퍼민트오일
+186,inulin,이눌린
+187,biologics,생물학적제제
+188,tenofovir,테노포비르
+189,entecavir,엔테카비르
+190,antiviral,항바이러스제
+191,lactulose,락툴로오스
+192,bcaa,분지사슬아미노산
+193,manganese,망간
+194,pancreatic_enzyme,췌장효소
+195,inhaled_corticosteroid,흡입 스테로이드
+196,laba,지속성 베타작용제
+197,bronchodilator,기관지확장제
+198,quercetin,케르세틴
+199,pirfenidone,피르페니돈
+200,antifibrotic,항섬유화제
+201,isoniazid,이소니아지드
+202,antituberculosis_drug,항결핵제
+203,propolis,프로폴리스
+204,anti_obesity_drug,항비만약
+205,phentermine,펜터민
+206,naltrexone,날트렉손
+207,bupropion,부프로피온
+208,liraglutide,리라글루타이드
+209,multivitamin,종합비타민
+210,finasteride,피나스테리드
+211,antioxidant,고용량 항산화제
+212,antiretroviral,항레트로바이러스제
+213,protease_inhibitor,프로테아제억제제
+214,nnrti,비뉴클레오시드 역전사효소억제제
+215,integrase_inhibitor,인테그라제억제제
+216,polyvalent_cation,다가양이온
+217,ras_blocker,RAS차단제
+218,potassium_sparing_diuretic,칼륨보존이뇨제
+219,soy,콩
+220,gaba,감마-아미노부티르산
+221,gamma_oryzanol,감마오리자놀
+222,creatine,크레아틴
+223,l_arginine,L-아르기닌
+224,cynanchum_wilfordii_complex,백수오등복합추출물
+225,sophora_japonica_fruit_extract,회화나무열매추출물
+226,milk_protein_hydrolysate,유단백가수분해물
+227,lactobacillus,락토바실러스
+228,lithium,리튬
+229,rivaroxaban,리바록사반
+230,cyclosporine,사이클로스포린
+231,heparin,헤파린
+232,phenytoin,페니토인
+233,comfrey,컴프리
+234,piperine,피페린
+237,green_tea_extract_egcg,녹차 추출물(EGCG)
+238,cimicifuga,승마
+239,aloe_anthraquinone,알로에(안트라퀴논)
+240,cod_liver_oil,코드간유·상어연골
+241,oral_contraceptive,경구 피임약
