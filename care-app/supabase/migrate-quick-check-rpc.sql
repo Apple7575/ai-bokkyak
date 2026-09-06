@@ -1,4 +1,7 @@
--- 1분 복용 점검 서버 판정 RPC v1 (2026-09-06)
+-- 1분 복용 점검 서버 판정 RPC v2 (2026-09-06)
+--
+-- v2: 인수인계 문서(§1) 반영 — object 항은 전부, precipitant 항은 하나 이상 충족(함정 1·2 방지).
+--     조건은 code 또는 name_ko 로 매칭. reassurance_ko·evidence_expression(label/phrasing) 반환.
 --
 -- 회의 결정(9/3) Option 1: 검수된 규칙 문구를 그대로 내보낸다. AI 설명은 별도 POC.
 -- 구성: 앱(anon) → public.quick_check_v1(...) [security definer]
@@ -96,6 +99,7 @@ begin
     select distinct c.id as condition_id
     from condition c
     where c.name_ko = any (coalesce(p_conditions, '{}'))
+       or c.code = any (coalesce(p_conditions, '{}'))
        or (p_age is not null and c.name_ko = p_age);
 
   -- ── 3. 규칙 매칭 ────────────────────────────────────────────────────────
@@ -107,16 +111,25 @@ begin
      or (s.target_type = 'intake_class'    and s.target_id in (select intake_class_id from _chips))
      or (s.target_type = 'condition'       and s.target_id in (select condition_id from _conds));
 
+  -- 인수인계 §1: object(영향 받는 쪽)는 전부, precipitant(원인 쪽)는 하나 이상 충족해야 발화.
+  -- either 는 precipitant 묶음에 넣는다 (하나 이상 그룹).
+  create temp table _rule_ok on commit drop as
+  select s.rule_id
+  from interaction_rule_side s
+  left join _side_ok k on k.rule_id = s.rule_id and k.ordinal = s.ordinal
+  group by s.rule_id
+  having bool_and(k.ordinal is not null) filter (where s.role = 'object') is not false
+     and (count(*) filter (where s.role in ('precipitant', 'either')) = 0
+          or bool_or(k.ordinal is not null) filter (where s.role in ('precipitant', 'either')))
+     and count(*) filter (where s.role = 'object' and k.ordinal is not null) 
+         + count(*) filter (where s.role in ('precipitant','either') and k.ordinal is not null) > 0;
+
   create temp table _hit on commit drop as
   select r.*
   from interaction_rule r
   where r.is_active
     and r.rule_kind in ('pair', 'set', 'standalone')
-    and not exists (        -- 모든 항이 충족돼야 발화
-      select 1 from interaction_rule_side s
-      where s.rule_id = r.id
-        and not exists (select 1 from _side_ok k where k.rule_id = s.rule_id and k.ordinal = s.ordinal))
-    and exists (select 1 from interaction_rule_side s where s.rule_id = r.id)
+    and exists (select 1 from _rule_ok ok where ok.rule_id = r.id)
     -- rule_condition: required = 조건 있어야, excluded = 조건 있으면 제외
     and not exists (
       select 1 from rule_condition rc
@@ -160,6 +173,9 @@ begin
          'summary', h.summary_ko,
          'what_happens', h.what_happens_ko,
          'what_to_do', h.what_to_do_ko,
+         'reassurance', h.reassurance_ko,
+         'evidence_label', (select ee.label_ko from evidence_expression ee where ee.evidence_level = h.evidence_level),
+         'evidence_phrase', (select ee.phrasing_ko from evidence_expression ee where ee.evidence_level = h.evidence_level),
          'min_separation_hours', h.min_separation_hours,
          'stop_days_before', h.stop_days_before,
          'matched', (
