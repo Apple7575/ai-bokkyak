@@ -14,7 +14,8 @@ describe("단계별 멘트 (문서 §4)", () => {
     expect(cuesForStep("count")).toEqual(["V01"]);
     expect(cuesForStep("time")).toEqual(["V02"]);
     expect(cuesForStep("confirm")).toEqual(["V04"]);
-    expect(cuesForStep("done")).toEqual(["V05", "V06"]);
+    // 회의 2026-09-03: 위험 분석 제안(V06)은 재생하지 않는다 — 점검과 알람이 한 흐름이 됐다.
+    expect(cuesForStep("done")).toEqual(["V05"]);
     expect(cuesForStep("skipped")).toEqual(["V14"]);
   });
 });
@@ -63,7 +64,7 @@ describe("단계 2 — 시간", () => {
     const proposed = { ...atTime, times: afterMealTimes(atTime.slots), proposedDefaults: true };
     const t = onAcceptDefaults(proposed, true);
     expect(t.state.step).toBe("done");
-    expect(t.play).toEqual(["V07", "V05", "V06"]);
+    expect(t.play).toEqual(["V07", "V05"]);
   });
 
   it("기본값 제안(V03)에 '다시' → V08 후 시간 질문으로 되돌아간다", () => {
@@ -85,10 +86,10 @@ describe("단계 3 — 요약 확인", () => {
   const atConfirm = onPickTimes(onPickCount(INITIAL_STATE, 1).state,
     [{ slot: "아침", hour: 8, minute: 0 }]).state;
 
-  it("네 → 완료 (V07 후 V05·V06)", () => {
+  it("네 → 완료 (V07 후 V05)", () => {
     const t = onConfirm(atConfirm, true);
     expect(t.state.step).toBe("done");
-    expect(t.play).toEqual(["V07", "V05", "V06"]);
+    expect(t.play).toEqual(["V07", "V05"]);
   });
 
   it("아니요 → V08 후 시간 단계로 복귀", () => {

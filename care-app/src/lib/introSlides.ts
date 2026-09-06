@@ -1,10 +1,11 @@
 // 인트로(브랜드 + 온보딩 + 시작 CTA) 슬라이드 표 — 순수 로직 (RN 의존 없음, jest 대상).
 //
-// 시안 V8의 화면 1~7을 한 화면(IntroScreen)에서 페이지로 넘긴다.
-// - 1·2번은 탭해야 넘어간다. (자동 전환은 사용자 피드백 2026-09-03으로 제거 —
+// 회의 2026-09-03: 7장 → 4장으로 줄였다. 브랜드 로고·1분 복용 점검 소개·
+// 약사가 설계한 기준 슬라이드를 삭제 — 인트로가 길어 이탈이 컸다.
+// - 1번(브랜드)은 탭해야 넘어간다. (자동 전환은 사용자 피드백 2026-09-03으로 제거 —
 //   "탭하여 계속"인데 저절로 넘어가 혼란을 줬다.)
-// - 3~6번은 상단에 점 4개 + 건너뛰기(→ CTA)가 있고 "다음" 버튼으로만 넘어간다.
-// - 7번은 시작 CTA.
+// - 2~3번(온보딩)은 상단에 점 2개 + 건너뛰기(→ CTA)가 있고 "다음" 버튼으로만 넘어간다.
+// - 4번은 시작 CTA.
 // 문구 자체는 화면(IntroScreen)에 있다 — 강조 색·형광 밴드 같은 부분 서식이 섞여 있어서다.
 
 export type IntroSlideKind = "brand" | "onboarding" | "cta";
@@ -21,11 +22,8 @@ export type IntroSlide = {
 
 export const INTRO_SLIDES: readonly IntroSlide[] = [
   { kind: "brand", autoAdvanceMs: null, showBar: false, label: "브랜드 인트로" },
-  { kind: "brand", autoAdvanceMs: null, showBar: false, label: "브랜드 로고" },
   { kind: "onboarding", autoAdvanceMs: null, showBar: true, label: "하나의 복용 조합" },
   { kind: "onboarding", autoAdvanceMs: null, showBar: true, label: "낭비와 위험" },
-  { kind: "onboarding", autoAdvanceMs: null, showBar: true, label: "1분 복용 점검" },
-  { kind: "onboarding", autoAdvanceMs: null, showBar: true, label: "병용금기 기준 점검" },
   { kind: "cta", autoAdvanceMs: null, showBar: false, label: "시작 CTA" },
 ] as const;
 

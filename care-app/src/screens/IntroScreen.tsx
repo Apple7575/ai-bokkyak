@@ -3,14 +3,16 @@ import {
   AccessibilityInfo, Animated, BackHandler, Easing, Pressable, ScrollView, StyleSheet, Text, View, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Check, ClipboardList, Gauge, Info, Layers, Leaf, Link2, Package, Pill, Plus } from "lucide-react-native";
+import { Check, Leaf, Link2, Package, Pill } from "lucide-react-native";
 import { Logo } from "../components/Logo";
 import { INTRO_SLIDES, SKIP_TARGET_INDEX, dotState, nextIndex, prevIndex } from "../lib/introSlides";
 import { setOnboarded } from "../lib/storage";
 import { colors, fontSizes, minTouch, radii, shadows, spacing } from "../theme/tokens";
 
-// 인트로 — 시안 V8 화면 1~7 (브랜드 2장 → 온보딩 4장 → 시작 CTA)을 한 화면에서 넘긴다.
-// 옛 Splash + Onboarding 화면을 대체한다. 슬라이드 순서·자동 진행 시간은 lib/introSlides.ts.
+// 인트로 — 브랜드 1장 → 온보딩 2장 → 시작 CTA, 총 4장을 한 화면에서 넘긴다.
+// (회의 2026-09-03: 시안 V8의 7장에서 브랜드 로고·1분 복용 점검 소개·약사가 설계한
+// 기준 슬라이드를 삭제했다.) 옛 Splash + Onboarding 화면을 대체한다.
+// 슬라이드 순서·자동 진행 시간은 lib/introSlides.ts.
 
 const FADE_MS = 220;
 
@@ -139,15 +141,17 @@ export function IntroScreen() {
       leaving.current = false;
     }
   }
+  // 회의 2026-09-03: 점검과 알람 설정은 한 흐름이다 — 점검 → 가입 → 결과 →
+  // 복용 알람 설정. 건너뛰면 가입 후 바로 홈이다(RoleSelectScreen 참고).
   const startQuickCheck = () => void leave([{ name: "RoleSelect" }, { name: "QuickCheckInput" }]);
-  const startAlarm = () => void leave([{ name: "RoleSelect" }]);
+  const skipSetup = () => void leave([{ name: "RoleSelect" }]);
 
   const slide = INTRO_SLIDES[index];
   const dots = dotState(index);
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      {/* 상단 바 — 온보딩 슬라이드(3~6)에서만: 점 4개 + 건너뛰기 */}
+      {/* 상단 바 — 온보딩 슬라이드(2~3)에서만: 점 2개 + 건너뛰기 */}
       {slide.showBar ? (
         <View style={styles.bar}>
           <View style={styles.barSpacer} />
@@ -166,12 +170,9 @@ export function IntroScreen() {
 
       <Animated.View style={[styles.body, { opacity }]}>
         {index === 0 ? <Brand1 onTap={tapNext} /> : null}
-        {index === 1 ? <Brand2 onTap={tapNext} /> : null}
-        {index === 2 ? <Onboarding1 onNext={tapNext} /> : null}
-        {index === 3 ? <Onboarding2 onNext={tapNext} /> : null}
-        {index === 4 ? <Onboarding3 onNext={tapNext} /> : null}
-        {index === 5 ? <Onboarding4 onNext={tapNext} /> : null}
-        {index === 6 ? <Cta onPrimary={startQuickCheck} onSecondary={startAlarm} /> : null}
+        {index === 1 ? <Onboarding1 onNext={tapNext} /> : null}
+        {index === 2 ? <Onboarding2 onNext={tapNext} /> : null}
+        {index === 3 ? <Cta onPrimary={startQuickCheck} onSecondary={skipSetup} /> : null}
       </Animated.View>
     </View>
   );
@@ -234,19 +235,7 @@ function Brand1({ onTap }: { onTap: () => void }) {
   );
 }
 
-// ── 2. 브랜드 로고 ──────────────────────────────────────────────────────────
-function Brand2({ onTap }: { onTap: () => void }) {
-  return (
-    <Pressable onPress={onTap} style={styles.brand2} accessibilityRole="button" accessibilityLabel="탭하여 계속">
-      <Reveal delay={150} duration={550} kind="scale"><View style={styles.logoRing}><Logo size={104} /></View></Reveal>
-      <Reveal delay={550} duration={600}><Text style={styles.brand2Title}>나에게 필요한 것만,{"\n"}<Text style={styles.accentBlue}>올바르게</Text></Text></Reveal>
-      <Reveal delay={1100} duration={600}><Text style={styles.brand2Word}>모두의 복약</Text></Reveal>
-      <Reveal delay={1800} kind="fade" style={styles.tapHintWrap}><Text style={styles.tapHint}>탭하여 계속</Text></Reveal>
-    </Pressable>
-  );
-}
-
-// ── 3. 하나의 복용 조합 ─────────────────────────────────────────────────────
+// ── 2. 하나의 복용 조합 ─────────────────────────────────────────────────────
 const TILES = [
   { Icon: Pill, label: "처방약", bg: colors.primarySoft, color: colors.primaryBlue },
   { Icon: Package, label: "일반의약품", bg: colors.lightBlueBg, color: colors.secondaryBlue },
@@ -300,7 +289,9 @@ function Onboarding1({ onNext }: { onNext: () => void }) {
   );
 }
 
-// ── 4. 낭비와 위험 ──────────────────────────────────────────────────────────
+// ── 3. 낭비와 위험 ──────────────────────────────────────────────────────────
+// 피드백 2026-09-03: "잘못된 조합·낭비·건강을 해칠 수 있다"를 더 강조 —
+// "잘못된 복용 조합은"에도 위험색(dangerSoft) 형광 밴드를 긋는다.
 function Onboarding2({ onNext }: { onNext: () => void }) {
   return (
     <View style={styles.onb}>
@@ -312,8 +303,12 @@ function Onboarding2({ onNext }: { onNext: () => void }) {
           <Text style={[styles.onb2Title, styles.noTop]}>는</Text>
         </View>
         <Text style={[styles.onb2Title, styles.noTop]}>
-          <Text style={styles.accentOrange}>낭비</Text>가 되고,{"\n"}
-          잘못된 복용 조합은{"\n"}
+          <Text style={styles.accentOrange}>낭비</Text>가 되고,
+        </Text>
+        <View style={styles.hlRow}>
+          <HL band={colors.dangerSoft} delay={1400}><Text style={[styles.onb2Title, styles.noTop]}>잘못된 복용 조합은</Text></HL>
+        </View>
+        <Text style={[styles.onb2Title, styles.noTop]}>
           <Text style={styles.accentRed}>건강을 해칠 수 있습니다.</Text>
         </Text>
         </Reveal>
@@ -323,109 +318,7 @@ function Onboarding2({ onNext }: { onNext: () => void }) {
   );
 }
 
-// ── 5. 1분 복용 점검 ────────────────────────────────────────────────────────
-// 예시 카드의 4행 — 시안 V8 그대로(문구·색·등장 지연 2.25s/2.5s/2.75s/3.0s).
-const EXAMPLE_ROWS: { Icon: typeof Link2; label: string; status: string; tone: "danger" | "ok" | "muted"; delay: number }[] = [
-  { Icon: Link2, label: "상호작용", status: "함께 복용 시 주의", tone: "danger", delay: 2250 },
-  { Icon: Layers, label: "중복 성분", status: "중복 성분 확인", tone: "danger", delay: 2500 },
-  { Icon: Gauge, label: "과다 복용", status: "이상 없음", tone: "ok", delay: 2750 },
-  { Icon: Info, label: "주의사항", status: "복용 방법 확인 필요", tone: "muted", delay: 3000 },
-];
-
-function Onboarding3({ onNext }: { onNext: () => void }) {
-  return (
-    <View style={styles.onb}>
-      <ScrollView contentContainerStyle={styles.onbTop} showsVerticalScrollIndicator={false}>
-        <Reveal delay={50}>
-          <Text style={styles.onb3Title}>
-            그래서,{"\n"}
-            <Text style={styles.onb3Big}>1분 복용 점검</Text>으로{"\n"}
-            불필요한 소비와{"\n"}
-            위험한 복용 조합을{"\n"}
-            한 번에 확인하세요.
-          </Text>
-        </Reveal>
-        <Reveal delay={900} duration={550} style={styles.exampleCard}>
-          <View style={styles.exampleHead}>
-            <Text style={styles.exampleHeadText}>내 복용 정보 분석</Text>
-            <Reveal delay={2100} duration={400} kind="pop"><View style={styles.checkDot}><Check size={13} strokeWidth={3} color={colors.white} /></View></Reveal>
-          </View>
-          <View style={styles.exampleBarTrack}><Reveal delay={1000} duration={1050} kind="bar" style={styles.exampleBarFill} /></View>
-          <View style={styles.exampleDivider} />
-          <View style={styles.exampleRows}>
-            {EXAMPLE_ROWS.map(({ Icon, label, status, tone, delay }) => (
-              <Reveal key={label} delay={delay} duration={450} style={styles.exampleRow}>
-                <View style={styles.exampleIcon}><Icon size={18} color={colors.primaryBlue} /></View>
-                <Text style={styles.exampleRowLabel}>{label}</Text>
-                <View style={styles.exampleRowRight}>
-                  {tone === "danger" ? <View style={styles.redDot} /> : null}
-                  {tone === "ok" ? <Check size={16} strokeWidth={3} color={colors.successGreen} /> : null}
-                  <Text style={[styles.exampleRowStatus, tone === "danger" && styles.statusDanger, tone === "ok" && styles.statusOk]}>{status}</Text>
-                </View>
-              </Reveal>
-            ))}
-          </View>
-          <View style={styles.exampleDividerTight} />
-          <View style={styles.exampleFoot}>
-            <Reveal delay={3400} duration={450}><Text style={styles.exampleFootCount}>확인 필요 2건</Text></Reveal>
-            <Reveal delay={3600} duration={400} kind="pop"><View style={styles.blueTag}><Text style={styles.blueTagText}>약사 확인 권장</Text></View></Reveal>
-          </View>
-        </Reveal>
-      </ScrollView>
-      <NextButton onPress={onNext} />
-    </View>
-  );
-}
-
-// ── 6. 약사 연결 (시안 V8 그대로 — 곧 만들 지역 약사 연결 기능의 예시 그림. 알약 태그는 눌리지 않는다) ──
-function Onboarding4({ onNext }: { onNext: () => void }) {
-  return (
-    <View style={styles.onb}>
-      <ScrollView contentContainerStyle={styles.onbTop} showsVerticalScrollIndicator={false}>
-        <Reveal delay={100} duration={550}>
-          <View style={styles.hlRow}>
-            <HL band={colors.successSoft} delay={500}><Text style={styles.onb4Title}>약사가 설계한 기준</Text></HL>
-            <Text style={styles.onb4Title}>으로</Text>
-          </View>
-          <Text style={styles.onb4Title}>
-            점검하고, 필요한 순간에는{"\n"}
-            <Text style={styles.accentGreen}>지역 약사</Text>와 연결됩니다.
-          </Text>
-        </Reveal>
-        <View style={styles.flow}>
-          <Reveal delay={800} duration={500} style={styles.compactCard}>
-            <View style={styles.compactIcon}><ClipboardList size={20} color={colors.primaryBlue} /></View>
-            <View style={styles.compactCopy}>
-              <Text style={styles.compactTitle}>복용 점검 결과</Text>
-              <Text style={styles.compactSub}>상호작용 · 중복 성분</Text>
-            </View>
-            <View style={styles.redTag}><Text style={styles.redTagText}>확인 필요 2건</Text></View>
-          </Reveal>
-          <Reveal delay={1350} duration={350} kind="line" style={styles.connector} />
-          <Reveal delay={1550} duration={450} style={styles.consentRow}>
-            <View style={styles.consentRing}>
-              <Reveal delay={2000} duration={450} kind="pop" style={styles.consentCheck}><Check size={14} strokeWidth={3} color={colors.white} /></Reveal>
-            </View>
-            <Text style={styles.consentText}>내 복용 정보 공유 동의</Text>
-          </Reveal>
-          <Reveal delay={2350} duration={350} kind="line" style={styles.connector} />
-          <Reveal delay={2600} duration={500} style={styles.pharmacyCard}>
-            <View style={styles.pharmacyIcon}><Plus size={22} strokeWidth={4} color={colors.successGreen} /></View>
-            <View style={styles.compactCopy}>
-              <Text style={styles.compactTitle}>봄뜰약국 · 이수진 약사</Text>
-              <Text style={styles.compactSub}>우리동네 지역 약국</Text>
-            </View>
-            <Reveal delay={3000} duration={400} kind="pop"><View style={styles.greenTag}><Text style={styles.greenTagText}>상담 연결</Text></View></Reveal>
-          </Reveal>
-          <Reveal delay={3300} duration={500}><Text style={styles.flowCaption}>복용 정보는 사용자 동의 후 공유됩니다.</Text></Reveal>
-        </View>
-      </ScrollView>
-      <NextButton onPress={onNext} />
-    </View>
-  );
-}
-
-// ── 7. 시작 CTA ─────────────────────────────────────────────────────────────
+// ── 4. 시작 CTA ─────────────────────────────────────────────────────────────
 const CHECKS = ["회원가입 없이 바로", "영양제·약 한 번에 분석", "사진·이름 일부로도 가능"];
 
 function Cta({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: () => void }) {
@@ -453,16 +346,17 @@ function Cta({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: (
           ))}
         </View>
       </ScrollView>
+      {/* 회의 2026-09-03: 점검+알람은 한 흐름 — 하면 둘 다, 건너뛰면 가입 후 바로 홈 */}
       <Reveal delay={1600} duration={550}>
-        <Pressable onPress={onPrimary} accessibilityRole="button" accessibilityLabel="내 복용 1분 점검하기"
+        <Pressable onPress={onPrimary} accessibilityRole="button" accessibilityLabel="1분 점검하고 시작하기"
           style={({ pressed }) => [styles.ctaPrimary, pressed && styles.pressed]}>
-          <Text style={styles.ctaPrimaryText}>내 복용 1분 점검하기</Text>
+          <Text style={styles.ctaPrimaryText}>1분 점검하고 시작하기</Text>
         </Pressable>
       </Reveal>
       <Reveal delay={1750} duration={550}>
-        <Pressable onPress={onSecondary} accessibilityRole="button" accessibilityLabel="복용 알람부터 시작하기"
+        <Pressable onPress={onSecondary} accessibilityRole="button" accessibilityLabel="지금은 건너뛰기"
           style={({ pressed }) => [styles.ctaSecondary, pressed && { opacity: 0.7 }]}>
-          <Text style={styles.ctaSecondaryText}>복용 알람부터 시작하기</Text>
+          <Text style={styles.ctaSecondaryText}>지금은 건너뛰기</Text>
         </Pressable>
       </Reveal>
     </View>
@@ -493,7 +387,6 @@ const styles = StyleSheet.create({
 
   // 공통 서식
   accentBlue: { color: colors.primaryBlue },
-  accentGreen: { color: colors.successGreen },
   accentOrange: { color: colors.warningOrange },
   accentRed: { color: colors.dangerRed },
   // 형광펜 밑줄 밴드 — 줄 높이의 아래 1/3만 칠한다
@@ -513,21 +406,14 @@ const styles = StyleSheet.create({
   brand1LineTop: { marginTop: 14 },
   brand1Line: { fontSize: 34, lineHeight: 48, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -1 },
 
-  // 2
-  brand2: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.xl, paddingBottom: 56 },
-  logoRing: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center", overflow: "hidden" },
-  brand2Title: { marginTop: 20, textAlign: "center", fontSize: 30, lineHeight: 41, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.8 },
-  brand2Word: { marginTop: 14, fontSize: fontSizes.body, fontWeight: "700", color: colors.textSecondary, letterSpacing: 5, paddingLeft: 5 },
-
   // 온보딩 공통 (시안 padding 6px 24px 24px)
   onb: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: 6, paddingBottom: spacing.lg },
   onbCenter: { flexGrow: 1, justifyContent: "center", paddingBottom: spacing.md },
   onbCenterLeft: { flexGrow: 1, justifyContent: "center", paddingBottom: spacing.md },
-  onbTop: { flexGrow: 1, paddingTop: 4, paddingBottom: 14 },
   nextBtn: { height: minTouch, borderRadius: radii.pill, backgroundColor: colors.primaryBlue, alignItems: "center", justifyContent: "center" },
   nextText: { color: colors.white, fontSize: 19, fontWeight: "800", letterSpacing: -0.3 },
 
-  // 3
+  // 2 — 하나의 복용 조합
   onb1Title: { textAlign: "center", fontSize: 26, lineHeight: 38, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.7 },
   tiles: { flexDirection: "row", marginTop: 30 },
   tile: { flex: 1, alignItems: "center", gap: 6 },
@@ -541,58 +427,13 @@ const styles = StyleSheet.create({
   onb1Body: { marginTop: 28, textAlign: "center", fontSize: fontSizes.emphasis, lineHeight: 33, fontWeight: "700", color: colors.text, letterSpacing: -0.5 },
   onb1BodyAccent: { color: colors.primaryBlue, fontWeight: "800" },
 
-  // 4
+  // 3 — 낭비와 위험
   onb2Lead: { fontSize: fontSizes.emphasis, fontWeight: "600", color: colors.textSecondary, letterSpacing: -0.5 },
   onb2TitleTop: { marginTop: spacing.md },
   onb2Title: { fontSize: 28, lineHeight: 42, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.8 },
 
-  // 5
-  onb3Title: { fontSize: 25, lineHeight: 36, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.6 },
-  onb3Big: { fontSize: 36, color: colors.primaryBlue, letterSpacing: -1.2 },
-  exampleCard: { marginTop: 18, backgroundColor: colors.white, borderRadius: 18, paddingVertical: spacing.md, paddingHorizontal: 18, ...shadows.card },
-  exampleHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  exampleHeadText: { fontSize: 18, fontWeight: "700", color: colors.textSecondary },
+  // 4 — 시작 CTA
   checkDot: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.successGreen, alignItems: "center", justifyContent: "center" },
-  exampleBarTrack: { marginTop: 10, height: 8, borderRadius: 4, backgroundColor: colors.canvasMuted, overflow: "hidden" },
-  exampleBarFill: { height: 8, borderRadius: 4, backgroundColor: colors.primaryBlue },
-  exampleDivider: { height: 1, backgroundColor: colors.canvasMuted, marginTop: spacing.md },
-  exampleRows: { marginTop: 4 },
-  exampleRow: { height: 52, flexDirection: "row", alignItems: "center", gap: 12 },
-  exampleIcon: { width: 34, height: 34, borderRadius: 10, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
-  exampleRowLabel: { fontSize: fontSizes.body, fontWeight: "700", color: colors.primaryNavy },
-  exampleRowRight: { marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: 6 },
-  redDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.dangerRed },
-  exampleRowStatus: { fontSize: 18, fontWeight: "700", color: colors.textSecondary },
-  statusDanger: { color: colors.dangerRed },
-  statusOk: { color: colors.successGreen },
-  exampleDividerTight: { height: 1, backgroundColor: colors.canvasMuted, marginTop: 4 },
-  exampleFoot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 14 },
-  exampleFootCount: { fontSize: 18, fontWeight: "800", color: colors.dangerRed },
-  blueTag: { height: 30, paddingHorizontal: 12, borderRadius: 15, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
-  blueTagText: { fontSize: 18, fontWeight: "700", color: colors.primaryBlue },
-
-  // 6
-  onb4Title: { fontSize: 27, lineHeight: 40, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.6 },
-  flow: { marginTop: spacing.lg },
-  compactCard: { backgroundColor: colors.white, borderRadius: 16, paddingVertical: 14, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", gap: 12, ...shadows.card },
-  compactIcon: { width: 38, height: 38, borderRadius: 11, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
-  compactCopy: { flex: 1 },
-  compactTitle: { fontSize: 18, fontWeight: "700", color: colors.primaryNavy },
-  compactSub: { marginTop: 1, fontSize: 18, fontWeight: "600", color: colors.textSecondary },
-  redTag: { height: 26, paddingHorizontal: 10, borderRadius: 13, backgroundColor: colors.dangerSoft, alignItems: "center", justifyContent: "center" },
-  redTagText: { fontSize: 18, fontWeight: "700", color: colors.dangerRed },
-  connector: { width: 2, height: 20, backgroundColor: colors.border, alignSelf: "center", marginVertical: 4 },
-  consentRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9 },
-  consentRing: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.canvasMuted },
-  consentCheck: { position: "absolute", top: 0, left: 0, width: 28, height: 28, borderRadius: 14, backgroundColor: colors.successGreen, alignItems: "center", justifyContent: "center" },
-  consentText: { fontSize: 18, fontWeight: "700", color: colors.primaryNavy },
-  pharmacyCard: { backgroundColor: colors.white, borderRadius: 16, paddingVertical: 14, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1.5, borderColor: colors.successSoft },
-  pharmacyIcon: { width: 44, height: 44, borderRadius: 13, backgroundColor: colors.successSoft, alignItems: "center", justifyContent: "center" },
-  greenTag: { height: 26, paddingHorizontal: 10, borderRadius: 13, backgroundColor: colors.successSoft, alignItems: "center", justifyContent: "center" },
-  greenTagText: { fontSize: 18, fontWeight: "700", color: colors.successGreen },
-  flowCaption: { marginTop: spacing.md, textAlign: "center", fontSize: 18, fontWeight: "600", color: colors.textSecondary },
-
-  // 7
   ctaCenter: { flexGrow: 1, alignItems: "center", justifyContent: "center", paddingBottom: spacing.md },
   logoRingSmall: { width: 96, height: 96, borderRadius: 48, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   ctaLeadTop: { marginTop: spacing.lg },

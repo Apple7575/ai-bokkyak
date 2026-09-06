@@ -18,7 +18,9 @@ const LOGO_CARD = 104;
 const LOGO_SIZE = 80;
 
 // 가입 화면 — 이름·성별·생년월일만 받는다.
-// 복약 정보는 가입 직후 음성 안내(VoiceGuide)에서 화면 터치로 받는다.
+// 회의 2026-09-03: 점검과 알람 설정은 한 흐름이다. 점검을 거쳐 온 가입은
+// 결과 화면(→ 복용 알람 설정하기 → VoiceGuide)으로 이어지고,
+// 점검 없이(인트로에서 건너뛰고) 온 가입은 바로 홈으로 간다 — 묻고 또 묻지 않는다.
 export function RoleSelectScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
@@ -108,8 +110,9 @@ export function RoleSelectScreen() {
         }).select().single();
       if (error || !data) { Alert.alert("등록 실패", error?.message ?? ""); setSaving(false); return; }
       await setPatient(data.id);
-      // 가입 직후 음성 가이드로 복용 알람을 설정한다(사전 녹음 인출 + 화면 터치).
-      await finish(data.id, [{ name: "Tabs" }, { name: "VoiceGuide" }]);
+      // 점검 초안이 없으면 바로 홈 — 알람 설정(VoiceGuide)은 점검 흐름의 결과
+      // 화면에서만 잇는다 (회의 2026-09-03: 건너뛴 사용자에게 다시 묻지 않는다).
+      await finish(data.id, [{ name: "Tabs" }]);
     } catch {
       Alert.alert("등록 실패", "인터넷 연결을 확인해 주세요.");
       setSaving(false);
@@ -161,7 +164,8 @@ export function RoleSelectScreen() {
         }).select().single();
       if (error || !data) throw error ?? new Error("insert 실패");
       await setPatient(data.id);
-      await finish(data.id, [{ name: "Tabs" }, { name: "VoiceGuide" }]);
+      // 신규 카카오 가입도 마찬가지 — 점검 초안이 없으면 바로 홈 (회의 2026-09-03).
+      await finish(data.id, [{ name: "Tabs" }]);
     } catch {
       Alert.alert("가입에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
       setKakaoBusy(false);

@@ -18,7 +18,7 @@ export type Step =
   | "count"     // 단계 1 — 인사 및 복용 횟수 (V01)
   | "time"      // 단계 2 — 복용 시간 (V02, V03)
   | "confirm"   // 단계 3 — 요약 확인 (V04)
-  | "done"      // 단계 4 — 완료 및 위험 분석 제안 (V05 → V06)
+  | "done"      // 단계 4 — 완료 (V05)
   | "skipped";  // 건너뛰기 (V14)
 
 export type GuideState = {
@@ -54,7 +54,9 @@ export function cuesForStep(step: Step): CueId[] {
     case "count": return ["V01"];
     case "time": return ["V02"];
     case "confirm": return ["V04"];
-    case "done": return ["V05", "V06"]; // 0.8초 간격 연속 재생
+    // 회의 2026-09-03: 점검과 알람은 한 흐름이 됐다 — 알람 설정을 마친 사용자에게
+    // 위험 분석(V06)을 다시 제안하지 않는다. V06 녹음·대본은 voiceScript.ts에 남아 있다.
+    case "done": return ["V05"];
     case "skipped": return ["V14"];
   }
 }

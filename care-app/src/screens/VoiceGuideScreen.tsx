@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Image, View, Text, ScrollView, StyleSheet, Pressable, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Volume2, Check, ChevronRight, ChevronLeft, Clock } from "lucide-react-native";
+import { Volume2, Check, ChevronLeft, Clock } from "lucide-react-native";
+import { BigButton } from "../components/BigButton";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders } from "../lib/notifications";
@@ -30,7 +31,9 @@ const VOICE_ART = require("../../assets/illustrations/voice-companion.png");
 // 그래서 멘트도 "말씀해 주세요"가 아니라 "아래에서 골라 주세요"라고 한다.
 //
 // 온보딩에서는 약 이름을 받지 않는다 — 횟수와 시간만 정한다(문서 §1).
-// 약 이름은 완료 후 "1분 복용 위험 분석"에서 간편 등록으로 받는다.
+// 약 이름은 나중에 약장의 간편 등록에서 받는다. (회의 2026-09-03: 알람 설정을
+// 마치면 바로 홈이다 — 위험 분석을 여기서 다시 제안하지 않는다. 점검은
+// 인트로 → 1분 점검 → 가입 → 결과 → 알람 설정의 한 흐름으로만 잇는다.)
 
 function ampm(h: number, m: number): string {
   const ap = h < 12 ? "오전" : "오후";
@@ -165,7 +168,7 @@ export function VoiceGuideScreen() {
       for (const t of state.times) {
         const { data, error } = await supabase.from("schedules").insert({
           patient_id: pid,
-          medicine_name: `${t.slot} 약`,   // 위험 분석에서 실제 약 이름으로 바꾼다
+          medicine_name: `${t.slot} 약`,   // 약장의 간편 등록에서 실제 약 이름으로 바꾼다
           time_of_day: t.slot, hour: t.hour, minute: t.minute,
           repeat_days: [] as number[], active: true,
         }).select().single();
@@ -177,7 +180,8 @@ export function VoiceGuideScreen() {
         }
       }
       void logGuideEvent({ step: "done", ...stats.current });
-      nav.reset({ index: 1, routes: [{ name: "Tabs" }, { name: "RegisterMethod" }] });
+      // 회의 2026-09-03: 알람 설정을 마치면 바로 홈. 약 등록·위험 분석을 이어 붙이지 않는다.
+      nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
     } catch {
       Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
       setSaving(false);
@@ -355,7 +359,7 @@ export function VoiceGuideScreen() {
           </>
         ) : null}
 
-        {/* 단계 4 — 완료 + 위험 분석 제안 */}
+        {/* 단계 4 — 완료. 회의 2026-09-03: 위험 분석을 다시 제안하지 않고 바로 홈으로 */}
         {state.step === "done" ? (
           <>
             <View style={styles.doneCard}>
@@ -366,25 +370,7 @@ export function VoiceGuideScreen() {
               ))}
             </View>
 
-            <View style={styles.riskCard}>
-              <View style={styles.badge}><Text style={styles.badgeText}>간편 등록으로 평생 복용 관리</Text></View>
-              <Text style={styles.riskTitle}>1분 복용 위험 분석</Text>
-              <Text style={styles.riskDesc}>
-                약과 영양제를 여러 개 함께 드시면 자칫 약이 독이 될 수도 있어요.
-                지금 드시는 조합이 괜찮은지 확인해 보세요.
-              </Text>
-              <Pressable onPress={() => { void saveAlarms(); }} disabled={saving}
-                style={({ pressed }) => [styles.wideBtn, (pressed || saving) && { opacity: 0.9 }]}>
-                <Text style={styles.wideText}>
-                  {saving ? "저장 중…" : "1분 복용 위험 분석 시작하기"}
-                </Text>
-                <ChevronRight size={20} color="#fff" />
-              </Pressable>
-            </View>
-
-            <Pressable onPress={() => { void saveAlarms(); }} style={styles.homeLink} hitSlop={8}>
-              <Text style={styles.homeLinkText}>홈으로 갈게요</Text>
-            </Pressable>
+            <BigButton label={saving ? "저장 중…" : "홈으로 가기"} onPress={() => { void saveAlarms(); }} disabled={saving} />
             <Text style={styles.disclaimer}>{DISCLAIMER}</Text>
           </>
         ) : null}
@@ -481,18 +467,5 @@ const styles = StyleSheet.create({
     borderRadius: radii.card, padding: spacing.lg,
   },
   doneTitle: { fontSize: 24, fontWeight: "800", color: colors.primaryNavy, marginVertical: spacing.xs },
-  riskCard: {
-    backgroundColor: colors.cardBg, borderColor: colors.primaryBlue, borderWidth: 2,
-    borderRadius: radii.card, padding: spacing.lg, gap: spacing.sm,
-  },
-  badge: {
-    alignSelf: "flex-start", backgroundColor: colors.lightBlueBg,
-    borderRadius: radii.pill, paddingHorizontal: 12, paddingVertical: 5,
-  },
-  badgeText: { fontSize: 14, fontWeight: "800", color: colors.primaryBlue },
-  riskTitle: { fontSize: 24, fontWeight: "800", color: colors.primaryNavy },
-  riskDesc: { fontSize: 18, color: colors.textSecondary, lineHeight: 27, marginBottom: spacing.xs },
-  homeLink: { alignSelf: "center", paddingVertical: spacing.sm },
-  homeLinkText: { fontSize: fontSizes.body, color: colors.textSecondary, fontWeight: "600" },
   disclaimer: { fontSize: 14, color: colors.textSecondary, textAlign: "center", lineHeight: 21 },
 });
