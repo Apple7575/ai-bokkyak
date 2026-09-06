@@ -40,8 +40,17 @@ const SUMMARY_ROWS: { kind: RuleKind; label: string }[] = [
   { kind: "overlap", label: KIND_LABEL.overlap },
 ];
 
+// 근거 수준(서버 판정에만 있음) → 표시 라벨. 없는 값(none_known 등)은 보여 주지 않는다.
+const EVIDENCE_LABEL: Record<string, string> = {
+  established: "명확한 근거",
+  theoretical: "이론적 우려",
+  limited: "이론적 우려",
+  conflicting: "근거 충돌",
+};
+
 function FindingCard({ f, highlighted }: { f: QuickFinding; highlighted?: boolean }) {
   const c = KIND_COLOR[f.kind];
+  const evidence = f.evidenceLevel ? EVIDENCE_LABEL[f.evidenceLevel] : undefined;
   return (
     <View style={[styles.card, highlighted && styles.cardTop]}>
       <View style={styles.tagRow}>
@@ -52,10 +61,14 @@ function FindingCard({ f, highlighted }: { f: QuickFinding; highlighted?: boolea
       </View>
       <Text style={styles.cardTitle}>{f.title}</Text>
       <Text style={styles.cardMsg}>{f.message}</Text>
+      {typeof f.minSeparationHours === "number" ? (
+        <Text style={styles.separation}>{`권장 간격: ${f.minSeparationHours}시간`}</Text>
+      ) : null}
       {f.source === "dur" && f.notice_no ? <Text style={styles.source}>{`근거: 식약처 DUR 고시 ${f.notice_no}`}</Text> : null}
       <View style={styles.divider} />
       <View style={styles.pharmRow}>
         <View style={styles.pharmPill}><Text style={styles.pharmPillText}>약사 확인 권장</Text></View>
+        {evidence ? <Text style={styles.evidenceText}>{evidence}</Text> : null}
         <Text style={styles.pharmNote}>복용 방법은 약사 또는 의료진과 확인해주세요.</Text>
       </View>
     </View>
@@ -352,6 +365,8 @@ const styles = StyleSheet.create({
   tagText: { fontSize: 18, fontWeight: "700" },
   cardTitle: { fontSize: 23, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.4, marginTop: spacing.sm + 4 },
   cardMsg: { fontSize: 19, lineHeight: 29, fontWeight: "600", color: colors.text, marginTop: spacing.sm },
+  separation: { fontSize: 18, lineHeight: 26, fontWeight: "700", color: colors.primaryNavy, marginTop: spacing.sm },
+  evidenceText: { fontSize: 18, fontWeight: "700", color: colors.textSecondary },
   source: { fontSize: 18, color: colors.textSecondary, marginTop: spacing.sm },
   pharmRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexWrap: "wrap" },
   pharmPill: { backgroundColor: colors.successSoft, borderRadius: radii.pill, paddingHorizontal: 12, minHeight: 32, justifyContent: "center" },

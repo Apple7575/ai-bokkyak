@@ -42,6 +42,8 @@ export type QuickCheckDraft = {
   analyzedAt: string | null;    // ISO 시각
   /** 제품명 DUR 대조를 네트워크 문제로 못 했지만 규칙 결과는 있어 넘어간 경우 */
   durUnavailable?: boolean;
+  /** 판정 주체: server=quick_check_v1 RPC(검수 문구), local=내장 규칙+DUR 폴백. 없으면 구버전 초안. */
+  engine?: "server" | "local";
 };
 
 export const EMPTY_DRAFT: QuickCheckDraft = {

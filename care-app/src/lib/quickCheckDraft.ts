@@ -27,6 +27,8 @@ export async function loadDraft(): Promise<QuickCheckDraft | null> {
       unmatched: Array.isArray(p.unmatched) ? p.unmatched : [],
       analyzedAt: typeof p.analyzedAt === "string" ? p.analyzedAt : null,
       durUnavailable: p.durUnavailable === true,
+      // 판정 주체 — 모르는 값(구버전·깨진 값)은 버린다.
+      engine: p.engine === "server" || p.engine === "local" ? p.engine : undefined,
     };
   } catch {
     return null; // 깨진 값은 없는 것으로

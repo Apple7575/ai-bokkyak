@@ -8,12 +8,15 @@ import { lookupIngredients, fetchContraindications } from "../lib/drugData";
 import { allIngredients, matchFindings, Finding, MedIngredients } from "../lib/interactions";
 import { checkItems, customNames, mergeFindings, unmatchedNames, QuickCheckDraft, QuickFinding } from "../lib/quickCheck";
 import { applyRules } from "../lib/quickCheckRules";
+import { runServerCheck, serverToFindings } from "../lib/quickCheckServer";
 import { loadDraft, saveDraft } from "../lib/quickCheckDraft";
 import { colors, fontSizes, spacing, radii, shadows } from "../theme/tokens";
 
-// 점검 중 화면 — 두 갈래를 돌리면서 4단계 체크리스트를 순서대로 켠다.
-//  · 종류명 칩 + 기본 정보 → 상식 규칙(applyRules, 기기 안에서 즉시)
-//  · 제품명(검색·사진) → 식약처 DUR 병용금기(InteractionScreen과 같은 경로)
+// 점검 중 화면 — 판정을 돌리면서 4단계 체크리스트를 순서대로 켠다.
+//  · 기본: 서버 판정(quick_check_v1 RPC) — 약사 검수를 거친 DB 문구를 그대로 받는다.
+//  · 서버 실패(에러·10초 타임아웃) 시 폴백: 기존 로컬 두 갈래.
+//    · 종류명 칩 + 기본 정보 → 상식 규칙(applyRules, 기기 안에서 즉시)
+//    · 제품명(검색·사진) → 식약처 DUR 병용금기(InteractionScreen과 같은 경로)
 // 조회가 순식간에 끝나도 최소 시간은 보여 준다 — 바로 넘어가면 "정말 봤나?" 싶어진다.
 
 const STEPS = ["약과 영양제 조합 확인", "성분 확인", "주의 조합 대조", "결과 정리"] as const;
@@ -37,11 +40,28 @@ async function analyzeDur(names: string[]): Promise<DurResult> {
   return { ok: true, findings: matchFindings(meds, rules.data), unmatched };
 }
 
-type Analysis = { ok: true; findings: QuickFinding[]; unmatched: string[]; durUnavailable: boolean } | { ok: false };
+type Analysis =
+  | { ok: true; findings: QuickFinding[]; unmatched: string[]; durUnavailable: boolean; engine: "server" | "local" }
+  | { ok: false };
 
-// 규칙은 기기 안에서 항상 된다. DUR이 실패해도 규칙 결과가 있으면 durUnavailable 표시로 넘어가고,
-// 보여 줄 것이 하나도 없을 때만 실패로 친다.
+// 1) 서버 판정(quick_check_v1) 먼저 — 검수된 문구를 그대로 받는다. 실패(throw)하면
+// 2) 로컬 폴백: 규칙은 기기 안에서 항상 된다. DUR이 실패해도 규칙 결과가 있으면
+//    durUnavailable 표시로 넘어가고, 보여 줄 것이 하나도 없을 때만 실패로 친다.
 async function analyze(draft: QuickCheckDraft): Promise<Analysis> {
+  try {
+    const res = await runServerCheck({
+      names: checkItems(draft), age: draft.profile.age, conditions: draft.profile.conditions,
+    });
+    const mapped = serverToFindings(res);
+    return {
+      ok: true, findings: mapped.findings,
+      // 못 찾은 입력(unresolved) + 성분 매핑 없는 원료(unmatched)를 "점검하지 못한 항목"으로.
+      unmatched: [...new Set([...mapped.unresolved, ...mapped.unmatched])],
+      durUnavailable: false, engine: "server",
+    };
+  } catch {
+    // 서버가 안 되면 아래 로컬 경로로 폴백한다.
+  }
   const ruleFindings = applyRules({ supplements: draft.supplements, medicines: draft.medicines, profile: draft.profile });
   const custom = customNames(checkItems(draft));
   let dur: DurResult;
@@ -50,9 +70,9 @@ async function analyze(draft: QuickCheckDraft): Promise<Analysis> {
   } catch {
     dur = { ok: false };
   }
-  if (dur.ok) return { ok: true, findings: mergeFindings(ruleFindings, dur.findings), unmatched: dur.unmatched, durUnavailable: false };
+  if (dur.ok) return { ok: true, findings: mergeFindings(ruleFindings, dur.findings), unmatched: dur.unmatched, durUnavailable: false, engine: "local" };
   if (ruleFindings.length === 0) return { ok: false };
-  return { ok: true, findings: mergeFindings(ruleFindings, []), unmatched: [], durUnavailable: true };
+  return { ok: true, findings: mergeFindings(ruleFindings, []), unmatched: [], durUnavailable: true, engine: "local" };
 }
 
 export function QuickCheckAnalyzingScreen() {
@@ -78,7 +98,7 @@ export function QuickCheckAnalyzingScreen() {
       try {
         await saveDraft({
           ...draft, findings: r.findings, unmatched: r.unmatched, durUnavailable: r.durUnavailable,
-          analyzedAt: new Date().toISOString(),
+          engine: r.engine, analyzedAt: new Date().toISOString(),
         });
       } catch {
         timers.forEach(clearTimeout);

@@ -1,6 +1,9 @@
 // "1분 복용 점검" — 종류명 칩(혈압약, 오메가3 …)과 기본 정보(연령대·해당 항목)에 맞춰
 // 돌리는 상식 규칙. 순수 로직(RN/네트워크 의존 없음, jest 대상).
 //
+// ⚠️ 지금은 서버 판정(quick_check_v1 RPC, quickCheckServer.ts)이 기본이다. 이 파일의
+// 내장 규칙은 오프라인·서버 실패 시 **폴백**으로만 쓴다 — 삭제하지 말 것.
+//
 // ⚠️ 이 규칙은 널리 알려진 약물 상식을 옮긴 **초안**으로 **약사 검수 전**이다.
 // 검수 결과에 따라 문구·등급(kind)·태그를 바꿔야 한다. 전체 표: docs/quick-check-rules.md
 //
@@ -17,6 +20,11 @@ export type QuickFinding = {
   tag: string;                   // "우선 확인 필요" | "복용 시간 확인 필요" | "중복 성분 확인" | "과다 복용 확인" | "주의사항"
   source: "rule" | "dur";
   notice_no?: string | null;
+  // ↓ 서버 판정(quick_check_v1)에서만 채워진다. 로컬 규칙 결과에는 없다(하위 호환).
+  /** 근거 수준: established | limited | conflicting | theoretical | none_known */
+  evidenceLevel?: string;
+  /** 권장 복용 간격(시간). 있으면 결과 카드에 "권장 간격: N시간"으로 보여 준다. */
+  minSeparationHours?: number | null;
 };
 
 export const KIND_LABEL: Record<RuleKind, string> = {
