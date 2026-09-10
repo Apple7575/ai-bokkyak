@@ -6,7 +6,7 @@ import { Lock, ShieldCheck, Stethoscope, MessageCircle, User, X, SearchX, Chevro
 import { BigButton } from "../components/BigButton";
 import { getPatientId } from "../lib/storage";
 import {
-  checkedCount as countChecked, summarize, topFinding, lockedGroups, groupByKind, QuickFinding, RuleKind,
+  checkedCount as countChecked, summarize, topFinding, lockedGroups, groupByKind, unmatchedDescription, QuickFinding, RuleKind,
 } from "../lib/quickCheck";
 import { KIND_LABEL } from "../lib/quickCheckRules";
 import { buildQuickCheckShareMessage } from "../lib/quickCheckShare";
@@ -137,7 +137,7 @@ export function QuickCheckResultScreen() {
   const unlocked = state.phase === "ok" && state.unlocked;
   const unmatched = state.phase === "ok" ? state.unmatched : [];
   const unmappedIngredients = state.phase === "ok" ? state.unmappedIngredients : [];
-  // 서버가 아직 판정하지 못하는 기본 정보(신장질환, 60대 이상 …) — 서버 판정일 때만 뜻이 있다.
+  // 서버가 아직 판정하지 못하는 기본 정보(신장질환, 간질환 — 연령대는 제외) — 서버 판정일 때만 뜻이 있다.
   // 로컬 판정은 내장 규칙이 이 라벨을 직접 다룬다.
   const uncoveredConditions = state.phase === "ok" && state.engine === "server" ? state.uncoveredConditions : [];
   // 서버 판정에 연결하지 못해 로컬 규칙으로만 본 경우 — 가입 전에만 알린다.
@@ -224,9 +224,7 @@ export function QuickCheckResultScreen() {
               <Text style={styles.unmatchedTitle}>점검하지 못한 항목 {unmatched.length}개</Text>
             </View>
             <Text style={styles.unmatchedNames}>{unmatched.join(" · ")}</Text>
-            <Text style={styles.unmatchedDesc}>
-              식약처 자료에서 제품을 찾지 못해 성분을 알 수 없었어요. 약 봉투나 통에 적힌 제품 이름으로 검색하면 확인할 수 있어요.
-            </Text>
+            <Text style={styles.unmatchedDesc}>{unmatchedDescription(unmatched)}</Text>
           </View>
         ) : null}
 
@@ -238,8 +236,8 @@ export function QuickCheckResultScreen() {
         {/* 서버 조건 규칙이 없는 기본 정보 — 결과에 반영되지 않았음을 숨기지 않는다 */}
         {state.phase === "ok" && uncoveredConditions.length > 0 ? (
           <View style={styles.durNote}>
-            <Text style={styles.note}>{`아직 서버 점검에 반영되지 않은 항목: ${uncoveredConditions.join(" · ")}`}</Text>
-            <Text style={styles.note}>이 항목은 이번 결과에 반영되지 않았어요. 약사에게 함께 말씀해 주세요.</Text>
+            <Text style={styles.note}>{`이번 점검에서 아직 확인하지 못한 정보: ${uncoveredConditions.join(" · ")}`}</Text>
+            <Text style={styles.note}>약사에게 함께 말씀해 주세요.</Text>
           </View>
         ) : null}
 

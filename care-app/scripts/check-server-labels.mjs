@@ -18,6 +18,11 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (p) => readFileSync(path.join(ROOT, p), "utf8");
 
+if (typeof fetch !== "function") {
+  console.error("Node 18 이상이 필요합니다 (전역 fetch 없음).");
+  process.exit(1);
+}
+
 // --- 설정 ------------------------------------------------------------------
 const extra = JSON.parse(read("app.json")).expo?.extra ?? {};
 const URL_ = extra.supabaseUrl;
@@ -33,7 +38,9 @@ if (!URL_ || !KEY) {
 function stringArrayConst(src, name) {
   const m = src.match(new RegExp("export const " + name + /\s*=\s*\[([^\]]*)\]/.source));
   if (!m) throw new Error(`${name} 을(를) 찾지 못했습니다`);
-  return [...m[1].matchAll(/"([^"]+)"/g)].map((x) => x[1]);
+  const out = [...m[1].matchAll(/"([^"]+)"/g)].map((x) => x[1]);
+  if (out.length === 0) throw new Error(`${name} 이(가) 비어 있습니다 — 파일 형식이 바뀌었는지 확인`);
+  return out;
 }
 const labelsSrc = read("src/lib/quickCheckLabels.ts");
 const SUPPLEMENTS = [...stringArrayConst(labelsSrc, "SUPPLEMENT_PRESETS"), ...stringArrayConst(labelsSrc, "SUPPLEMENT_MORE")];
@@ -46,6 +53,7 @@ const ALIASES = {};
 for (const m of aliasBody[1].matchAll(/"([^"]+)":\s*\[([^\]]*)\]/g)) {
   ALIASES[m[1]] = [...m[2].matchAll(/"([^"]+)"/g)].map((x) => x[1]);
 }
+if (Object.keys(ALIASES).length === 0) throw new Error("CONDITION_ALIASES 에서 항목을 하나도 읽지 못했습니다 — 파일 형식이 바뀌었는지 확인");
 const ALL_ALIASES = [...new Set(Object.values(ALIASES).flat())];
 
 // 별칭이 살아 있다는 증거. 별칭을 추가하면 여기에도 한 줄 넣어야 한다(없으면 ✖).
@@ -126,6 +134,10 @@ async function main() {
     else info(`"${label}" 만 보내도 걸림: ${JSON.stringify(codes)} — 서버가 앱 라벨을 알게 됐다면 별칭을 정리해도 된다`);
   }
 
+  if (pass + fail === 0) {
+    console.error("✖ 검사가 하나도 실행되지 않았습니다 — 라벨 파싱을 확인하세요.");
+    process.exit(1);
+  }
   console.log(`\n결과: ✔ ${pass}  ✖ ${fail}`);
   process.exit(fail > 0 ? 1 : 0);
 }

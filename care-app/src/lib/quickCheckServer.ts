@@ -9,8 +9,6 @@ import { supabase } from "./supabase";
 import { QuickFinding, sortFindings } from "./quickCheckRules";
 import { substanceName } from "./substanceNames";
 
-export { PRESET_LABELS } from "./quickCheckLabels";
-
 export type ServerResolved = {
   input: string;
   via: "chip" | "substance" | "hff_product" | "drug_product";
@@ -117,14 +115,23 @@ function chipResolvedProperly(r: ServerResolved | undefined): boolean {
  *  · unresolved: 아무 데서도 못 찾은 **입력 이름** — 결과 화면의 "점검하지 못한 항목"이자
  *    checkedCount 계산 단위(입력 이름과 같은 단위여야 한다).
  *    presetLabels를 주면, 그 라벨 중 칩으로 제대로 풀리지 않은 것(chipResolvedProperly 참고)도
- *    서버 unresolved 뒤에 붙인다(중복 제거). 칩이 아닌 입력(제품명)은 그대로 둔다.
+ *    서버 unresolved 뒤에 붙이고(중복 제거) 그 이름이 걸린 규칙 결과는 뺀다. 칩이 아닌 입력(제품명)은 그대로.
  *  · unmappedIngredients: 제품은 찾았지만 성분 매핑이 없던 **원료명**(중복 제거, 8개까지) —
  *    입력 이름이 아니므로 unmatched에 섞지 않는다. */
 export function serverToFindings(
   res: ServerCheckResult,
   presetLabels?: ReadonlySet<string>
 ): { findings: QuickFinding[]; unresolved: string[]; unmappedIngredients: string[] } {
-  const ruleFindings: QuickFinding[] = res.findings.map((f) => ({
+  // 칩이 제대로 풀리지 않은 입력(chipResolvedProperly 참고). 이 이름이 걸린 규칙 결과는 버린다 —
+  // "유산균 × 혈압약"과 "점검하지 못한 항목: 유산균"이 같이 뜨면 안 된다. DUR 행에는 입력 이름이
+  // 없으므로 그대로 둔다.
+  const demoted = new Set<string>();
+  if (presetLabels) {
+    for (const r of res.resolved) {
+      if (presetLabels.has(r.input) && !chipResolvedProperly(r)) demoted.add(r.input);
+    }
+  }
+  const ruleFindings: QuickFinding[] = res.findings.filter((f) => !f.matched.some((m) => demoted.has(m))).map((f) => ({
     kind: kindOf(f),
     a: f.matched[0] ?? "",
     b: f.matched[1] ?? "",
@@ -155,12 +162,7 @@ export function serverToFindings(
   // unmapped를 "제품: 원료"로 다 늘어놓으면 너무 길다 — 원료명만 중복 제거해 8개까지.
   const unmappedIngredients = [...new Set(res.unmapped.map((u) => u.ingredient))].slice(0, UNMAPPED_CAP);
   const unresolved = [...res.unresolved];
-  if (presetLabels) {
-    for (const r of res.resolved) {
-      if (!presetLabels.has(r.input) || chipResolvedProperly(r)) continue;
-      if (!unresolved.includes(r.input)) unresolved.push(r.input);
-    }
-  }
+  for (const name of demoted) if (!unresolved.includes(name)) unresolved.push(name);
   return {
     findings: sortFindings([...ruleFindings, ...durFindings]),
     unresolved,

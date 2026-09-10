@@ -2,6 +2,7 @@ import {
   SUPPLEMENT_PRESETS, SUPPLEMENT_MORE, MEDICINE_PRESETS, AGES, CONDS, NONE_SUPPLEMENT, NONE_MEDICINE, NONE_CONDITION,
   toggleItem, addItem, checkItems, splitResult, unmatchedNames, checkedCount, EMPTY_DRAFT,
   isPreset, customNames, durToQuickFinding, mergeFindings, summarize, topFinding, lockedGroups, groupByKind,
+  unmatchedDescription, PRESET_LABELS,
 } from "../lib/quickCheck";
 import type { Finding } from "../lib/interactions";
 import type { QuickFinding, RuleKind } from "../lib/quickCheckRules";
@@ -169,5 +170,16 @@ describe("summarize / topFinding / lockedGroups / groupByKind", () => {
   });
   it("groupByKind: kind 순서로 묶는다", () => {
     expect(groupByKind(list).map((g) => [g.kind, g.items.length])).toEqual([["priority", 1], ["timing", 2], ["overlap", 1], ["caution", 1]]);
+  });
+});
+
+describe("unmatchedDescription — 점검하지 못한 항목 설명", () => {
+  it("전부 종류명 칩이면 '자료에 없는 종류' 문구", () => {
+    expect(unmatchedDescription(["유산균", "여드름약"])).toBe("아직 점검 자료에 없는 종류예요. 약사에게 함께 말씀해 주세요.");
+    expect(PRESET_LABELS.has("유산균")).toBe(true);
+  });
+  it("제품명이 하나라도 섞이면 제품 검색 안내 문구", () => {
+    expect(unmatchedDescription(["유산균", "락토핏 골드"])).toContain("제품 이름으로 검색");
+    expect(unmatchedDescription(["락토핏 골드"])).toContain("제품 이름으로 검색");
   });
 });

@@ -43,15 +43,15 @@ describe("serverConditionInput", () => {
     expect(r.conditions).toEqual(["신장질환"]);
     expect(r.uncovered).toEqual(["신장질환"]);
   });
-  it("연령대는 그대로 넘기고, 서버 규칙이 없으므로 uncovered 끝에 붙는다(조건 먼저, 연령 나중)", () => {
+  it("연령대는 그대로 넘기되 uncovered에는 넣지 않는다(항상 미반영이라 매번 뜨면 소음)", () => {
     const r = serverConditionInput({ age: "60대 이상", conditions: ["신장질환", "임신·수유 중"] });
     expect(r.age).toBe("60대 이상");
     expect(r.conditions).toEqual(["신장질환", "임신·수유 중", "임신"]);
-    expect(r.uncovered).toEqual(["신장질환", "60대 이상"]);
+    expect(r.uncovered).toEqual(["신장질환"]);
   });
-  it("age가 null이면 uncovered에 연령이 없다", () => {
-    const r = serverConditionInput({ age: null, conditions: [] });
-    expect(r).toEqual({ age: null, conditions: [], uncovered: [] });
+  it("age만 있고 조건이 없으면 uncovered는 비어 있다", () => {
+    expect(serverConditionInput({ age: "40대", conditions: [] })).toEqual({ age: "40대", conditions: [], uncovered: [] });
+    expect(serverConditionInput({ age: null, conditions: [] })).toEqual({ age: null, conditions: [], uncovered: [] });
   });
   it("중복 없이, 순서를 지킨다 — 서버 조건명 자체(임신)는 별칭 없이도 uncovered가 아니다", () => {
     const r = serverConditionInput({ age: null, conditions: ["임신", "임신·수유 중", "임신·수유 중"] });

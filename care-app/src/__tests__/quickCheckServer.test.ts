@@ -185,6 +185,28 @@ describe("serverToFindings — 칩 라벨 해석 검증(presetLabels)", () => {
     const r = serverToFindings(resolved([{ input: "락토핏 골드", via: "hff_product", substance_ids: [3] }]), PRESETS);
     expect(r.unresolved).toEqual([]);
   });
+  it("탈락한 칩이 걸린 규칙 결과는 버린다 — '유산균 × 혈압약'과 '점검하지 못한 항목: 유산균'이 같이 뜨면 안 된다", () => {
+    const r = serverToFindings(
+      {
+        ...EMPTY,
+        resolved: [
+          { input: "유산균", via: "hff_product", substance_ids: [3] },
+          { input: "오메가3", via: "chip", substance_ids: [12] },
+          { input: "혈압약", via: "chip", substance_ids: [40] },
+        ],
+        findings: [
+          finding({ code: "probiotic_x", matched: ["유산균", "혈압약"] }),
+          finding({ code: "omega_x", matched: ["오메가3", "혈압약"] }),
+        ],
+        // DUR 행에는 입력 이름이 없다 — 그대로 둔다.
+        dur: [{ ingredient_a: "A", ingredient_b: "B", reason: null, notice_no: null }],
+      },
+      PRESETS
+    );
+    expect(r.unresolved).toEqual(["유산균"]);
+    expect(r.findings.filter((f) => f.source === "rule").map((f) => f.title)).toEqual(["오메가3 × 혈압약"]);
+    expect(r.findings.filter((f) => f.source === "dur")).toHaveLength(1);
+  });
   it("서버 unresolved를 먼저, 그 뒤에 칩 검증 탈락을 붙이고 중복은 뺀다", () => {
     const r = serverToFindings(
       {

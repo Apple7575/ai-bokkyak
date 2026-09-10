@@ -11,10 +11,9 @@ import { QuickFinding, RuleKind, KIND_ORDER, LOCKED_GROUPS, sortFindings } from 
 export type { QuickFinding, RuleKind } from "./quickCheckRules";
 
 // 버튼 라벨은 quickCheckLabels.ts에 있다(서버 라벨 대조 스크립트가 읽는 파일). 여기서 재수출.
-export {
-  SUPPLEMENT_PRESETS, SUPPLEMENT_MORE, MEDICINE_PRESETS, AGES, CONDS, NONE_CONDITION, PRESET_LABELS,
-} from "./quickCheckLabels";
-import { PRESET_LABELS as _PRESET_LABELS } from "./quickCheckLabels";
+export { SUPPLEMENT_PRESETS, SUPPLEMENT_MORE, MEDICINE_PRESETS, AGES, CONDS, NONE_CONDITION } from "./quickCheckLabels";
+import { PRESET_LABELS } from "./quickCheckLabels";
+export { PRESET_LABELS };
 
 export const NONE_SUPPLEMENT = "먹는 영양제 없음";
 export const NONE_MEDICINE = "복용 중인 약 없음";
@@ -49,7 +48,15 @@ export const EMPTY_DRAFT: QuickCheckDraft = {
 
 /** 칩으로 고른 종류명인가. 종류명은 규칙이 맡고, 제품명(검색·사진)은 DUR이 맡는다. */
 export function isPreset(name: string): boolean {
-  return _PRESET_LABELS.has(name);
+  return PRESET_LABELS.has(name);
+}
+
+/** 결과 화면 "점검하지 못한 항목" 설명. 전부 종류명 칩이면 제품 검색을 권해도 소용없다(자료 자체가 없다). */
+export function unmatchedDescription(unmatched: string[]): string {
+  if (unmatched.length > 0 && unmatched.every(isPreset)) {
+    return "아직 점검 자료에 없는 종류예요. 약사에게 함께 말씀해 주세요.";
+  }
+  return "식약처 자료에서 제품을 찾지 못해 성분을 알 수 없었어요. 약 봉투나 통에 적힌 제품 이름으로 검색하면 확인할 수 있어요.";
 }
 
 /** 점검 이름 중 제품명(칩이 아닌 것) — DUR 대조 대상 */

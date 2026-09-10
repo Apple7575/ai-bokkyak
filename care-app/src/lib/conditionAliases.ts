@@ -45,9 +45,10 @@ function coveredByServer(label: string): boolean {
  *  · conditions: 원래 라벨("해당 없음" 제외) + 별칭, 중복 제거, 순서 유지. 원래 라벨을 남기는 건
  *    나중에 DB 이름이 앱 라벨로 바뀌어도 그대로 걸리게 하려는 뜻.
  *  · age: 그대로.
- *  · uncovered: 사용자가 고른 것 중 서버가 판정하지 못하는 라벨 — 별칭이 없고 라벨 자체도
- *    서버 조건명이 아닌 것(표에 없는 구버전 라벨 포함).
- *    조건 먼저, 연령 나중. 결과 화면이 "반영되지 않은 항목"으로 보여 준다. */
+ *  · uncovered: 사용자가 고른 **조건** 중 서버가 판정하지 못하는 라벨 — 별칭이 없고 라벨 자체도
+ *    서버 조건명이 아닌 것(표에 없는 구버전 라벨 포함). 결과 화면이 "확인하지 못한 정보"로 보여 준다.
+ *    연령대는 넣지 않는다: 서버에 연령 규칙이 아예 없고 연령은 단일 선택이라, 넣으면 모든 결과에
+ *    "40대"가 매번 떠서 소음이 된다. CONDITION_ALIASES의 연령 항목은 문서·타입 완결성용이다. */
 export function serverConditionInput(
   profile: { age: string | null; conditions: string[] }
 ): { age: string | null; conditions: string[]; uncovered: string[] } {
@@ -59,9 +60,6 @@ export function serverConditionInput(
     push(label);
     for (const a of aliasesOf(label)) push(a);
     if (!coveredByServer(label) && !uncovered.includes(label)) uncovered.push(label);
-  }
-  if (profile.age !== null && !coveredByServer(profile.age) && !uncovered.includes(profile.age)) {
-    uncovered.push(profile.age);
   }
   return { age: profile.age, conditions, uncovered };
 }

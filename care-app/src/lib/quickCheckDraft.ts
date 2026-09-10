@@ -65,6 +65,10 @@ export async function commitQuickCheckDraft(patientId: string): Promise<QuickChe
       unmatched: draft.unmatched, profile: draft.profile,
       // 서버 판정 전용(성분 매핑 없던 원료명) — 로컬 판정이면 빈 배열.
       unmappedIngredients: draft.unmappedIngredients ?? [],
+      // 서버가 판정하지 못한 기본 정보 라벨 — 저장된 행만 봐도 무엇이 빠졌는지 알 수 있게.
+      uncoveredConditions: draft.uncoveredConditions ?? [],
+      // 판정 주체(server|local). 구버전 초안이면 null.
+      engine: draft.engine ?? null,
     },
     findings: draft.findings,
   });
