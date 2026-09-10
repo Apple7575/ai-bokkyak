@@ -31,6 +31,11 @@ export const colors = {
   dangerSoft: "#FCEBE7",
   warningSoft: "#FEF3E2",
   successSoft: "#E7F6EE",
+  // 형광펜 밴드(인트로 강조 구절 아래) — Soft 계열은 흰 배경에서 안 보인다는 피드백(2026-09-10).
+  // 글자 뒤에 깔리므로 진하되 글자(primaryNavy)가 읽히는 40~45% 농도.
+  successMark: "#8FDDB6",
+  warningMark: "#FFD27A",
+  dangerMark: "#F7ADA5",
   kakao: "#FEE500",
   kakaoInk: "#3C1E1E",
   kakaoShadow: "#B9A100",

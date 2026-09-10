@@ -225,7 +225,7 @@ function Brand1({ onTap }: { onTap: () => void }) {
       <Reveal delay={1000} duration={600}><Text style={styles.brand1Sub}>더 많이 먹는 것이 아니라,</Text></Reveal>
       <Reveal delay={1800} duration={650}>
         <View style={[styles.hlRow, styles.brand1LineTop]}>
-          <HL band={colors.successSoft} delay={2100}><Text style={styles.brand1Line}>제대로 먹는 것</Text></HL>
+          <HL band={colors.successMark} delay={2100}><Text style={styles.brand1Line}>제대로 먹는 것</Text></HL>
           <Text style={styles.brand1Line}>에서</Text>
         </View>
         <Text style={styles.brand1Line}>시작됩니다.</Text>
@@ -253,7 +253,7 @@ function Onboarding1({ onNext }: { onNext: () => void }) {
           {/* 제목이 가운데 정렬이라 줄바꿈돼도 가운데를 유지하도록 hlRowCenter */}
           <View style={styles.hlRowCenter}>
             <Text style={[styles.onb1Title, styles.noTop]}>몸에서는 </Text>
-            <HL band={colors.successSoft} delay={450}><Text style={[styles.onb1Title, styles.noTop]}>하나의 복용 조합</Text></HL>
+            <HL band={colors.successMark} delay={450}><Text style={[styles.onb1Title, styles.noTop]}>하나의 복용 조합</Text></HL>
             <Text style={[styles.onb1Title, styles.noTop]}>입니다.</Text>
           </View>
         </Reveal>
@@ -299,14 +299,14 @@ function Onboarding2({ onNext }: { onNext: () => void }) {
         <Reveal delay={150} duration={550}><Text style={styles.onb2Lead}>건강을 위해 챙겨 먹는 약과 영양제.</Text></Reveal>
         <Reveal delay={550} duration={600}>
         <View style={[styles.hlRow, styles.onb2TitleTop]}>
-          <HL band={colors.warningSoft} delay={900}><Text style={[styles.onb2Title, styles.noTop]}>불필요한 영양제</Text></HL>
+          <HL band={colors.warningMark} delay={900}><Text style={[styles.onb2Title, styles.noTop]}>불필요한 영양제</Text></HL>
           <Text style={[styles.onb2Title, styles.noTop]}>는</Text>
         </View>
         <Text style={[styles.onb2Title, styles.noTop]}>
           <Text style={styles.accentOrange}>낭비</Text>가 되고,
         </Text>
         <View style={styles.hlRow}>
-          <HL band={colors.dangerSoft} delay={1400}><Text style={[styles.onb2Title, styles.noTop]}>잘못된 복용 조합은</Text></HL>
+          <HL band={colors.dangerMark} delay={1400}><Text style={[styles.onb2Title, styles.noTop]}>잘못된 복용 조합은</Text></HL>
         </View>
         <Text style={[styles.onb2Title, styles.noTop]}>
           <Text style={styles.accentRed}>건강을 해칠 수 있습니다.</Text>
@@ -328,10 +328,10 @@ function Cta({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: (
         <Reveal delay={150} duration={550} kind="scale"><View style={styles.logoRingSmall}><Logo size={84} /></View></Reveal>
         <Reveal delay={750} duration={600}>
           <View style={[styles.hlRowCenter, styles.ctaLeadTop]}>
-            <HL band={colors.warningSoft} delay={1050}><Text style={styles.ctaLead}>불필요한 소비를 줄이고,</Text></HL>
+            <HL band={colors.warningMark} delay={1050}><Text style={styles.ctaLead}>불필요한 소비를 줄이고,</Text></HL>
           </View>
           <View style={[styles.hlRowCenter, styles.ctaTitleTop]}>
-            <HL band={colors.successSoft} delay={1250}><Text style={[styles.ctaTitle, styles.noTop]}>건강해지는 복용</Text></HL>
+            <HL band={colors.successMark} delay={1250}><Text style={[styles.ctaTitle, styles.noTop]}>건강해지는 복용</Text></HL>
             <Text style={[styles.ctaTitle, styles.noTop]}>의</Text>
           </View>
           <Text style={[styles.ctaTitle, styles.noTop]}>첫걸음, 지금 시작해보세요.</Text>
