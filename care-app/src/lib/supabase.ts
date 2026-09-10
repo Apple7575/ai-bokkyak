@@ -46,6 +46,15 @@ export type QuickCheckResult = {
     supplements: string[]; medicines: string[]; names: string[]; unmatched?: string[];
     /** 연령대·해당 항목 — 기록용, 분석에는 쓰지 않는다 */
     profile?: { age: string | null; conditions: string[] };
+    // 아래는 commitQuickCheckDraft가 쓰는 값(quickCheckDraft.ts). 구버전 행에는 없다.
+    /** 제품명 대조를 네트워크 문제로 못 한 채 저장된 결과인지 */
+    durUnavailable?: boolean;
+    /** 서버 판정 전용: 제품은 찾았지만 성분 매핑이 없던 원료명(로컬 판정이면 빈 배열) */
+    unmappedIngredients?: string[];
+    /** 서버가 판정하지 못한 기본 정보 라벨(신장질환 등, 로컬 판정이면 빈 배열) */
+    uncoveredConditions?: string[];
+    /** 판정 주체. 구버전 초안이면 null */
+    engine?: "server" | "local" | null;
   };
   /** 규칙(source "rule") + 식약처 DUR(source "dur") 결과 — quickCheckRules.QuickFinding[] */
   findings: import("./quickCheckRules").QuickFinding[];

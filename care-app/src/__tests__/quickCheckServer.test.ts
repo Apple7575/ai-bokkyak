@@ -165,9 +165,46 @@ describe("serverToFindings — 칩 라벨 해석 검증(presetLabels)", () => {
     const r = serverToFindings(resolved([{ input: "유산균", via: "hff_product", substance_ids: [3, 4] }]), PRESETS);
     expect(r.unresolved).toEqual(["유산균"]);
   });
-  it("알레르기약이 chip이지만 substance_ids가 null이면 점검 못 한 항목", () => {
+  it("알레르기약이 chip이지만 substance_ids가 null이고 어떤 규칙에도 안 걸리면 점검 못 한 항목", () => {
     const r = serverToFindings(resolved([{ input: "알레르기약", via: "chip", substance_ids: null }]), PRESETS);
     expect(r.unresolved).toEqual(["알레르기약"]);
+  });
+  it("chip + ids null이라도 규칙(intake_class 직접 매칭)에 걸렸으면 점검한 것으로 치고 결과도 남긴다", () => {
+    const r = serverToFindings(
+      {
+        ...EMPTY,
+        resolved: [
+          { input: "알레르기약", via: "chip", substance_ids: null },
+          { input: "혈압약", via: "chip", substance_ids: [40] },
+        ],
+        findings: [finding({ code: "antihistamine_x", matched: ["알레르기약", "혈압약"] })],
+      },
+      PRESETS
+    );
+    expect(r.unresolved).toEqual([]);
+    expect(r.findings.map((f) => f.title)).toEqual(["알레르기약 × 혈압약"]);
+  });
+  it("hff_product로 풀린 칩은 규칙에 걸렸어도 탈락시키고 결과를 버린다(임의 제품 성분이라 뜻이 다르다)", () => {
+    const r = serverToFindings(
+      {
+        ...EMPTY,
+        resolved: [{ input: "유산균", via: "hff_product", substance_ids: [3] }],
+        findings: [finding({ code: "probiotic_x", matched: ["유산균", "혈압약"] })],
+      },
+      PRESETS
+    );
+    expect(r.unresolved).toEqual(["유산균"]);
+    expect(r.findings).toEqual([]);
+  });
+  it("탈락 순서는 resolved 순서가 아니라 presetLabels(앱 버튼) 순서", () => {
+    const r = serverToFindings(
+      resolved([
+        { input: "알레르기약", via: "chip", substance_ids: null },
+        { input: "유산균", via: "hff_product", substance_ids: [3] },
+      ]),
+      new Set(["유산균", "알레르기약"])
+    );
+    expect(r.unresolved).toEqual(["유산균", "알레르기약"]);
   });
   it("chip인데 substance_ids가 빈 배열이어도 점검 못 한 항목", () => {
     const r = serverToFindings(resolved([{ input: "철분", via: "chip", substance_ids: [] }]), PRESETS);

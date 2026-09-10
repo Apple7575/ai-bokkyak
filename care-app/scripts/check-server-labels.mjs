@@ -42,18 +42,29 @@ function stringArrayConst(src, name) {
   if (out.length === 0) throw new Error(`${name} 이(가) 비어 있습니다 — 파일 형식이 바뀌었는지 확인`);
   return out;
 }
-const labelsSrc = read("src/lib/quickCheckLabels.ts");
-const SUPPLEMENTS = [...stringArrayConst(labelsSrc, "SUPPLEMENT_PRESETS"), ...stringArrayConst(labelsSrc, "SUPPLEMENT_MORE")];
-const MEDICINES = stringArrayConst(labelsSrc, "MEDICINE_PRESETS");
+function parseLabels() {
+  const labelsSrc = read("src/lib/quickCheckLabels.ts");
+  const supplements = [...stringArrayConst(labelsSrc, "SUPPLEMENT_PRESETS"), ...stringArrayConst(labelsSrc, "SUPPLEMENT_MORE")];
+  const medicines = stringArrayConst(labelsSrc, "MEDICINE_PRESETS");
 
-const aliasesSrc = read("src/lib/conditionAliases.ts");
-const aliasBody = aliasesSrc.match(/CONDITION_ALIASES[^=]*=\s*\{([\s\S]*?)\n\};/);
-if (!aliasBody) throw new Error("CONDITION_ALIASES 를 찾지 못했습니다");
-const ALIASES = {};
-for (const m of aliasBody[1].matchAll(/"([^"]+)":\s*\[([^\]]*)\]/g)) {
-  ALIASES[m[1]] = [...m[2].matchAll(/"([^"]+)"/g)].map((x) => x[1]);
+  const aliasesSrc = read("src/lib/conditionAliases.ts");
+  const aliasBody = aliasesSrc.match(/CONDITION_ALIASES[^=]*=\s*\{([\s\S]*?)\n\};/);
+  if (!aliasBody) throw new Error("CONDITION_ALIASES 를 찾지 못했습니다");
+  const aliases = {};
+  for (const m of aliasBody[1].matchAll(/"([^"]+)":\s*\[([^\]]*)\]/g)) {
+    aliases[m[1]] = [...m[2].matchAll(/"([^"]+)"/g)].map((x) => x[1]);
+  }
+  if (Object.keys(aliases).length === 0) throw new Error("CONDITION_ALIASES 에서 항목을 하나도 읽지 못했습니다 — 파일 형식이 바뀌었는지 확인");
+  return { supplements, medicines, aliases };
 }
-if (Object.keys(ALIASES).length === 0) throw new Error("CONDITION_ALIASES 에서 항목을 하나도 읽지 못했습니다 — 파일 형식이 바뀌었는지 확인");
+
+let SUPPLEMENTS, MEDICINES, ALIASES;
+try {
+  ({ supplements: SUPPLEMENTS, medicines: MEDICINES, aliases: ALIASES } = parseLabels());
+} catch (e) {
+  console.error(`✖ 라벨 파일 파싱 실패: ${e instanceof Error ? e.message : String(e)}`);
+  process.exit(1);
+}
 const ALL_ALIASES = [...new Set(Object.values(ALIASES).flat())];
 
 // 별칭이 살아 있다는 증거. 별칭을 추가하면 여기에도 한 줄 넣어야 한다(없으면 ✖).

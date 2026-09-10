@@ -102,19 +102,22 @@ function messageOf(f: Pick<ServerFinding, "summary" | "what_happens" | "what_to_
 const UNMAPPED_CAP = 8;
 const DUR_FALLBACK_MESSAGE = "식약처 병용금기 고시에 함께 쓰지 말라고 되어 있는 조합이에요.";
 
-// 종류명 칩이 서버에서 "제대로" 풀렸는가. 칩은 via chip|substance로 성분 id가 하나 이상 있어야
-// 실제로 대조된 것이다. hff_product/drug_product로 풀리면 임의 제품의 성분이라 뜻이 다르고
-// (예: 유산균), ids가 null·빈 배열이면 아무것도 대조하지 않은 것이다(예: 알레르기약).
-function chipResolvedProperly(r: ServerResolved | undefined): boolean {
-  if (!r) return false;
-  if (r.via !== "chip" && r.via !== "substance") return false;
-  return Array.isArray(r.substance_ids) && r.substance_ids.length > 0;
+// 종류명 칩을 "점검하지 못한 항목"으로 내릴 것인가.
+//  (a) via hff_product|drug_product — 임의 제품의 성분으로 풀린 것이라 칩의 뜻과 다르다(예: 유산균).
+//      규칙에 걸렸어도 내린다.
+//  (b) via chip|substance 인데 substance_ids 가 null·빈 배열 — 성분 대조는 못 했지만 RPC가
+//      intake_class 로 규칙을 직접 맞출 수 있다. 어떤 규칙의 matched 에도 안 나오면 내리고,
+//      나오면 점검한 것으로 친다(예: 알레르기약).
+function shouldDemote(r: ServerResolved, matchedAnywhere: ReadonlySet<string>): boolean {
+  if (r.via !== "chip" && r.via !== "substance") return true;
+  const hasIds = Array.isArray(r.substance_ids) && r.substance_ids.length > 0;
+  return !hasIds && !matchedAnywhere.has(r.input);
 }
 
 /** 서버 응답을 앱의 QuickFinding 목록으로 옮긴다(정렬 포함). 순수 함수.
  *  · unresolved: 아무 데서도 못 찾은 **입력 이름** — 결과 화면의 "점검하지 못한 항목"이자
  *    checkedCount 계산 단위(입력 이름과 같은 단위여야 한다).
- *    presetLabels를 주면, 그 라벨 중 칩으로 제대로 풀리지 않은 것(chipResolvedProperly 참고)도
+ *    presetLabels를 주면, 그 라벨 중 칩으로 제대로 풀리지 않은 것(shouldDemote 참고)도
  *    서버 unresolved 뒤에 붙이고(중복 제거) 그 이름이 걸린 규칙 결과는 뺀다. 칩이 아닌 입력(제품명)은 그대로.
  *  · unmappedIngredients: 제품은 찾았지만 성분 매핑이 없던 **원료명**(중복 제거, 8개까지) —
  *    입력 이름이 아니므로 unmatched에 섞지 않는다. */
@@ -122,15 +125,22 @@ export function serverToFindings(
   res: ServerCheckResult,
   presetLabels?: ReadonlySet<string>
 ): { findings: QuickFinding[]; unresolved: string[]; unmappedIngredients: string[] } {
-  // 칩이 제대로 풀리지 않은 입력(chipResolvedProperly 참고). 이 이름이 걸린 규칙 결과는 버린다 —
+  // 칩이 제대로 풀리지 않은 입력(shouldDemote 참고). 이 이름이 걸린 규칙 결과는 버린다 —
   // "유산균 × 혈압약"과 "점검하지 못한 항목: 유산균"이 같이 뜨면 안 된다. DUR 행에는 입력 이름이
   // 없으므로 그대로 둔다.
+  // 순서는 presetLabels(앱 버튼 순서)를 따른다 — 서버 resolved 순서에 기대면 화면 순서가 흔들린다.
   const demoted = new Set<string>();
   if (presetLabels) {
-    for (const r of res.resolved) {
-      if (presetLabels.has(r.input) && !chipResolvedProperly(r)) demoted.add(r.input);
+    const matchedAnywhere = new Set(res.findings.flatMap((f) => f.matched));
+    const byInput = new Map(res.resolved.map((r) => [r.input, r] as const));
+    for (const label of presetLabels) {
+      const r = byInput.get(label);
+      if (r && shouldDemote(r, matchedAnywhere)) demoted.add(label);
     }
   }
+  // 감수하는 손실: matched 가 3개 이상인 규칙도 그중 하나가 탈락하면 통째로 버린다. 클라이언트는
+  // 어느 이름이 규칙의 어느 역할(object/precipitant)인지 모르므로 부분 유지가 불가능하다.
+  // 서버가 matched 를 역할별로 돌려주면 그때 좁힐 수 있다.
   const ruleFindings: QuickFinding[] = res.findings.filter((f) => !f.matched.some((m) => demoted.has(m))).map((f) => ({
     kind: kindOf(f),
     a: f.matched[0] ?? "",
