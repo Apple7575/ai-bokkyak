@@ -27,7 +27,8 @@ type State =
   // unmappedIngredients·engine은 가입 전 초안에서만 읽는다(가입 후에는 안 보여 준다).
   | {
       phase: "ok"; findings: QuickFinding[]; unlocked: boolean; unmatched: string[]; checkedCount: number;
-      durUnavailable: boolean; unmappedIngredients: string[]; engine?: "server" | "local";
+      durUnavailable: boolean; unmappedIngredients: string[]; uncoveredConditions: string[];
+      engine?: "server" | "local";
     };
 
 // kind별 태그 색 — 요약 카드 점(우선=빨강, 시간=파랑, 중복=주황)과 같은 계열.
@@ -107,6 +108,7 @@ export function QuickCheckResultScreen() {
         durUnavailable: paramFindings ? Boolean(route.params?.durUnavailable) : Boolean(d?.durUnavailable),
         // 가입 전 초안에서만 — 가입 후(params 경로)에는 보여 주지 않는다.
         unmappedIngredients: paramFindings ? [] : (d?.unmappedIngredients ?? []),
+        uncoveredConditions: paramFindings ? [] : (d?.uncoveredConditions ?? []),
         engine: paramFindings ? undefined : d?.engine,
       });
     })();
@@ -135,6 +137,9 @@ export function QuickCheckResultScreen() {
   const unlocked = state.phase === "ok" && state.unlocked;
   const unmatched = state.phase === "ok" ? state.unmatched : [];
   const unmappedIngredients = state.phase === "ok" ? state.unmappedIngredients : [];
+  // 서버가 아직 판정하지 못하는 기본 정보(신장질환, 60대 이상 …) — 서버 판정일 때만 뜻이 있다.
+  // 로컬 판정은 내장 규칙이 이 라벨을 직접 다룬다.
+  const uncoveredConditions = state.phase === "ok" && state.engine === "server" ? state.uncoveredConditions : [];
   // 서버 판정에 연결하지 못해 로컬 규칙으로만 본 경우 — 가입 전에만 알린다.
   // durUnavailable 안내와 겹치면 이 안내가 더 넓은 사실이므로 이것만 보여 준다.
   const localFallbackNote = state.phase === "ok" && !state.unlocked && state.engine === "local";
@@ -228,6 +233,14 @@ export function QuickCheckResultScreen() {
         {/* 제품은 찾았지만 성분 매핑이 없던 원료 — 점검 단위(입력 이름)가 아니라 따로 알린다(가입 전만) */}
         {state.phase === "ok" && !unlocked && unmappedIngredients.length > 0 ? (
           <Text style={styles.note}>{`성분을 확인하지 못한 원료: ${unmappedIngredients.join(" · ")}`}</Text>
+        ) : null}
+
+        {/* 서버 조건 규칙이 없는 기본 정보 — 결과에 반영되지 않았음을 숨기지 않는다 */}
+        {state.phase === "ok" && uncoveredConditions.length > 0 ? (
+          <View style={styles.durNote}>
+            <Text style={styles.note}>{`아직 서버 점검에 반영되지 않은 항목: ${uncoveredConditions.join(" · ")}`}</Text>
+            <Text style={styles.note}>이 항목은 이번 결과에 반영되지 않았어요. 약사에게 함께 말씀해 주세요.</Text>
+          </View>
         ) : null}
 
         {state.phase === "ok" && summary.total === 0 && !nothingChecked ? (

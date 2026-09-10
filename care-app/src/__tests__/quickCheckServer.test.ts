@@ -152,3 +152,51 @@ describe("serverToFindings — 점검하지 못한 항목", () => {
     expect(r.unmappedIngredients).toEqual(["특이원료"]);
   });
 });
+
+describe("serverToFindings — 칩 라벨 해석 검증(presetLabels)", () => {
+  const PRESETS = new Set(["유산균", "알레르기약", "항우울제", "오메가3", "철분"]);
+  const resolved = (r: ServerCheckResult["resolved"]): ServerCheckResult => ({ ...EMPTY, resolved: r });
+
+  it("두 번째 인자가 없으면 기존 동작 그대로(unresolved만 돌려준다)", () => {
+    const r = serverToFindings(resolved([{ input: "유산균", via: "hff_product", substance_ids: [1] }]));
+    expect(r.unresolved).toEqual([]);
+  });
+  it("유산균이 hff_product로 풀리면(임의 제품 성분) 점검 못 한 항목으로 친다", () => {
+    const r = serverToFindings(resolved([{ input: "유산균", via: "hff_product", substance_ids: [3, 4] }]), PRESETS);
+    expect(r.unresolved).toEqual(["유산균"]);
+  });
+  it("알레르기약이 chip이지만 substance_ids가 null이면 점검 못 한 항목", () => {
+    const r = serverToFindings(resolved([{ input: "알레르기약", via: "chip", substance_ids: null }]), PRESETS);
+    expect(r.unresolved).toEqual(["알레르기약"]);
+  });
+  it("chip인데 substance_ids가 빈 배열이어도 점검 못 한 항목", () => {
+    const r = serverToFindings(resolved([{ input: "철분", via: "chip", substance_ids: [] }]), PRESETS);
+    expect(r.unresolved).toEqual(["철분"]);
+  });
+  it("항우울제가 substance로 풀리고 ids가 있으면 정상", () => {
+    const r = serverToFindings(resolved([{ input: "항우울제", via: "substance", substance_ids: [68] }]), PRESETS);
+    expect(r.unresolved).toEqual([]);
+  });
+  it("오메가3가 chip으로 풀리고 ids가 있으면 정상", () => {
+    const r = serverToFindings(resolved([{ input: "오메가3", via: "chip", substance_ids: [12] }]), PRESETS);
+    expect(r.unresolved).toEqual([]);
+  });
+  it("칩이 아닌 제품명은 hff_product로 풀려도 그대로 정상", () => {
+    const r = serverToFindings(resolved([{ input: "락토핏 골드", via: "hff_product", substance_ids: [3] }]), PRESETS);
+    expect(r.unresolved).toEqual([]);
+  });
+  it("서버 unresolved를 먼저, 그 뒤에 칩 검증 탈락을 붙이고 중복은 뺀다", () => {
+    const r = serverToFindings(
+      {
+        ...EMPTY,
+        unresolved: ["여드름약", "알레르기약"],
+        resolved: [
+          { input: "유산균", via: "hff_product", substance_ids: [3] },
+          { input: "알레르기약", via: "chip", substance_ids: null },
+        ],
+      },
+      new Set(["유산균", "알레르기약", "여드름약"])
+    );
+    expect(r.unresolved).toEqual(["여드름약", "알레르기약", "유산균"]);
+  });
+});

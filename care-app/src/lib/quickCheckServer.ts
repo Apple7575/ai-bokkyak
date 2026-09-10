@@ -9,6 +9,8 @@ import { supabase } from "./supabase";
 import { QuickFinding, sortFindings } from "./quickCheckRules";
 import { substanceName } from "./substanceNames";
 
+export { PRESET_LABELS } from "./quickCheckLabels";
+
 export type ServerResolved = {
   input: string;
   via: "chip" | "substance" | "hff_product" | "drug_product";
@@ -102,13 +104,25 @@ function messageOf(f: Pick<ServerFinding, "summary" | "what_happens" | "what_to_
 const UNMAPPED_CAP = 8;
 const DUR_FALLBACK_MESSAGE = "식약처 병용금기 고시에 함께 쓰지 말라고 되어 있는 조합이에요.";
 
+// 종류명 칩이 서버에서 "제대로" 풀렸는가. 칩은 via chip|substance로 성분 id가 하나 이상 있어야
+// 실제로 대조된 것이다. hff_product/drug_product로 풀리면 임의 제품의 성분이라 뜻이 다르고
+// (예: 유산균), ids가 null·빈 배열이면 아무것도 대조하지 않은 것이다(예: 알레르기약).
+function chipResolvedProperly(r: ServerResolved | undefined): boolean {
+  if (!r) return false;
+  if (r.via !== "chip" && r.via !== "substance") return false;
+  return Array.isArray(r.substance_ids) && r.substance_ids.length > 0;
+}
+
 /** 서버 응답을 앱의 QuickFinding 목록으로 옮긴다(정렬 포함). 순수 함수.
  *  · unresolved: 아무 데서도 못 찾은 **입력 이름** — 결과 화면의 "점검하지 못한 항목"이자
  *    checkedCount 계산 단위(입력 이름과 같은 단위여야 한다).
+ *    presetLabels를 주면, 그 라벨 중 칩으로 제대로 풀리지 않은 것(chipResolvedProperly 참고)도
+ *    서버 unresolved 뒤에 붙인다(중복 제거). 칩이 아닌 입력(제품명)은 그대로 둔다.
  *  · unmappedIngredients: 제품은 찾았지만 성분 매핑이 없던 **원료명**(중복 제거, 8개까지) —
  *    입력 이름이 아니므로 unmatched에 섞지 않는다. */
 export function serverToFindings(
-  res: ServerCheckResult
+  res: ServerCheckResult,
+  presetLabels?: ReadonlySet<string>
 ): { findings: QuickFinding[]; unresolved: string[]; unmappedIngredients: string[] } {
   const ruleFindings: QuickFinding[] = res.findings.map((f) => ({
     kind: kindOf(f),
@@ -140,9 +154,16 @@ export function serverToFindings(
   });
   // unmapped를 "제품: 원료"로 다 늘어놓으면 너무 길다 — 원료명만 중복 제거해 8개까지.
   const unmappedIngredients = [...new Set(res.unmapped.map((u) => u.ingredient))].slice(0, UNMAPPED_CAP);
+  const unresolved = [...res.unresolved];
+  if (presetLabels) {
+    for (const r of res.resolved) {
+      if (!presetLabels.has(r.input) || chipResolvedProperly(r)) continue;
+      if (!unresolved.includes(r.input)) unresolved.push(r.input);
+    }
+  }
   return {
     findings: sortFindings([...ruleFindings, ...durFindings]),
-    unresolved: res.unresolved,
+    unresolved,
     unmappedIngredients,
   };
 }

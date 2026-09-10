@@ -57,7 +57,12 @@
 cd care-app
 npm test            # jest: intent / schedule / parse
 npx tsc --noEmit    # 타입 체크
+npm run check:server  # 네트워크 필요: 라이브 quick_check_v1(읽기 전용 RPC)에 앱 라벨·조건 별칭을 대조
 ```
+
+`check:server`는 일부러 jest 밖에 둔 스크립트다(jest는 오프라인). 칩 라벨이 서버에서 제대로
+풀리는지, `conditionAliases.ts`의 별칭이 실제 규칙에 걸리는지 확인하고 어긋나면 exit 1.
+서버 데이터 공백(예: 유산균·알레르기약·여드름약)은 여기서 드러난다 — 앱에서 지어내지 말 것.
 
 ## 보안 한계 (의도적, MVP)
 

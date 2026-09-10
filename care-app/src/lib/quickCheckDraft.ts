@@ -29,6 +29,9 @@ export async function loadDraft(): Promise<QuickCheckDraft | null> {
       unmappedIngredients: Array.isArray(p.unmappedIngredients)
         ? p.unmappedIngredients.filter((s): s is string => typeof s === "string")
         : undefined,
+      uncoveredConditions: Array.isArray(p.uncoveredConditions)
+        ? p.uncoveredConditions.filter((s): s is string => typeof s === "string")
+        : undefined,
       analyzedAt: typeof p.analyzedAt === "string" ? p.analyzedAt : null,
       durUnavailable: p.durUnavailable === true,
       // 판정 주체 — 모르는 값(구버전·깨진 값)은 버린다.

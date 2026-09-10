@@ -8,7 +8,8 @@ import { lookupIngredients, fetchContraindications } from "../lib/drugData";
 import { allIngredients, matchFindings, Finding, MedIngredients } from "../lib/interactions";
 import { checkItems, customNames, mergeFindings, unmatchedNames, QuickCheckDraft, QuickFinding } from "../lib/quickCheck";
 import { applyRules } from "../lib/quickCheckRules";
-import { runServerCheck, serverToFindings } from "../lib/quickCheckServer";
+import { runServerCheck, serverToFindings, PRESET_LABELS } from "../lib/quickCheckServer";
+import { serverConditionInput } from "../lib/conditionAliases";
 import { loadDraft, saveDraft } from "../lib/quickCheckDraft";
 import { colors, fontSizes, spacing, radii, shadows } from "../theme/tokens";
 
@@ -43,7 +44,7 @@ async function analyzeDur(names: string[]): Promise<DurResult> {
 type Analysis =
   | {
       ok: true; findings: QuickFinding[]; unmatched: string[]; durUnavailable: boolean;
-      engine: "server" | "local"; unmappedIngredients?: string[];
+      engine: "server" | "local"; unmappedIngredients?: string[]; uncoveredConditions?: string[];
     }
   | { ok: false };
 
@@ -52,16 +53,19 @@ type Analysis =
 //    durUnavailable 표시로 넘어가고, 보여 줄 것이 하나도 없을 때만 실패로 친다.
 async function analyze(draft: QuickCheckDraft): Promise<Analysis> {
   try {
-    const res = await runServerCheck({
-      names: checkItems(draft), age: draft.profile.age, conditions: draft.profile.conditions,
-    });
-    const mapped = serverToFindings(res);
+    // 서버는 조건을 name_ko 문자열로만 비교한다 — 앱 라벨에 서버 조건명 별칭을 덧붙여 보내고,
+    // 서버가 판정하지 못하는 라벨(uncovered)은 결과 화면에서 알린다.
+    const cond = serverConditionInput(draft.profile);
+    const res = await runServerCheck({ names: checkItems(draft), age: cond.age, conditions: cond.conditions });
+    // 칩이 제대로 풀리지 않은 것(유산균→임의 제품, 알레르기약→성분 없음)도 "점검하지 못한 항목"으로.
+    const mapped = serverToFindings(res, PRESET_LABELS);
     return {
       ok: true, findings: mapped.findings,
       // unmatched는 **입력 이름**만(unresolved) — checkedCount가 입력 이름 수에서 빼는 단위라
       // 원료명을 섞으면 계산이 깨진다. 원료명은 unmappedIngredients로 따로 싣는다.
       unmatched: mapped.unresolved,
       unmappedIngredients: mapped.unmappedIngredients,
+      uncoveredConditions: cond.uncovered,
       durUnavailable: false, engine: "server",
     };
   } catch {
@@ -105,6 +109,7 @@ export function QuickCheckAnalyzingScreen() {
           ...draft, findings: r.findings, unmatched: r.unmatched, durUnavailable: r.durUnavailable,
           // 로컬 판정이면 undefined — 이전 서버 판정의 값이 남지 않게 항상 덮어쓴다.
           unmappedIngredients: r.unmappedIngredients,
+          uncoveredConditions: r.uncoveredConditions,
           engine: r.engine, analyzedAt: new Date().toISOString(),
         });
       } catch {

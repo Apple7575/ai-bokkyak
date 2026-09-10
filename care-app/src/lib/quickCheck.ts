@@ -10,24 +10,14 @@ import { QuickFinding, RuleKind, KIND_ORDER, LOCKED_GROUPS, sortFindings } from 
 
 export type { QuickFinding, RuleKind } from "./quickCheckRules";
 
-// 칩 목록은 시안 V8 그대로 (PM 결정).
-export const SUPPLEMENT_PRESETS = [
-  "오메가3", "비타민D", "마그네슘", "유산균", "종합비타민", "철분", "루테인", "밀크씨슬",
-] as const;
-/** "더 보기"를 누르면 SUPPLEMENT_PRESETS 뒤에 이어 붙는 영양제 */
-export const SUPPLEMENT_MORE = ["콜라겐", "아연", "홍삼", "단백질보충제"] as const;
-
-export const MEDICINE_PRESETS = [
-  "갑상선약", "혈압약", "고지혈증약", "위장약", "통증·소염제", "알레르기약", "피임약", "항우울제", "여드름약",
-] as const;
+// 버튼 라벨은 quickCheckLabels.ts에 있다(서버 라벨 대조 스크립트가 읽는 파일). 여기서 재수출.
+export {
+  SUPPLEMENT_PRESETS, SUPPLEMENT_MORE, MEDICINE_PRESETS, AGES, CONDS, NONE_CONDITION, PRESET_LABELS,
+} from "./quickCheckLabels";
+import { PRESET_LABELS as _PRESET_LABELS } from "./quickCheckLabels";
 
 export const NONE_SUPPLEMENT = "먹는 영양제 없음";
 export const NONE_MEDICINE = "복용 중인 약 없음";
-
-// 3/3 기본 정보 — 연령대(단일 선택), 해당 항목(복수 선택, "해당 없음"은 나머지를 밀어낸다).
-export const AGES = ["20대", "30대", "40대", "50대", "60대 이상"] as const;
-export const CONDS = ["임신·수유 중", "신장질환", "간질환", "해당 없음"] as const;
-export const NONE_CONDITION = "해당 없음";
 
 /** 기본 정보. 상식 규칙(연령·질환 조건)에 쓴다. DUR 병용금기에는 조건이 없다. */
 export type QuickCheckProfile = { age: string | null; conditions: string[] };
@@ -42,6 +32,9 @@ export type QuickCheckDraft = {
   unmatched: string[];
   /** 서버 판정 전용: 제품은 찾았지만 성분 매핑이 없던 원료명(입력 이름 아님, 8개까지). 없으면 undefined. */
   unmappedIngredients?: string[];
+  /** 서버 판정 전용: 사용자가 고른 기본 정보 중 서버가 아직 판정하지 못하는 라벨(신장질환, 60대 이상 …).
+   *  로컬 판정은 내장 규칙이 이 라벨을 직접 다루므로 undefined. 매 판정마다 덮어쓴다. */
+  uncoveredConditions?: string[];
   analyzedAt: string | null;    // ISO 시각
   /** 제품명 DUR 대조를 네트워크 문제로 못 했지만 규칙 결과는 있어 넘어간 경우 */
   durUnavailable?: boolean;
@@ -54,11 +47,9 @@ export const EMPTY_DRAFT: QuickCheckDraft = {
   findings: null, unmatched: [], analyzedAt: null,
 };
 
-const PRESET_SET = new Set<string>([...SUPPLEMENT_PRESETS, ...SUPPLEMENT_MORE, ...MEDICINE_PRESETS]);
-
 /** 칩으로 고른 종류명인가. 종류명은 규칙이 맡고, 제품명(검색·사진)은 DUR이 맡는다. */
 export function isPreset(name: string): boolean {
-  return PRESET_SET.has(name);
+  return _PRESET_LABELS.has(name);
 }
 
 /** 점검 이름 중 제품명(칩이 아닌 것) — DUR 대조 대상 */
