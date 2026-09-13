@@ -6,9 +6,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Bell, User, Clock, Pencil, Volume2, ChevronRight, AlertTriangle } from "lucide-react-native";
 import { MedicineMark } from "../components/MedicineMark";
 import { supabase, Schedule, IntakeRecord } from "../lib/supabase";
-import { getPatientId } from "../lib/storage";
+import { getPatientId, getPatientName } from "../lib/storage";
 import { commitQuickCheckDraft } from "../lib/quickCheckDraft";
-import { checkedCount } from "../lib/quickCheck";
+import { checkItems } from "../lib/quickCheck";
 import { nextNotificationTime, todaySlot } from "../lib/schedule";
 import { hasExactAlarm } from "../lib/alarmPermissions";
 import { MedKind } from "../lib/medKind";
@@ -55,8 +55,10 @@ export function HomeScreen() {
   const [total, setTotal] = useState(0);
   const [alarmOk, setAlarmOk] = useState(true);
   const [warnCount, setWarnCount] = useState(0);
+  // 인사말에 쓰는 이름 — 3/3·NameEntry에서 저장한 것. 없으면 이름 없이 인사한다.
+  const [name, setName] = useState<string | null>(null);
 
-  // 가입 직후 점검 결과 저장에 실패해 기기에 남은 초안이 있으면 홈이 뜰 때마다 다시 시도한다.
+  // 점검 직후 결과 저장에 실패해 기기에 남은 초안이 있으면 홈이 뜰 때마다 다시 시도한다.
   // 성공하면 결과 전체를 보여 준다. 실패하면 배너로 알리고 "다시 시도" 버튼을 준다 —
   // 자동 재시도 실패는 조용히 넘기되(진입마다 Alert가 뜨면 성가시다), 수동 시도는 Alert로.
   const [draftPending, setDraftPending] = useState(false);
@@ -72,7 +74,13 @@ export function HomeScreen() {
       const committed = await commitQuickCheckDraft(pid);
       setDraftPending(false);
       if (committed?.findings) {
-        nav.navigate("QuickCheckResult", { unlocked: true, findings: committed.findings, unmatched: committed.unmatched, checked: checkedCount(committed), durUnavailable: committed.durUnavailable === true });
+        nav.navigate("QuickCheckResult", {
+          findings: committed.findings, unmatched: committed.unmatched, names: checkItems(committed),
+          durUnavailable: committed.durUnavailable === true,
+          unmappedIngredients: committed.unmappedIngredients ?? [],
+          uncoveredConditions: committed.uncoveredConditions ?? [],
+          engine: committed.engine,
+        });
       }
     } catch {
       setDraftPending(true);
@@ -85,6 +93,7 @@ export function HomeScreen() {
   }, []);
 
   const load = useCallback(async () => {
+    setName(await getPatientName());
     const pid = await getPatientId();
     if (!pid) return;
     void retryDraft(pid);
@@ -177,7 +186,7 @@ export function HomeScreen() {
         </Pressable>
       </View>
 
-      <Text style={styles.greet}>안녕하세요!</Text>
+      <Text style={styles.greet}>{name ? `${name}님, 안녕하세요` : "안녕하세요!"}</Text>
       <Text style={styles.greetSub}>오늘도 건강한 하루 보내세요.</Text>
 
       {/* 정확알람 권한 경고 */}
@@ -190,7 +199,7 @@ export function HomeScreen() {
         </Pressable>
       ) : null}
 
-      {/* 가입 때 저장 못 한 1분 점검 결과 — 자동 재시도 실패 시에만 보인다 */}
+      {/* 점검 때 저장 못 한 1분 점검 결과 — 자동 재시도 실패 시에만 보인다 */}
       {draftPending ? (
         <View style={styles.warnCard}>
           <View style={styles.warnHead}>

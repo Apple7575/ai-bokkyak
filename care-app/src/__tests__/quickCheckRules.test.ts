@@ -1,4 +1,4 @@
-import { applyRules, sortFindings, RULES, KIND_LABEL, LOCKED_GROUPS, KIND_ORDER, QuickFinding } from "../lib/quickCheckRules";
+import { applyRules, sortFindings, RULES, KIND_LABEL, KIND_ORDER, QuickFinding } from "../lib/quickCheckRules";
 import { SUPPLEMENT_PRESETS, SUPPLEMENT_MORE, MEDICINE_PRESETS, AGES, CONDS } from "../lib/quickCheck";
 
 const noProfile = { age: null, conditions: [] as string[] };
@@ -69,9 +69,8 @@ describe("규칙 데이터 자체", () => {
   it("문구는 단정하지 않는다(확인/의료진 언급)", () => {
     for (const r of RULES) expect(/확인/.test(r.message)).toBe(true);
   });
-  it("라벨·잠금 묶음", () => {
+  it("라벨", () => {
     expect(KIND_LABEL).toEqual({ priority: "우선 확인 필요", timing: "복용 시간 조정", overlap: "중복·과다 확인", caution: "주의사항" });
-    expect(LOCKED_GROUPS.map((g) => g.title)).toEqual(["함께 복용 시 주의", "중복 성분 확인", "복용 시간 조정", "추가 확인이 필요한 항목"]);
   });
 });
 

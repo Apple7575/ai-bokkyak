@@ -1,12 +1,12 @@
 // "1분 복용 점검" — 순수 로직 (RN/네트워크 의존 없음, jest 대상).
 //
-// 가입 전에 영양제·복용약을 고르게 하고 두 갈래로 점검한다.
+// 영양제·복용약을 고르게 하고 두 갈래로 점검한다.
 //  · 종류명 칩(혈압약, 오메가3 …) + 기본 정보 → 상식 규칙(quickCheckRules.ts, 약사 검수 전)
 //  · 검색·사진으로 넣은 제품명 → 식약처 DUR 병용금기(interactions.ts)
-// 결과는 QuickFinding 하나로 합쳐 첫 건만 보여 주고 나머지는 가입하면 열린다(잠금).
+// 결과는 QuickFinding 하나로 합쳐 종류별로 전부 보여 준다(회의 2026-09-10: 잠금 없음).
 
 import type { Finding } from "./interactions";
-import { QuickFinding, RuleKind, KIND_ORDER, LOCKED_GROUPS, sortFindings } from "./quickCheckRules";
+import { QuickFinding, RuleKind, KIND_ORDER, sortFindings } from "./quickCheckRules";
 
 export type { QuickFinding, RuleKind } from "./quickCheckRules";
 
@@ -126,25 +126,17 @@ export function topFinding(findings: QuickFinding[]): QuickFinding | null {
   return s.length > 0 ? s[0] : null;
 }
 
-/** 가입 전 잠금 목록: 첫 건을 뺀 나머지를 V8 LOCKED 순서로 묶고, 0건 묶음은 뺀다. */
-export function lockedGroups(findings: QuickFinding[]): { kind: RuleKind; title: string; count: number }[] {
-  const rest = sortFindings(findings).slice(1);
-  const { byKind } = summarize(rest);
-  return LOCKED_GROUPS.map((g) => ({ ...g, count: byKind[g.kind] })).filter((g) => g.count > 0);
-}
-
-/** 가입 후 전체 보기: kind 순서대로 묶는다(0건 묶음 제외) */
+/** 결과 화면 전체 보기: kind 순서대로 묶는다(0건 묶음 제외) */
 export function groupByKind(findings: QuickFinding[]): { kind: RuleKind; items: QuickFinding[] }[] {
   const s = sortFindings(findings);
   return KIND_ORDER.map((kind) => ({ kind, items: s.filter((f) => f.kind === kind) })).filter((g) => g.items.length > 0);
 }
 
-// 가입 전 결과 화면: 첫 건은 보여 주고, 나머지는 잠근다.
-export function splitResult(findings: QuickFinding[]): { shown: QuickFinding | null; lockedCount: number } {
-  return {
-    shown: topFinding(findings),
-    lockedCount: Math.max(0, findings.length - 1),
-  };
+/** 결과 화면 부제 "혈압약 · 오메가3 · 비타민D 를 대조했어요" — 4개 이상이면 앞 3개 + "외 N개". 0개면 빈 문자열. */
+export function checkedNamesLine(names: string[]): string {
+  if (names.length === 0) return "";
+  if (names.length <= 3) return `${names.join(" · ")} 를 대조했어요`;
+  return `${names.slice(0, 3).join(" · ")} 외 ${names.length - 3}개를 대조했어요`;
 }
 
 // 실제로 대조한 이름 수 = 고른 이름 − 자료에서 못 찾은 제품명. 결과 화면이 "이상 없음"을

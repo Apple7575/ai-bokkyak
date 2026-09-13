@@ -2,11 +2,11 @@ import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, Pressable, Modal, ActivityIndicator, Share, Alert, Platform } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Lock, ShieldCheck, Stethoscope, MessageCircle, User, X, SearchX, ChevronRight } from "lucide-react-native";
+import { ShieldCheck, Stethoscope, MessageCircle, X, SearchX } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
-import { getPatientId } from "../lib/storage";
+import { getPatientName } from "../lib/storage";
 import {
-  checkedCount as countChecked, summarize, topFinding, lockedGroups, groupByKind, unmatchedDescription, QuickFinding, RuleKind,
+  checkedCount as countChecked, checkItems, checkedNamesLine, summarize, groupByKind, unmatchedDescription, QuickFinding, RuleKind,
 } from "../lib/quickCheck";
 import { KIND_LABEL } from "../lib/quickCheckRules";
 import { buildQuickCheckShareMessage } from "../lib/quickCheckShare";
@@ -14,36 +14,30 @@ import { loadDraft } from "../lib/quickCheckDraft";
 import { DISCLAIMER } from "../lib/voiceScript";
 import { colors, fontSizes, spacing, radii, minTouch, shadows } from "../theme/tokens";
 
-// 점검 결과 (시안 V8 화면 12).
-//  · 가입 전: 요약 카드 + 첫 건만 보여 주고 나머지는 종류별 개수로 잠근다. 버튼을 누르면 가입 시트.
-//  · 가입 후(앞 화면이 unlocked:true 로 보냄): 종류별로 전부 보여 주고 알람 설정으로 보낸다.
-// 결과 데이터는 기기 초안에서 읽는다. 가입 직후에는 commit이 초안을 지우므로
-// 앞 화면이 넘겨준 findings 파라미터를 우선 쓴다.
+// 점검 결과 — 회의 2026-09-10(B안, 목업 B-1): 잠금 없이 종류별로 전부 보여 준다.
+// 3/3에서 환자를 만들었고 점검 직후 서버에 저장했으므로 "결과 저장하고 …" 갈래는 없다.
+// 다음 갈래는 둘뿐: 이 약들로 복용 알람 설정하기 / 나중에 할게요(홈).
+// 결과 데이터: 앞 화면(Analyzing·Home 재시도)이 commit 후 params로 넘긴 것을 우선 쓰고,
+// 없으면(저장 실패로 초안이 남은 경우) 기기 초안에서 읽는다.
 
 type State =
   | { phase: "loading" }
   | { phase: "empty" }
-  // unmatched: 자료에서 못 찾아 대조에서 빠진 입력 이름. checkedCount: 실제로 대조한 이름 수.
-  // unmappedIngredients·engine은 가입 전 초안에서만 읽는다(가입 후에는 안 보여 준다).
+  // names: 대조한 이름 전부(부제용). unmatched: 자료에서 못 찾아 대조에서 빠진 입력 이름.
+  // checkedCount: 실제로 대조한 이름 수 = names − unmatched.
   | {
-      phase: "ok"; findings: QuickFinding[]; unlocked: boolean; unmatched: string[]; checkedCount: number;
+      phase: "ok"; findings: QuickFinding[]; names: string[]; unmatched: string[]; checkedCount: number;
       durUnavailable: boolean; unmappedIngredients: string[]; uncoveredConditions: string[];
       engine?: "server" | "local";
     };
 
-// kind별 태그 색 — 요약 카드 점(우선=빨강, 시간=파랑, 중복=주황)과 같은 계열.
+// kind별 태그 색(우선=빨강, 시간=파랑, 중복=주황).
 const KIND_COLOR: Record<RuleKind, { fg: string; bg: string }> = {
   priority: { fg: colors.dangerRed, bg: colors.dangerSoft },
   timing: { fg: colors.primaryBlue, bg: colors.primarySoft },
   overlap: { fg: colors.warningOrange, bg: colors.warningSoft },
   caution: { fg: colors.textSecondary, bg: colors.canvasMuted },
 };
-
-const SUMMARY_ROWS: { kind: RuleKind; label: string }[] = [
-  { kind: "priority", label: KIND_LABEL.priority },
-  { kind: "timing", label: KIND_LABEL.timing },
-  { kind: "overlap", label: KIND_LABEL.overlap },
-];
 
 // 근거 수준(서버 판정에만 있음) → 표시 라벨. 없는 값(none_known 등)은 보여 주지 않는다.
 const EVIDENCE_LABEL: Record<string, string> = {
@@ -53,16 +47,13 @@ const EVIDENCE_LABEL: Record<string, string> = {
   conflicting: "근거 충돌",
 };
 
-function FindingCard({ f, highlighted }: { f: QuickFinding; highlighted?: boolean }) {
+function FindingCard({ f }: { f: QuickFinding }) {
   const c = KIND_COLOR[f.kind];
   const evidence = f.evidenceLevel ? EVIDENCE_LABEL[f.evidenceLevel] : undefined;
   return (
-    <View style={[styles.card, highlighted && styles.cardTop]}>
-      <View style={styles.tagRow}>
-        <View style={[styles.tag, { backgroundColor: c.bg }]}>
-          <Text style={[styles.tagText, { color: c.fg }]}>{f.tag}</Text>
-        </View>
-        {highlighted ? <ChevronRight size={22} color={colors.border} /> : null}
+    <View style={styles.card}>
+      <View style={[styles.tag, { backgroundColor: c.bg }]}>
+        <Text style={[styles.tagText, { color: c.fg }]}>{f.tag}</Text>
       </View>
       <Text style={styles.cardTitle}>{f.title}</Text>
       <Text style={styles.cardMsg}>{f.message}</Text>
@@ -85,47 +76,57 @@ export function QuickCheckResultScreen() {
   const route = useRoute<any>();
   const insets = useSafeAreaInsets();
   const [state, setState] = useState<State>({ phase: "loading" });
-  const [sheet, setSheet] = useState<null | "signup" | "share">(null);
+  const [name, setName] = useState<string | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
     (async () => {
+      const patientName = await getPatientName();
       const paramFindings = route.params?.findings as QuickFinding[] | undefined;
-      const paramUnmatched = (route.params?.unmatched as string[] | undefined) ?? [];
-      const pid = await getPatientId();
-      const unlocked = Boolean(route.params?.unlocked) || pid !== null;
-      const d = await loadDraft();
-      const findings = paramFindings ?? d?.findings ?? null;
-      const unmatched = paramFindings ? paramUnmatched : (d?.unmatched ?? []);
-      // 가입 후에는 commit이 초안을 지우므로 대조한 이름 수도 params로 받는다.
-      const checked = paramFindings
-        ? (typeof route.params?.checked === "number" ? route.params.checked : 0)
-        : d ? countChecked(d) : 0;
+      let next: State;
+      if (paramFindings) {
+        // commit이 초안을 지웠으므로 전부 params에서 읽는다.
+        const names = (route.params?.names as string[] | undefined) ?? [];
+        const unmatched = (route.params?.unmatched as string[] | undefined) ?? [];
+        next = {
+          phase: "ok", findings: paramFindings, names, unmatched,
+          checkedCount: Math.max(0, names.length - unmatched.length),
+          durUnavailable: Boolean(route.params?.durUnavailable),
+          unmappedIngredients: (route.params?.unmappedIngredients as string[] | undefined) ?? [],
+          uncoveredConditions: (route.params?.uncoveredConditions as string[] | undefined) ?? [],
+          engine: route.params?.engine as "server" | "local" | undefined,
+        };
+      } else {
+        const d = await loadDraft();
+        next = !d?.findings ? { phase: "empty" } : {
+          phase: "ok", findings: d.findings, names: checkItems(d), unmatched: d.unmatched,
+          checkedCount: countChecked(d),
+          durUnavailable: d.durUnavailable === true,
+          unmappedIngredients: d.unmappedIngredients ?? [],
+          uncoveredConditions: d.uncoveredConditions ?? [],
+          engine: d.engine,
+        };
+      }
       if (!alive) return;
-      if (!findings) { setState({ phase: "empty" }); return; }
-      setState({
-        phase: "ok", findings, unlocked, unmatched, checkedCount: checked,
-        durUnavailable: paramFindings ? Boolean(route.params?.durUnavailable) : Boolean(d?.durUnavailable),
-        // 가입 전 초안에서만 — 가입 후(params 경로)에는 보여 주지 않는다.
-        unmappedIngredients: paramFindings ? [] : (d?.unmappedIngredients ?? []),
-        uncoveredConditions: paramFindings ? [] : (d?.uncoveredConditions ?? []),
-        engine: paramFindings ? undefined : d?.engine,
-      });
+      setName(patientName);
+      setState(next);
     })();
     return () => { alive = false; };
   }, [route.params]);
 
-  // Task 2(결과 전체 공개)에서 가입 시트와 함께 지운다. 지금은 이름 한 칸으로만 보낸다.
-  function toSignup(_kakao: boolean) {
-    setSheet(null);
-    nav.navigate("NameEntry");
-  }
   function toAlarm() {
     nav.reset({ index: 1, routes: [{ name: "Tabs" }, { name: "VoiceGuide" }] });
   }
+  function toHome() {
+    nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
+  }
+  function toPick() {
+    nav.reset({ index: 0, routes: [{ name: "QuickCheckInput" }] });
+  }
   // 시스템 공유 시트 — 카카오톡은 여기서 고른다(카카오 SDK 없음). 취소는 조용히, 실패만 알린다.
   async function share() {
-    setSheet(null);
+    setShareOpen(false);
     try {
       await Share.share({ message: buildQuickCheckShareMessage(Platform.OS) });
     } catch (e) {
@@ -134,30 +135,26 @@ export function QuickCheckResultScreen() {
   }
 
   const findings = state.phase === "ok" ? state.findings : [];
-  const unlocked = state.phase === "ok" && state.unlocked;
+  const names = state.phase === "ok" ? state.names : [];
   const unmatched = state.phase === "ok" ? state.unmatched : [];
   const unmappedIngredients = state.phase === "ok" ? state.unmappedIngredients : [];
   // 서버가 아직 판정하지 못하는 기본 정보(신장질환, 간질환 — 연령대는 제외) — 서버 판정일 때만 뜻이 있다.
   // 로컬 판정은 내장 규칙이 이 라벨을 직접 다룬다.
   const uncoveredConditions = state.phase === "ok" && state.engine === "server" ? state.uncoveredConditions : [];
-  // 서버 판정에 연결하지 못해 로컬 규칙으로만 본 경우 — 가입 전에만 알린다.
+  // 서버 판정에 연결하지 못해 로컬 규칙으로만 본 경우.
   // durUnavailable 안내와 겹치면 이 안내가 더 넓은 사실이므로 이것만 보여 준다.
-  const localFallbackNote = state.phase === "ok" && !state.unlocked && state.engine === "local";
+  const localFallbackNote = state.phase === "ok" && state.engine === "local";
   // 대조한 이름이 2개 미만이면 조합 점검 자체가 성립하지 않는다 — "이상 없음"이라 하면 안 된다.
   const nothingChecked = state.phase === "ok" && state.checkedCount < 2;
   const summary = summarize(findings);
-  const top = topFinding(findings);
-  const locked = lockedGroups(findings);
-  const lockedCount = Math.max(0, summary.total - 1);
+  const namesLine = checkedNamesLine(names);
+  const title = summary.total > 0
+    ? `${name ? `${name}님, ` : ""}확인 필요 ${summary.total}건`
+    : nothingChecked ? "복용 조합 점검이 끝났어요." : "확인된 주의 조합이 없어요";
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <ScrollView contentContainerStyle={[styles.c, { paddingBottom: spacing.xl + insets.bottom }]}>
-        <Text style={styles.title}>복용 조합 점검이 끝났어요.</Text>
-        {state.phase === "ok" && summary.total > 0 ? (
-          <Text style={styles.subtitle}>먼저 확인하면 좋은 내용을 간단하게 정리했어요.</Text>
-        ) : null}
-
         {state.phase === "loading" ? (
           <View style={styles.center}><ActivityIndicator size="large" color={colors.primaryBlue} /></View>
         ) : null}
@@ -165,36 +162,19 @@ export function QuickCheckResultScreen() {
         {state.phase === "empty" ? (
           <View style={styles.safe}>
             <Text style={styles.safeDesc}>점검 결과가 없어요. 처음부터 다시 점검해 주세요.</Text>
-            <BigButton label="다시 점검하기" variant="secondary" onPress={() => nav.reset({ index: 0, routes: [{ name: "QuickCheckInput" }] })} />
+            <BigButton label="다시 점검하기" variant="secondary" onPress={toPick} />
           </View>
         ) : null}
 
-        {/* 요약 카드 */}
-        {state.phase === "ok" && summary.total > 0 ? (
-          <View style={styles.summary}>
-            <View style={styles.summaryHead}>
-              <Text style={styles.summaryLabel}>확인이 필요한 항목</Text>
-              <Text style={styles.summaryTotal}>{`${summary.total}건`}</Text>
-            </View>
-            <View style={styles.divider} />
-            {SUMMARY_ROWS.map((r) => {
-              const n = summary.byKind[r.kind];
-              const c = KIND_COLOR[r.kind];
-              return (
-                <View key={r.kind} style={styles.summaryRow}>
-                  <View style={[styles.dot, { backgroundColor: n > 0 ? c.fg : colors.border }]} />
-                  <Text style={[styles.summaryRowLabel, n === 0 && styles.muted]}>{r.label}</Text>
-                  <Text style={[styles.summaryRowNum, { color: n > 0 ? c.fg : colors.textSecondary }]}>{`${n}건`}</Text>
-                </View>
-              );
-            })}
-            {summary.byKind.caution > 0 ? (
-              <Text style={styles.summaryFoot}>{`주의사항 ${summary.byKind.caution}건 포함`}</Text>
-            ) : null}
-          </View>
+        {/* ① 제목 · ② 대조한 이름 */}
+        {state.phase === "ok" ? (
+          <>
+            <Text style={styles.title}>{title}</Text>
+            {namesLine ? <Text style={styles.subtitle}>{namesLine}</Text> : null}
+          </>
         ) : null}
 
-        {/* 서버 점검 폴백 고지 — 로컬 규칙으로만 확인했음을 숨기지 않는다(가입 전만) */}
+        {/* ③ 안내 노트 — 서버 점검 폴백 고지: 로컬 규칙으로만 확인했음을 숨기지 않는다 */}
         {localFallbackNote ? (
           <View style={styles.durNote}>
             <Text style={styles.note}>서버 점검에 연결하지 못해 기기에 저장된 기본 규칙으로만 확인했어요.</Text>
@@ -205,14 +185,8 @@ export function QuickCheckResultScreen() {
         {/* 제품명 대조를 못 한 경우 — 규칙 결과만으로 넘어왔다. 위 폴백 고지가 있으면 그걸로 갈음. */}
         {state.phase === "ok" && state.durUnavailable && !localFallbackNote ? (
           <View style={styles.durNote}>
-            <Text style={styles.note}>
-              {unlocked
-                ? "인터넷 연결 문제로 제품명 자료 대조는 하지 못했어요. 약장에 등록하면 '함께 드실 때 주의'에서 다시 확인할 수 있어요."
-                : "인터넷 연결 문제로 제품명 자료 대조는 하지 못했어요. 연결을 확인하고 다시 대조해 보세요."}
-            </Text>
-            {!unlocked ? (
-              <BigButton label="제품명 다시 대조하기" variant="secondary" onPress={() => nav.replace("QuickCheckAnalyzing")} />
-            ) : null}
+            <Text style={styles.note}>인터넷 연결 문제로 제품명 자료 대조는 하지 못했어요. 연결을 확인하고 다시 대조해 보세요.</Text>
+            <BigButton label="제품명 다시 대조하기" variant="secondary" onPress={() => nav.replace("QuickCheckAnalyzing")} />
           </View>
         ) : null}
 
@@ -228,11 +202,6 @@ export function QuickCheckResultScreen() {
           </View>
         ) : null}
 
-        {/* 제품은 찾았지만 성분 매핑이 없던 원료 — 점검 단위(입력 이름)가 아니라 따로 알린다(가입 전만) */}
-        {state.phase === "ok" && !unlocked && unmappedIngredients.length > 0 ? (
-          <Text style={styles.note}>{`성분을 확인하지 못한 원료: ${unmappedIngredients.join(" · ")}`}</Text>
-        ) : null}
-
         {/* 서버 조건 규칙이 없는 기본 정보 — 결과에 반영되지 않았음을 숨기지 않는다 */}
         {state.phase === "ok" && uncoveredConditions.length > 0 ? (
           <View style={styles.durNote}>
@@ -241,49 +210,21 @@ export function QuickCheckResultScreen() {
           </View>
         ) : null}
 
+        {/* 제품은 찾았지만 성분 매핑이 없던 원료 — 점검 단위(입력 이름)가 아니라 따로 알린다 */}
+        {state.phase === "ok" && unmappedIngredients.length > 0 ? (
+          <Text style={styles.note}>{`성분을 확인하지 못한 원료: ${unmappedIngredients.join(" · ")}`}</Text>
+        ) : null}
+
+        {/* ④ 0건 — 약사 문장은 하단 고지 한 곳으로 모은다 */}
         {state.phase === "ok" && summary.total === 0 && !nothingChecked ? (
           <View style={styles.safe}>
             <ShieldCheck size={44} color={colors.successGreen} />
-            <Text style={styles.safeTitle}>확인된 주의 조합이 없어요</Text>
-            <Text style={styles.safeDesc}>
-              고르신 약과 영양제 사이에 알려진 주의 조합은 없었어요.
-              다만 모든 경우를 다 담고 있지는 않으니, 새 약을 드시게 되면 약사에게 확인해 주세요.
-            </Text>
+            <Text style={styles.safeDesc}>고르신 약과 영양제 사이에 알려진 주의 조합은 없었어요.</Text>
           </View>
         ) : null}
 
-        {state.phase === "ok" && summary.total === 0 && nothingChecked ? (
-          <View style={styles.safe}>
-            <Text style={styles.safeTitle}>점검할 조합이 부족해요</Text>
-            <Text style={styles.safeDesc}>약과 영양제를 두 가지 이상 고르면 함께 먹어도 되는지 확인할 수 있어요.</Text>
-            <BigButton label="다시 고르기" variant="secondary" onPress={() => nav.reset({ index: 0, routes: [{ name: "QuickCheckInput" }] })} />
-          </View>
-        ) : null}
-
-        {/* 가입 전: 첫 건 + 잠금 목록 */}
-        {state.phase === "ok" && top && !unlocked ? (
-          <>
-            <Text style={styles.section}>가장 먼저 확인해보세요.</Text>
-            <FindingCard f={top} highlighted />
-            {locked.length > 0 ? (
-              <>
-                <Text style={styles.section}>추가로 확인할 내용이 있어요.</Text>
-                <View style={styles.lockedBox}>
-                  {locked.map((g, i) => (
-                    <View key={g.kind} style={[styles.lockedRow, i === locked.length - 1 && styles.lockedRowLast]}>
-                      <Text style={styles.lockedTitle}>{g.title}</Text>
-                      <Text style={styles.lockedCount}>{`${g.count}건`}</Text>
-                      <Lock size={18} color={colors.textSecondary} />
-                    </View>
-                  ))}
-                </View>
-              </>
-            ) : null}
-          </>
-        ) : null}
-
-        {/* 가입 후: 종류별 전체 */}
-        {state.phase === "ok" && unlocked && summary.total > 0 ? (
+        {/* ⑤ 종류별 전부 */}
+        {state.phase === "ok" && summary.total > 0 ? (
           groupByKind(findings).map((g) => (
             <View key={g.kind} style={styles.group}>
               <Text style={styles.section}>{`${KIND_LABEL[g.kind]} ${g.items.length}건`}</Text>
@@ -292,34 +233,35 @@ export function QuickCheckResultScreen() {
           ))
         ) : null}
 
-        {/* 주 버튼 */}
+        {/* ⑥ 대조 2개 미만 — 조합 점검이 성립하지 않는다 */}
+        {state.phase === "ok" && nothingChecked ? (
+          <View style={styles.safe}>
+            <Text style={styles.safeTitle}>점검할 조합이 부족해요</Text>
+            <Text style={styles.safeDesc}>약과 영양제를 두 가지 이상 고르면 함께 먹어도 되는지 확인할 수 있어요.</Text>
+          </View>
+        ) : null}
+
+        {/* ⑦ 버튼 — 알람 설정 / 나중에 */}
         {state.phase === "ok" ? (
           <View style={styles.actions}>
-            {unlocked ? (
-              <BigButton label="복용 알람 설정하기" onPress={toAlarm} showArrow />
-            ) : nothingChecked && summary.total === 0 ? (
-              <BigButton label="점검 없이 가입하기" variant="secondary" onPress={() => setSheet("signup")} />
-            ) : lockedCount === 0 ? (
-              <BigButton label="결과 저장하고 시작하기" onPress={() => setSheet("signup")} showArrow />
+            {nothingChecked ? (
+              <BigButton label="다시 고르기" onPress={toPick} showArrow />
             ) : (
-              <BigButton label={`결과 저장하고 상세 ${lockedCount}건 보기`} onPress={() => setSheet("signup")} showArrow />
+              <BigButton label="이 약들 복용 알람 설정하기" onPress={toAlarm} showArrow />
             )}
-            {!unlocked ? <Text style={styles.actionsNote}>무료 회원가입 · 결과 자동 저장</Text> : null}
+            <BigButton label="나중에 할게요" variant="secondary" onPress={toHome} />
           </View>
         ) : null}
 
-        {/* 공유 */}
+        {/* ⑧ 공유 — 한 줄 링크 */}
         {state.phase === "ok" ? (
-          <View style={styles.shareBox}>
-            <Text style={styles.shareTitle}>가족과 지인도 함께 건강해지기</Text>
-            <Text style={styles.shareDesc}>약과 영양제를 함께 먹는 조합도 간단하게 확인해보세요.</Text>
-            <Pressable onPress={() => setSheet("share")} style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.85 }]} accessibilityRole="button">
-              <View style={styles.kakaoDot}><MessageCircle size={16} color={colors.kakaoInk} fill={colors.kakaoInk} /></View>
-              <Text style={styles.shareBtnText}>가족·지인에게 1분 점검 보내기</Text>
-            </Pressable>
-          </View>
+          <Pressable onPress={() => setShareOpen(true)} style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.85 }]} accessibilityRole="button">
+            <View style={styles.kakaoDot}><MessageCircle size={16} color={colors.kakaoInk} fill={colors.kakaoInk} /></View>
+            <Text style={styles.shareBtnText}>가족·지인에게 1분 점검 보내기</Text>
+          </Pressable>
         ) : null}
 
+        {/* ⑨ 고지 — 약사 확인 한 번 + 면책 한 번 */}
         {state.phase === "ok" ? (
           <>
             <View style={styles.notice}>
@@ -334,40 +276,22 @@ export function QuickCheckResultScreen() {
         ) : null}
       </ScrollView>
 
-      {/* 가입 시트 / 공유 시트 */}
-      <Modal visible={sheet !== null} transparent animationType="slide" onRequestClose={() => setSheet(null)}>
-        <Pressable style={styles.backdrop} onPress={() => setSheet(null)} accessibilityLabel="닫기" />
+      {/* 공유 시트 */}
+      <Modal visible={shareOpen} transparent animationType="slide" onRequestClose={() => setShareOpen(false)}>
+        <Pressable style={styles.backdrop} onPress={() => setShareOpen(false)} accessibilityLabel="닫기" />
         <View style={[styles.sheet, { paddingBottom: spacing.lg + insets.bottom }]}>
           <View style={styles.sheetHead}>
-            <Text style={styles.sheetTitle}>
-              {sheet === "share" ? "가족과 지인도 함께 건강해지기" : "분석 결과를 저장하고 상세 내용을 확인해보세요."}
-            </Text>
-            <Pressable onPress={() => setSheet(null)} hitSlop={10} style={styles.sheetClose} accessibilityRole="button" accessibilityLabel="닫기">
+            <Text style={styles.sheetTitle}>가족과 지인도 함께 건강해지기</Text>
+            <Pressable onPress={() => setShareOpen(false)} hitSlop={10} style={styles.sheetClose} accessibilityRole="button" accessibilityLabel="닫기">
               <X size={24} color={colors.textSecondary} />
             </Pressable>
           </View>
-          {sheet === "share" ? (
-            <>
-              <Text style={styles.sheetSub}>약과 영양제를 함께 먹는 조합도 간단하게 확인해보세요.</Text>
-              <Pressable onPress={() => { void share(); }} style={({ pressed }) => [styles.kakaoBtn, pressed && { opacity: 0.85 }]} accessibilityRole="button">
-                <MessageCircle size={22} color={colors.kakaoInk} fill={colors.kakaoInk} />
-                <Text style={styles.kakaoText}>카카오톡으로 1분 점검 보내기</Text>
-              </Pressable>
-              <Text style={styles.sheetCaption}>내 분석 결과는 공유되지 않아요.</Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.sheetSub}>무료 회원가입 · 결과 자동 저장</Text>
-              <Pressable onPress={() => toSignup(true)} style={({ pressed }) => [styles.kakaoBtn, pressed && { opacity: 0.85 }]} accessibilityRole="button">
-                <MessageCircle size={22} color={colors.kakaoInk} fill={colors.kakaoInk} />
-                <Text style={styles.kakaoText}>카카오로 계속하기</Text>
-              </Pressable>
-              <Pressable onPress={() => toSignup(false)} style={({ pressed }) => [styles.otherBtn, pressed && { opacity: 0.85 }]} accessibilityRole="button">
-                <User size={22} color={colors.primaryNavy} />
-                <Text style={styles.otherText}>다른 방법으로 가입하기</Text>
-              </Pressable>
-            </>
-          )}
+          <Text style={styles.sheetSub}>약과 영양제를 함께 먹는 조합도 간단하게 확인해보세요.</Text>
+          <Pressable onPress={() => { void share(); }} style={({ pressed }) => [styles.kakaoBtn, pressed && { opacity: 0.85 }]} accessibilityRole="button">
+            <MessageCircle size={22} color={colors.kakaoInk} fill={colors.kakaoInk} />
+            <Text style={styles.kakaoText}>카카오톡으로 1분 점검 보내기</Text>
+          </Pressable>
+          <Text style={styles.sheetCaption}>내 분석 결과는 공유되지 않아요.</Text>
         </View>
       </Modal>
     </View>
@@ -382,24 +306,11 @@ const styles = StyleSheet.create({
   center: { alignItems: "center", marginTop: spacing.xl },
   section: { fontSize: 21, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.4, marginTop: spacing.sm },
   divider: { height: 1, backgroundColor: colors.canvasMuted, marginVertical: spacing.sm },
-  muted: { color: colors.textSecondary },
   durNote: { gap: 4 },
   note: { fontSize: fontSizes.body, lineHeight: 26, color: colors.textSecondary },
 
-  summary: { backgroundColor: colors.cardBg, borderRadius: radii.card, padding: spacing.md, ...shadows.card },
-  summaryHead: { flexDirection: "row", alignItems: "center" },
-  summaryLabel: { flex: 1, fontSize: 20, fontWeight: "700", color: colors.primaryNavy },
-  summaryTotal: { fontSize: 30, fontWeight: "800", color: colors.dangerRed, letterSpacing: -0.5 },
-  summaryRow: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 46 },
-  dot: { width: 10, height: 10, borderRadius: 5 },
-  summaryRowLabel: { flex: 1, fontSize: fontSizes.body, fontWeight: "700", color: colors.text },
-  summaryRowNum: { fontSize: 19, fontWeight: "800" },
-  summaryFoot: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: spacing.xs },
-
   card: { backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1, borderRadius: radii.card, padding: spacing.md, ...shadows.card },
-  cardTop: { borderColor: colors.secondaryBlue, borderWidth: 1.5 },
-  tagRow: { flexDirection: "row", alignItems: "center" },
-  tag: { alignSelf: "flex-start", borderRadius: radii.pill, paddingHorizontal: 12, minHeight: 32, justifyContent: "center", marginRight: "auto" },
+  tag: { alignSelf: "flex-start", borderRadius: radii.pill, paddingHorizontal: 12, minHeight: 32, justifyContent: "center" },
   tagText: { fontSize: 18, fontWeight: "700" },
   cardTitle: { fontSize: 23, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.4, marginTop: spacing.sm + 4 },
   cardMsg: { fontSize: 19, lineHeight: 29, fontWeight: "600", color: colors.text, marginTop: spacing.sm },
@@ -411,22 +322,12 @@ const styles = StyleSheet.create({
   pharmPillText: { fontSize: 18, fontWeight: "700", color: colors.successGreen },
   pharmNote: { flex: 1, fontSize: 18, lineHeight: 24, fontWeight: "600", color: colors.textSecondary, minWidth: 160 },
 
-  lockedBox: { backgroundColor: colors.cardBg, borderRadius: radii.card, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, ...shadows.card },
-  lockedRow: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 56, borderBottomWidth: 1, borderBottomColor: colors.canvasMuted },
-  lockedRowLast: { borderBottomWidth: 0 },
-  lockedTitle: { flex: 1, fontSize: fontSizes.body, fontWeight: "700", color: colors.text },
-  lockedCount: { fontSize: fontSizes.body, fontWeight: "800", color: colors.textSecondary },
-
   group: { gap: spacing.md },
   actions: { marginTop: spacing.sm, gap: spacing.sm },
-  actionsNote: { textAlign: "center", fontSize: 18, fontWeight: "600", color: colors.textSecondary },
 
-  shareBox: { backgroundColor: colors.successSoft, borderWidth: 1.5, borderColor: colors.border, borderRadius: radii.card, padding: spacing.md, gap: spacing.sm, marginTop: spacing.sm },
-  shareTitle: { fontSize: 21, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.4 },
-  shareDesc: { fontSize: fontSizes.body, lineHeight: 26, fontWeight: "600", color: colors.text },
   shareBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, minHeight: minTouch,
-    borderRadius: radii.pill, backgroundColor: colors.surfaceRaised, borderWidth: 1.5, borderColor: colors.border, marginTop: spacing.xs,
+    borderRadius: radii.pill, backgroundColor: colors.surfaceRaised, borderWidth: 1.5, borderColor: colors.border,
   },
   kakaoDot: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.kakao, alignItems: "center", justifyContent: "center" },
   shareBtnText: { fontSize: fontSizes.body, fontWeight: "800", color: colors.primaryNavy },
@@ -453,6 +354,4 @@ const styles = StyleSheet.create({
   sheetCaption: { fontSize: 18, fontWeight: "600", color: colors.textSecondary, textAlign: "center" },
   kakaoBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, minHeight: minTouch, borderRadius: radii.pill, backgroundColor: colors.kakao },
   kakaoText: { fontSize: fontSizes.emphasis, fontWeight: "800", color: colors.kakaoInk },
-  otherBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, minHeight: minTouch, borderRadius: radii.pill, backgroundColor: colors.surfaceRaised, borderWidth: 1.5, borderColor: colors.border },
-  otherText: { fontSize: fontSizes.emphasis, fontWeight: "800", color: colors.primaryNavy },
 });

@@ -335,7 +335,7 @@ function Onboarding2({ onNext }: { onNext: () => void }) {
 }
 
 // ── 4. 시작 CTA ─────────────────────────────────────────────────────────────
-const CHECKS = ["회원가입 없이 바로", "영양제·약 한 번에 분석", "사진·이름 일부로도 가능"];
+const CHECKS = ["이름만 적고 바로", "영양제·약 한 번에 분석", "사진·이름 일부로도 가능"];
 
 function Cta({ onPrimary, onSecondary, onRestore, restoring }: { onPrimary: () => void; onSecondary: () => void; onRestore: () => void; restoring: boolean }) {
   return (

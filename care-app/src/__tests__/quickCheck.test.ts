@@ -1,7 +1,7 @@
 import {
   SUPPLEMENT_PRESETS, SUPPLEMENT_MORE, MEDICINE_PRESETS, AGES, CONDS, NONE_SUPPLEMENT, NONE_MEDICINE, NONE_CONDITION,
-  toggleItem, addItem, checkItems, splitResult, unmatchedNames, checkedCount, EMPTY_DRAFT,
-  isPreset, customNames, durToQuickFinding, mergeFindings, summarize, topFinding, lockedGroups, groupByKind,
+  toggleItem, addItem, checkItems, unmatchedNames, checkedCount, checkedNamesLine, EMPTY_DRAFT,
+  isPreset, customNames, durToQuickFinding, mergeFindings, summarize, topFinding, groupByKind,
   unmatchedDescription, PRESET_LABELS,
 } from "../lib/quickCheck";
 import type { Finding } from "../lib/interactions";
@@ -98,19 +98,7 @@ describe("checkItems", () => {
   });
 });
 
-describe("splitResult", () => {
-  it("0건: 보여줄 것도 잠글 것도 없다", () => {
-    expect(splitResult([])).toEqual({ shown: null, lockedCount: 0 });
-  });
-  it("1건: 첫 건만, 잠금 0", () => {
-    const a = f("A", "B");
-    expect(splitResult([a])).toEqual({ shown: a, lockedCount: 0 });
-  });
-  it("3건: 첫 건 + 잠금 2", () => {
-    const a = f("A", "B");
-    expect(splitResult([a, f("C", "D"), f("E", "F")])).toEqual({ shown: a, lockedCount: 2 });
-  });
-
+describe("unmatchedNames / checkedCount / checkedNamesLine", () => {
   describe("unmatchedNames", () => {
     it("제품명 중 성분이 비었거나 없는 이름만 돌려준다 — 종류명 칩은 규칙이 맡으므로 제외", () => {
       expect(unmatchedNames(["혈압약", "노바스크정", "오메가3", "이상한약"], { "노바스크정": ["amlodipine"], "오메가3": [] }))
@@ -124,6 +112,13 @@ describe("splitResult", () => {
   it("checkedCount: 고른 이름에서 못 찾은 이름을 뺀다", () => {
     expect(checkedCount({ ...EMPTY_DRAFT, supplements: ["오메가3"], medicines: ["혈압약", "이상한약"], unmatched: ["이상한약"] })).toBe(2);
     expect(checkedCount({ ...EMPTY_DRAFT, medicines: ["이상한약"], unmatched: ["이상한약"] })).toBe(0);
+  });
+
+  it("checkedNamesLine — 3개까지는 전부, 4개부터는 외 N개", () => {
+    expect(checkedNamesLine([])).toBe("");
+    expect(checkedNamesLine(["혈압약"])).toBe("혈압약 를 대조했어요");
+    expect(checkedNamesLine(["혈압약", "오메가3", "비타민D"])).toBe("혈압약 · 오메가3 · 비타민D 를 대조했어요");
+    expect(checkedNamesLine(["a", "b", "c", "d", "e"])).toBe("a · b · c 외 2개를 대조했어요");
   });
 });
 
@@ -150,7 +145,7 @@ describe("durToQuickFinding / mergeFindings", () => {
   });
 });
 
-describe("summarize / topFinding / lockedGroups / groupByKind", () => {
+describe("summarize / topFinding / groupByKind", () => {
   const list = [f("c", "x", "caution"), f("t", "x", "timing"), f("p", "x", "priority"), f("o", "x", "overlap"), f("t2", "x", "timing")];
   it("summarize: 총합과 kind별", () => {
     expect(summarize(list)).toEqual({ total: 5, byKind: { priority: 1, timing: 2, overlap: 1, caution: 1 } });
@@ -159,14 +154,6 @@ describe("summarize / topFinding / lockedGroups / groupByKind", () => {
   it("topFinding: 정렬 후 첫 건", () => {
     expect(topFinding(list)?.a).toBe("p");
     expect(topFinding([])).toBeNull();
-  });
-  it("lockedGroups: 첫 건 제외, V8 순서, 0건 묶음 제외", () => {
-    expect(lockedGroups(list)).toEqual([
-      { kind: "overlap", title: "중복 성분 확인", count: 1 },
-      { kind: "timing", title: "복용 시간 조정", count: 2 },
-      { kind: "caution", title: "추가 확인이 필요한 항목", count: 1 },
-    ]);
-    expect(lockedGroups([f("p", "x")])).toEqual([]);
   });
   it("groupByKind: kind 순서로 묶는다", () => {
     expect(groupByKind(list).map((g) => [g.kind, g.items.length])).toEqual([["priority", 1], ["timing", 2], ["overlap", 1], ["caution", 1]]);

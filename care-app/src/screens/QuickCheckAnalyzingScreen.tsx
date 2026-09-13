@@ -10,7 +10,8 @@ import { checkItems, customNames, mergeFindings, unmatchedNames, QuickCheckDraft
 import { applyRules } from "../lib/quickCheckRules";
 import { runServerCheck, serverToFindings } from "../lib/quickCheckServer";
 import { serverConditionInput } from "../lib/conditionAliases";
-import { loadDraft, saveDraft } from "../lib/quickCheckDraft";
+import { loadDraft, saveDraft, commitQuickCheckDraft } from "../lib/quickCheckDraft";
+import { getPatientId } from "../lib/storage";
 import { colors, fontSizes, spacing, radii, shadows } from "../theme/tokens";
 
 // 점검 중 화면 — 판정을 돌리면서 4단계 체크리스트를 순서대로 켠다.
@@ -19,6 +20,8 @@ import { colors, fontSizes, spacing, radii, shadows } from "../theme/tokens";
 //    · 종류명 칩 + 기본 정보 → 상식 규칙(applyRules, 기기 안에서 즉시)
 //    · 제품명(검색·사진) → 식약처 DUR 병용금기(InteractionScreen과 같은 경로)
 // 조회가 순식간에 끝나도 최소 시간은 보여 준다 — 바로 넘어가면 "정말 봤나?" 싶어진다.
+// 판정이 끝나면 곧바로 서버(quick_check_results)에 저장한다 — 3/3에서 환자를 만들었으므로
+// 여기서 commit할 수 있다. 저장에 실패해도 결과는 보여 주고, 초안은 남겨 HomeScreen이 재시도한다.
 
 const STEPS = ["약과 영양제 조합 확인", "성분 확인", "주의 조합 대조", "결과 정리"] as const;
 const MIN_MS = 2400;
@@ -90,6 +93,13 @@ export function QuickCheckAnalyzingScreen() {
   const [done, setDone] = useState(0);          // 켜진 체크 개수
   const [failed, setFailed] = useState<null | "network" | "storage">(null);
   const [attempt, setAttempt] = useState(0);
+  // 실패 화면의 보조 버튼 — 환자가 있으면 홈으로, 없으면 이름 한 칸으로.
+  const [hasPatient, setHasPatient] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    void getPatientId().then((pid) => { if (alive) setHasPatient(pid !== null); });
+    return () => { alive = false; };
+  }, []);
 
   const run = useCallback(async (alive: () => boolean) => {
     setFailed(null);
@@ -117,10 +127,24 @@ export function QuickCheckAnalyzingScreen() {
         if (alive()) setFailed("storage");
         return;
       }
+      // 서버 저장. 실패는 여기서 삼킨다 — 초안이 기기에 남아 HomeScreen이 홈에 들어올 때마다
+      // 다시 시도하고, 결과 화면은 초안에서 읽으면 되므로 사용자를 막지 않는다.
+      const pid = await getPatientId();
+      let committed: QuickCheckDraft | null = null;
+      if (pid) {
+        try { committed = await commitQuickCheckDraft(pid); } catch { committed = null; }
+      }
       const wait = Math.max(0, MIN_MS - (Date.now() - started));
       await new Promise((res) => setTimeout(res, wait));
       if (!alive()) return;
-      nav.replace("QuickCheckResult");
+      // commit이 초안을 지웠으므로 결과는 params로 넘긴다. 저장 못 했으면 결과 화면이 초안에서 읽는다.
+      nav.replace("QuickCheckResult", committed ? {
+        findings: committed.findings, unmatched: committed.unmatched, names: checkItems(committed),
+        durUnavailable: committed.durUnavailable === true,
+        unmappedIngredients: committed.unmappedIngredients ?? [],
+        uncoveredConditions: committed.uncoveredConditions ?? [],
+        engine: committed.engine,
+      } : undefined);
     } catch {
       timers.forEach(clearTimeout);
       if (alive()) setFailed("network");
@@ -146,7 +170,7 @@ export function QuickCheckAnalyzingScreen() {
             {failed === "storage"
               ? "결과를 기기에 저장하지 못했어요. 저장 공간을 확인하고 다시 시도해 주세요."
               : failed === "network"
-                ? "인터넷 연결을 확인하고 다시 시도해 주세요. 지금 건너뛰어도 가입 후 다시 점검할 수 있어요."
+                ? "인터넷 연결을 확인하고 다시 시도해 주세요. 지금 건너뛰어도 나중에 다시 점검할 수 있어요."
                 : "약과 영양제 조합을 확인하고 식약처 자료와 대조합니다. 잠시만 기다려 주세요."}
           </Text>
         </View>
@@ -169,7 +193,11 @@ export function QuickCheckAnalyzingScreen() {
         {failed ? (
           <View style={styles.actions}>
             <BigButton label="다시 시도" onPress={() => setAttempt((a) => a + 1)} />
-            <BigButton label="건너뛰고 시작하기" variant="secondary" onPress={() => nav.reset({ index: 0, routes: [{ name: "NameEntry" }] })} />
+            {hasPatient ? (
+              <BigButton label="건너뛰고 홈으로" variant="secondary" onPress={() => nav.reset({ index: 0, routes: [{ name: "Tabs" }] })} />
+            ) : (
+              <BigButton label="건너뛰고 시작하기" variant="secondary" onPress={() => nav.reset({ index: 0, routes: [{ name: "NameEntry" }] })} />
+            )}
           </View>
         ) : null}
       </ScrollView>

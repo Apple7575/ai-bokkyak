@@ -118,7 +118,7 @@
   ```
   (`unlocked`·`checked` 제거. `checked`는 `names.length - unmatched.length`로 계산.)
 
-- [ ] **Step 1: 테스트 먼저** — `quickCheck.test.ts`에서 `lockedGroups`/`splitResult` 테스트를 지우고 `checkedNamesLine` 테스트 추가:
+- [x] **Step 1: 테스트 먼저** — `quickCheck.test.ts`에서 `lockedGroups`/`splitResult` 테스트를 지우고 `checkedNamesLine` 테스트 추가:
   ```ts
   it("checkedNamesLine — 3개까지는 전부, 4개부터는 외 N개", () => {
     expect(checkedNamesLine([])).toBe("");
@@ -128,21 +128,21 @@
   });
   ```
   실행해 실패 확인 → 구현 → 통과. `lockedGroups`·`splitResult`·`LOCKED_GROUPS` 삭제(다른 참조가 없는지 grep).
-- [ ] **Step 2: `QuickCheckInputScreen.tsx` 3/3** —
+- [x] **Step 2: `QuickCheckInputScreen.tsx` 3/3** —
   - 상태 `name`(초기값: `getPatientName()`이 있으면 그것).
   - 3/3 렌더: 제목 "마지막으로 몇 가지만", 부제 "나이와 상태에 따라 주의할 조합이 달라요". 첫 질문 "어떻게 불러드릴까요?" + `TextInput`(placeholder "홍길동", maxLength 20, 기존 `styles.input`류 재사용, 높이 ≥56). 그 다음 기존 연령대·해당 항목 그대로. 도움말은 "복용 조합을 확인하기 위한 최소 정보입니다. 비밀번호도 이메일도 없어요."
   - `canNext`(profile 단계) = `name.trim().length > 0 && age !== null`.
   - `next()` profile 단계: draft 저장 전에 환자 보장: `let pid = await getPatientId(); if (!pid) { const { data, error } = await supabase.from("patients").insert({ name: name.trim() }).select("id").single(); if (error || !data) { Alert.alert("시작하지 못했어요", error?.message ?? "인터넷 연결을 확인하고 다시 시도해 주세요."); return; } await setPatient(data.id); }` 그리고 항상 `await setPatientName(name.trim())`. 이후 기존 `saveDraft` → `QuickCheckAnalyzing`. `nextBusy`로 이중 탭 방지 유지. 버튼은 busy 동안 "잠시만요…".
   - `skip()`/`goBack()` 폴백: 환자가 있으면 `Tabs`, 없으면 `NameEntry`.
-- [ ] **Step 3: `QuickCheckAnalyzingScreen.tsx`** — `run()`에서 `saveDraft` 성공 후: `const pid = await getPatientId(); let committed: QuickCheckDraft | null = null; if (pid) { try { committed = await commitQuickCheckDraft(pid); } catch { committed = null; } }` (실패는 삼키되 초안이 남아 HomeScreen이 재시도한다 — 이 동작은 이미 있다). 최소 표시 시간 대기 후 `nav.replace("QuickCheckResult", committed ? { findings: committed.findings, unmatched: committed.unmatched, names: checkItems(committed), durUnavailable: committed.durUnavailable === true, unmappedIngredients: committed.unmappedIngredients ?? [], uncoveredConditions: committed.uncoveredConditions ?? [], engine: committed.engine } : undefined)`. 실패 화면의 보조 버튼: 환자가 있으면 "건너뛰고 홈으로"(Tabs), 없으면 "건너뛰고 시작하기"(NameEntry).
-- [ ] **Step 4: `QuickCheckResultScreen.tsx` 전면 정리** —
+- [x] **Step 3: `QuickCheckAnalyzingScreen.tsx`** — `run()`에서 `saveDraft` 성공 후: `const pid = await getPatientId(); let committed: QuickCheckDraft | null = null; if (pid) { try { committed = await commitQuickCheckDraft(pid); } catch { committed = null; } }` (실패는 삼키되 초안이 남아 HomeScreen이 재시도한다 — 이 동작은 이미 있다). 최소 표시 시간 대기 후 `nav.replace("QuickCheckResult", committed ? { findings: committed.findings, unmatched: committed.unmatched, names: checkItems(committed), durUnavailable: committed.durUnavailable === true, unmappedIngredients: committed.unmappedIngredients ?? [], uncoveredConditions: committed.uncoveredConditions ?? [], engine: committed.engine } : undefined)`. 실패 화면의 보조 버튼: 환자가 있으면 "건너뛰고 홈으로"(Tabs), 없으면 "건너뛰고 시작하기"(NameEntry).
+- [x] **Step 4: `QuickCheckResultScreen.tsx` 전면 정리** —
   - 삭제: `unlocked`, `lockedCount`, `lockedGroups`, `topFinding` 기반 "가장 먼저 확인" 카드, 가입 시트(`sheet === "signup"` 분기와 `toSignup`), "결과 저장하고 …" 버튼들, "무료 회원가입 · 결과 자동 저장" 문구, `Modal`의 signup 분기(공유 분기만 남김).
   - 상태 로드: params가 있으면 params, 없으면 draft에서(기존 방식). `names` = params.names ?? checkItems(draft). `name` = `getPatientName()`.
   - 렌더 순서: ① 제목 — `summary.total > 0 ? `${name ? name + "님, " : ""}확인 필요 ${summary.total}건` : "확인된 주의 조합이 없어요"`; ② 부제 `checkedNamesLine(names)`(빈 문자열이면 생략); ③ 안내 노트들(로컬 폴백·DUR 불가·점검하지 못한 항목·확인하지 못한 정보·성분 미매핑) — 기존 컴포넌트 그대로, `!unlocked` 조건만 제거; ④ 0건이면 카드 한 장: "고르신 약과 영양제 사이에 알려진 주의 조합은 없었어요." (약사 문장은 여기서 빼고 하단 고지 한 곳으로 모은다); ⑤ 1건 이상이면 `groupByKind(findings)`로 종류별 전부(`KIND_LABEL` + `FindingCard`); ⑥ `nothingChecked`(대조 2개 미만)면 기존 "점검할 조합이 부족해요" + "다시 고르기"; ⑦ 버튼: 주 `BigButton label="이 약들 복용 알람 설정하기"`(`nav.reset({index:1, routes:[{name:"Tabs"},{name:"VoiceGuide"}]})`), 보조 `BigButton variant="secondary" label="나중에 할게요"`(`nav.reset({index:0, routes:[{name:"Tabs"}]})`); `nothingChecked`면 주 버튼을 "다시 고르기"(QuickCheckInput)로, 보조는 그대로; ⑧ 공유 박스는 유지하되 제목만 "가족·지인에게 1분 점검 보내기" 한 줄 링크로 축소; ⑨ 고지: "스스로 약을 끊거나 바꾸지 마시고, 약사나 의사에게 꼭 확인하세요." 한 번 + `DISCLAIMER` 한 번. 회의 12번: 중복 문구 제거.
   - 사용하지 않게 된 스타일·import 정리(`lockedCount` 등).
-- [ ] **Step 5: `HomeScreen.tsx` 인사** — `getPatientName()` 읽어 `name ? `${name}님, 안녕하세요` : "안녕하세요!"`. 그 외 변경 없음.
-- [ ] **Step 6: 검증** — `npx tsc --noEmit`, `npm test`. `grep -rn "unlocked\|lockedGroups\|splitResult\|회원가입\|가입하" src` → 사용자 문구/코드 잔재 0건(주석 제외).
-- [ ] **Step 7: 커밋** — `feat: 1분 점검 3/3에서 이름을 받아 환자 생성, 결과는 잠금 없이 전체 공개 — 알람 설정/나중에 두 갈래`.
+- [x] **Step 5: `HomeScreen.tsx` 인사** — `getPatientName()` 읽어 `name ? `${name}님, 안녕하세요` : "안녕하세요!"`. 그 외 변경 없음.
+- [x] **Step 6: 검증** — `npx tsc --noEmit`, `npm test`. `grep -rn "unlocked\|lockedGroups\|splitResult\|회원가입\|가입하" src` → 사용자 문구/코드 잔재 0건(주석 제외).
+- [x] **Step 7: 커밋** — `feat: 1분 점검 3/3에서 이름을 받아 환자 생성, 결과는 잠금 없이 전체 공개 — 알람 설정/나중에 두 갈래`.
 
 ---
 

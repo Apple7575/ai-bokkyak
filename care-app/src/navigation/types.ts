@@ -20,7 +20,11 @@ export type RootStackParamList = {
   QuickCheckInput: undefined;
   QuickCheckAnalyzing: undefined;
   // findings: 초안이 서버로 옮겨져(지워져) 기기에 없을 수 있어 앞 화면이 넘겨준다.
-  QuickCheckResult: { unlocked?: boolean; findings?: import("../lib/quickCheckRules").QuickFinding[]; unmatched?: string[]; checked?: number; durUnavailable?: boolean } | undefined;
+  // names: 대조한 이름 전부(부제·대조 수 계산용). 대조 수 = names.length - unmatched.length.
+  QuickCheckResult: {
+    findings?: import("../lib/quickCheckRules").QuickFinding[]; unmatched?: string[]; names?: string[]; durUnavailable?: boolean;
+    unmappedIngredients?: string[]; uncoveredConditions?: string[]; engine?: "server" | "local";
+  } | undefined;
 };
 export type TabParamList = {
   Home: undefined;

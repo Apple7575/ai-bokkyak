@@ -36,14 +36,6 @@ export const KIND_LABEL: Record<RuleKind, string> = {
 
 export const KIND_ORDER: RuleKind[] = ["priority", "timing", "overlap", "caution"];
 
-/** 가입 전 잠금 목록의 묶음·순서 (시안 V8 LOCKED 그대로) */
-export const LOCKED_GROUPS: { kind: RuleKind; title: string }[] = [
-  { kind: "priority", title: "함께 복용 시 주의" },
-  { kind: "overlap", title: "중복 성분 확인" },
-  { kind: "timing", title: "복용 시간 조정" },
-  { kind: "caution", title: "추가 확인이 필요한 항목" },
-];
-
 export const TAG = {
   priority: "우선 확인 필요",
   timing: "복용 시간 확인 필요",
