@@ -1,11 +1,13 @@
-import React from "react";
-import { Image, View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
+import React, { useCallback, useState } from "react";
+import { Image, View, Text, Pressable, ScrollView, StyleSheet, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { Volume2, Gauge, Type, Shield, LogOut, ChevronRight } from "lucide-react-native";
 import notifee from "@notifee/react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
-import { clearAll } from "../lib/storage";
+import { BigButton } from "../components/BigButton";
+import { clearAll, getPatientId, getPatientName } from "../lib/storage";
+import { isKakaoLinked, linkKakao } from "../lib/kakaoAccount";
 import { colors, fontSizes, radii, spacing, shadows, tabBarClearance } from "../theme/tokens";
 
 const SETTINGS_ART = require("../../assets/illustrations/settings-dial-accent.png");
@@ -26,6 +28,42 @@ const menuItems: MenuItem[] = [
 export function SettingsScreen() {
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
+
+  // 계정 영역 — 회의 2026-09-10: 카카오는 가입이 아니라 "기기 이전용 연결". 여기서 연결 상태를 보여 주고
+  // 미연결이면 연결 버튼을 둔다. linked: null = 조회 실패(버튼은 남기고 문구만 바꾼다).
+  const [name, setName] = useState<string | null>(null);
+  const [linked, setLinked] = useState<boolean | null>(null);
+  const [linking, setLinking] = useState(false);
+  useFocusEffect(useCallback(() => {
+    let alive = true;
+    (async () => {
+      const [n, pid] = await Promise.all([getPatientName(), getPatientId()]);
+      if (!alive) return;
+      setName(n);
+      const v = pid ? await isKakaoLinked(pid) : null;
+      if (alive) setLinked(v);
+    })();
+    return () => { alive = false; };
+  }, []));
+
+  const onLink = async () => {
+    if (linking) return;
+    const pid = await getPatientId();
+    if (!pid) { Alert.alert("연결하지 못했어요", "내 정보를 찾지 못했어요. 앱을 다시 시작해 주세요."); return; }
+    setLinking(true);
+    try {
+      const r = await linkKakao(pid);
+      if (r.ok) {
+        setLinked(true);
+        Alert.alert("연결됐어요", "휴대폰을 바꿔도 이 정보를 그대로 쓸 수 있어요.");
+      } else if (!r.canceled) {
+        Alert.alert("카카오 연결하기", r.message);
+      }
+    } finally {
+      setLinking(false);
+    }
+  };
+
   const onLogout = async () => {
     await notifee.cancelAllNotifications().catch(() => {});
     // 카카오 로그인은 Supabase Auth 세션을 만들지 않으므로 끊을 세션이 없다.
@@ -39,6 +77,21 @@ export function SettingsScreen() {
     <View style={styles.screen}>
       <ScreenHeader title="더보기" />
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance + insets.bottom }]}>
+        {/* 계정 — 이름과 카카오 연결 상태 */}
+        <View style={styles.accountCard}>
+          <Text style={styles.accountName}>{name ? name : "이름 없음"}</Text>
+          <Text style={styles.accountStatus}>
+            {linked === true
+              ? "카카오와 연결돼 있어요 · 휴대폰을 바꿔도 그대로"
+              : linked === false
+                ? "이 휴대폰에만 저장돼 있어요"
+                : "연결 상태를 확인하지 못했어요"}
+          </Text>
+          {linked !== true ? (
+            <BigButton variant="secondary" label={linking ? "연결 중…" : "카카오 연결하기"} onPress={() => { void onLink(); }} disabled={linking} />
+          ) : null}
+        </View>
+
         <View style={styles.introCard}>
           <View style={styles.introCopy}>
             <Text style={styles.introTitle}>나에게 편하게 맞춰요</Text>
@@ -93,6 +146,12 @@ export function SettingsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.md, gap: spacing.md },
+  accountCard: {
+    backgroundColor: colors.surfaceRaised, borderColor: colors.border, borderWidth: 1,
+    borderRadius: radii.card, padding: spacing.md, gap: spacing.xs, ...shadows.card,
+  },
+  accountName: { fontSize: fontSizes.title, fontWeight: "800", color: colors.primaryNavy },
+  accountStatus: { fontSize: fontSizes.body, lineHeight: 26, color: colors.textSecondary, marginBottom: spacing.xs },
   introCard: {
     minHeight: 126, padding: spacing.md, justifyContent: "center", overflow: "hidden",
     backgroundColor: colors.sageSoft, borderColor: colors.border, borderWidth: 1,

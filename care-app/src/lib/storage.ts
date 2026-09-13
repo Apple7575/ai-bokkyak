@@ -5,7 +5,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 //
 // care.role / care.patientCode 키는 더 쓰지 않지만 clearAll이 지울 수 있게
 // 남겨 둔다 — 이전 버전을 쓰던 기기에 값이 남아 있다.
-const KEYS = { patientId: "care.patientId", onboarded: "care.onboarded", patientName: "care.patientName" };
+const KEYS = {
+  patientId: "care.patientId",
+  onboarded: "care.onboarded",
+  patientName: "care.patientName",
+  kakaoBannerDismissed: "care.kakaoBannerDismissed",
+};
 const LEGACY_KEYS = ["care.role", "care.patientCode"];
 
 export async function getOnboarded(): Promise<boolean> {
@@ -29,6 +34,14 @@ export async function getPatientName(): Promise<string | null> {
 }
 export async function setPatientName(name: string): Promise<void> {
   await AsyncStorage.setItem(KEYS.patientName, name);
+}
+
+// 홈의 "카카오 연결" 배너를 ✕로 닫았는지. 한 번 닫으면 다시 띄우지 않는다(더보기에서 연결 가능).
+export async function getKakaoBannerDismissed(): Promise<boolean> {
+  return (await AsyncStorage.getItem(KEYS.kakaoBannerDismissed)) === "1";
+}
+export async function setKakaoBannerDismissed(): Promise<void> {
+  await AsyncStorage.setItem(KEYS.kakaoBannerDismissed, "1");
 }
 export async function clearAll(): Promise<void> {
   await AsyncStorage.multiRemove([...Object.values(KEYS), ...LEGACY_KEYS]);

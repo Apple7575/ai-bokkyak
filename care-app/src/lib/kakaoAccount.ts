@@ -35,3 +35,54 @@ export async function restoreWithKakao(): Promise<RestoreResult> {
   await setOnboarded();
   return { ok: true, patientId, name };
 }
+
+// ── 연결(linkKakao) ──────────────────────────────────────────────────────────
+// 지금 이 기기의 환자를 카카오 계정에 묶어 둔다. 휴대폰을 바꾸면 위 restoreWithKakao로 되찾는다.
+// RLS tier1이 anon의 patients update를 막으므로 서버 함수 link_kakao(supabase/migrate-kakao-link.sql)로
+// 간다. 함수가 아직 없으면(SQL 미적용) rpc가 error를 돌려주고 "network" 문구로 끝난다 — 앱은 죽지 않는다.
+
+export type LinkReason = "not_found" | "already_linked" | "taken" | "network";
+
+export function linkResultMessage(reason: LinkReason): string {
+  switch (reason) {
+    case "not_found": return "내 정보를 찾지 못했어요. 앱을 다시 시작해 주세요.";
+    case "already_linked": return "이미 다른 카카오 계정과 연결돼 있어요.";
+    case "taken": return "이 카카오 계정은 다른 휴대폰의 정보와 이미 연결돼 있어요. 그 정보를 쓰시려면 '카카오로 불러오기'를 눌러 주세요.";
+    case "network": return "인터넷 연결을 확인하고 다시 시도해 주세요.";
+  }
+}
+
+export type LinkResult = { ok: true } | { ok: false; canceled: boolean; message: string };
+
+const LINK_REASONS: readonly LinkReason[] = ["not_found", "already_linked", "taken", "network"];
+type LinkRpcResult = { ok?: unknown; reason?: unknown };
+
+export async function linkKakao(patientId: string): Promise<LinkResult> {
+  const r = await signInWithKakao();
+  if (!r.ok) return r;
+
+  let res: LinkRpcResult | null = null;
+  try {
+    const { data, error } = await supabase.rpc("link_kakao", { p_patient_id: patientId, p_kakao_id: r.kakaoId });
+    if (error) return { ok: false, canceled: false, message: linkResultMessage("network") };
+    res = (data ?? null) as LinkRpcResult | null;
+  } catch {
+    return { ok: false, canceled: false, message: linkResultMessage("network") };
+  }
+
+  if (res && res.ok === true) return { ok: true };
+  const reason = LINK_REASONS.find((k) => k === res?.reason) ?? "network";
+  return { ok: false, canceled: false, message: linkResultMessage(reason) };
+}
+
+// 연결돼 있나. 조회에 실패하면 null — 화면은 "확인하지 못했어요"로 보여 주고 버튼은 남긴다.
+export async function isKakaoLinked(patientId: string): Promise<boolean | null> {
+  try {
+    const { data, error } = await supabase
+      .from("patients").select("kakao_id").eq("id", patientId).maybeSingle();
+    if (error || !data) return null;
+    return typeof data.kakao_id === "string" && data.kakao_id.length > 0;
+  } catch {
+    return null;
+  }
+}

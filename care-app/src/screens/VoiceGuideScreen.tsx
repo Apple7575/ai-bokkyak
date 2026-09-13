@@ -6,6 +6,7 @@ import { Volume2, Check, ChevronLeft, Clock } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
+import { isKakaoLinked, linkKakao } from "../lib/kakaoAccount";
 import { ensurePermission, scheduleReminders } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { playCues, stopCues, currentCueId } from "../lib/cuePlayer";
@@ -52,6 +53,10 @@ export function VoiceGuideScreen() {
   const [speaking, setSpeaking] = useState(false);
   // 지금 시각을 조정 중인 시간 카드. 시안대로 고른 카드에만 −/+ 를 띄운다.
   const [editing, setEditing] = useState<number | null>(null);
+  // 완료 단계의 카카오 "연결" 카드 — 회의 2026-09-10: 카카오는 기기 이전용 연결. 미연결(false)일 때만 띄운다.
+  // null(아직 모름·조회 실패)·true면 카드 없음. saving과 별개의 busy — 연결 중에도 "홈으로 가기"는 살아 있다.
+  const [linked, setLinked] = useState<boolean | null>(null);
+  const [linking, setLinking] = useState(false);
 
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -77,6 +82,37 @@ export function VoiceGuideScreen() {
     return () => { void stopCues(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 완료 단계에 들어서면 연결 상태를 한 번 조회한다.
+  useEffect(() => {
+    if (state.step !== "done") return;
+    let alive = true;
+    (async () => {
+      const pid = await getPatientId();
+      if (!pid) return;
+      const v = await isKakaoLinked(pid);
+      if (alive) setLinked(v);
+    })();
+    return () => { alive = false; };
+  }, [state.step]);
+
+  async function linkAccount(): Promise<void> {
+    if (linking) return;
+    const pid = await getPatientId();
+    if (!pid) return;
+    setLinking(true);
+    try {
+      const r = await linkKakao(pid);
+      if (r.ok) {
+        setLinked(true);
+        Alert.alert("연결됐어요", "휴대폰을 바꿔도 이 정보를 그대로 쓸 수 있어요.");
+      } else if (!r.canceled) {
+        Alert.alert("카카오 연결하기", r.message);
+      }
+    } finally {
+      setLinking(false);
+    }
+  }
 
   // 화면 탭 = 안내 건너뛰기. 이미 아는 내용을 끝까지 듣고 있을 필요는 없다.
   // 끊더라도 자막은 전문으로 채워 둔다 — 반쯤 친 문장이 남으면 읽을 수가 없다.
@@ -370,6 +406,15 @@ export function VoiceGuideScreen() {
               ))}
             </View>
 
+            {/* 카카오 연결 제안 — 미연결일 때만. 홈으로 가기는 연결과 무관하게 아래에 그대로 */}
+            {linked === false ? (
+              <View style={styles.linkCard}>
+                <Text style={styles.linkTitle}>휴대폰을 바꿔도 그대로</Text>
+                <Text style={styles.linkBody}>지금 정보는 이 휴대폰에만 있어요. 카카오를 연결하면 새 기기에서도 이어서 쓸 수 있어요.</Text>
+                <BigButton variant="secondary" label={linking ? "연결 중…" : "카카오 연결하기"} onPress={() => { void linkAccount(); }} disabled={linking} />
+              </View>
+            ) : null}
+
             <BigButton label={saving ? "저장 중…" : "홈으로 가기"} onPress={() => { void saveAlarms(); }} disabled={saving} />
             <Text style={styles.disclaimer}>{DISCLAIMER}</Text>
           </>
@@ -467,5 +512,11 @@ const styles = StyleSheet.create({
     borderRadius: radii.card, padding: spacing.lg,
   },
   doneTitle: { fontSize: 24, fontWeight: "800", color: colors.primaryNavy, marginVertical: spacing.xs },
+  linkCard: {
+    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
+    borderRadius: radii.card, padding: spacing.lg, gap: spacing.xs,
+  },
+  linkTitle: { fontSize: fontSizes.emphasis, fontWeight: "800", color: colors.primaryNavy },
+  linkBody: { fontSize: fontSizes.body, lineHeight: 27, color: colors.textSecondary, marginBottom: spacing.xs },
   disclaimer: { fontSize: 14, color: colors.textSecondary, textAlign: "center", lineHeight: 21 },
 });

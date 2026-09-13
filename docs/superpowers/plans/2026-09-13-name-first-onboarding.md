@@ -188,13 +188,13 @@
   `linkKakao`: `signInWithKakao()` → `supabase.rpc("link_kakao", { p_patient_id, p_kakao_id })` → `error`면 `{ok:false, canceled:false, message: linkResultMessage("network")}`(RPC가 없을 때도 여기로 온다) → `data.ok`가 아니면 `linkResultMessage(data.reason)`.
 - `storage.ts`: `getKakaoBannerDismissed(): Promise<boolean>`, `setKakaoBannerDismissed(): Promise<void>`, 키 `care.kakaoBannerDismissed` (clearAll 포함).
 
-- [ ] **Step 1: 테스트 먼저** — `kakaoAccount.test.ts`에 `linkResultMessage` 4가지 문구 `toContain`으로 고정. 실패 확인 후 구현.
-- [ ] **Step 2: SQL 파일** 작성(위 그대로).
-- [ ] **Step 3: `SettingsScreen.tsx` 계정 영역(목록 맨 위)** — 카드: 첫 줄 `name`(없으면 "이름 없음"), 둘째 줄 linked ? "카카오와 연결돼 있어요 · 휴대폰을 바꿔도 그대로" : "이 휴대폰에만 저장돼 있어요", 미연결일 때만 `BigButton variant="secondary" label="카카오 연결하기"`(busy 시 "연결 중…"). 성공 → `Alert.alert("연결됐어요", "휴대폰을 바꿔도 이 정보를 그대로 쓸 수 있어요.")` 후 상태 갱신. 실패는 canceled가 아닐 때만 Alert. 조회 실패(null)면 버튼은 보이되 상태 문구는 "연결 상태를 확인하지 못했어요".
-- [ ] **Step 4: `VoiceGuideScreen.tsx` 완료 단계** — `state.step === "done"`에서 `isKakaoLinked(pid)`가 false일 때만 `doneCard` 아래에 카드: 제목 "휴대폰을 바꿔도 그대로", 본문 "지금 정보는 이 휴대폰에만 있어요. 카카오를 연결하면 새 기기에서도 이어서 쓸 수 있어요.", `BigButton variant="secondary" label="카카오 연결하기"`. 성공 시 카드가 사라지고 짧은 Alert. "홈으로 가기"는 그대로 아래.
-- [ ] **Step 5: `HomeScreen.tsx` 배너** — `!linked && total >= 1 && !dismissed`일 때 인사말 아래 한 줄 배너: "휴대폰을 바꿔도 그대로 쓰시려면" + Pressable "연결"(→ `linkKakao`) + ✕(→ `setKakaoBannerDismissed`). 배너 높이 ≥56, 글자 18px.
-- [ ] **Step 6: 검증** — tsc, jest. 실기기: SQL 미적용 상태에서도 앱이 죽지 않고 "인터넷 연결을 확인…" Alert만 뜨는지 코드로 확인.
-- [ ] **Step 7: 커밋** — `feat: 카카오를 기기 이전용 연결로 — link_kakao RPC, 더보기 계정 영역, 알람 완료·홈 배너`.
+- [x] **Step 1: 테스트 먼저** — `kakaoAccount.test.ts`에 `linkResultMessage` 4가지 문구 `toContain`으로 고정. 실패 확인 후 구현.
+- [x] **Step 2: SQL 파일** 작성(위 그대로).
+- [x] **Step 3: `SettingsScreen.tsx` 계정 영역(목록 맨 위)** — 카드: 첫 줄 `name`(없으면 "이름 없음"), 둘째 줄 linked ? "카카오와 연결돼 있어요 · 휴대폰을 바꿔도 그대로" : "이 휴대폰에만 저장돼 있어요", 미연결일 때만 `BigButton variant="secondary" label="카카오 연결하기"`(busy 시 "연결 중…"). 성공 → `Alert.alert("연결됐어요", "휴대폰을 바꿔도 이 정보를 그대로 쓸 수 있어요.")` 후 상태 갱신. 실패는 canceled가 아닐 때만 Alert. 조회 실패(null)면 버튼은 보이되 상태 문구는 "연결 상태를 확인하지 못했어요".
+- [x] **Step 4: `VoiceGuideScreen.tsx` 완료 단계** — `state.step === "done"`에서 `isKakaoLinked(pid)`가 false일 때만 `doneCard` 아래에 카드: 제목 "휴대폰을 바꿔도 그대로", 본문 "지금 정보는 이 휴대폰에만 있어요. 카카오를 연결하면 새 기기에서도 이어서 쓸 수 있어요.", `BigButton variant="secondary" label="카카오 연결하기"`. 성공 시 카드가 사라지고 짧은 Alert. "홈으로 가기"는 그대로 아래.
+- [x] **Step 5: `HomeScreen.tsx` 배너** — `!linked && total >= 1 && !dismissed`일 때 인사말 아래 한 줄 배너: "휴대폰을 바꿔도 그대로 쓰시려면" + Pressable "연결"(→ `linkKakao`) + ✕(→ `setKakaoBannerDismissed`). 배너 높이 ≥56, 글자 18px.
+- [x] **Step 6: 검증** — tsc, jest. 실기기: SQL 미적용 상태에서도 앱이 죽지 않고 "인터넷 연결을 확인…" Alert만 뜨는지 코드로 확인.
+- [x] **Step 7: 커밋** — `feat: 카카오를 기기 이전용 연결로 — link_kakao RPC, 더보기 계정 영역, 알람 완료·홈 배너`.
 
 ---
 
