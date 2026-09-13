@@ -135,8 +135,18 @@ export function groupByKind(findings: QuickFinding[]): { kind: RuleKind; items: 
 /** 결과 화면 부제 "혈압약 · 오메가3 · 비타민D 를 대조했어요" — 4개 이상이면 앞 3개 + "외 N개". 0개면 빈 문자열. */
 export function checkedNamesLine(names: string[]): string {
   if (names.length === 0) return "";
-  if (names.length <= 3) return `${names.join(" · ")} 를 대조했어요`;
+  if (names.length <= 3) {
+    const list = names.join(" · ");
+    return `${list}${objectJosa(list)} 대조했어요`;
+  }
   return `${names.slice(0, 3).join(" · ")} 외 ${names.length - 3}개를 대조했어요`;
+}
+
+// 목적격 조사 — 마지막 글자에 받침이 있으면 "을", 없으면 "를". 한글이 아니면(영문·숫자) "를".
+function objectJosa(word: string): "을" | "를" {
+  const ch = word.charCodeAt(word.length - 1);
+  if (ch < 0xac00 || ch > 0xd7a3) return "를";
+  return (ch - 0xac00) % 28 === 0 ? "를" : "을";
 }
 
 // 실제로 대조한 이름 수 = 고른 이름 − 자료에서 못 찾은 제품명. 결과 화면이 "이상 없음"을

@@ -116,8 +116,8 @@ describe("unmatchedNames / checkedCount / checkedNamesLine", () => {
 
   it("checkedNamesLine — 3개까지는 전부, 4개부터는 외 N개", () => {
     expect(checkedNamesLine([])).toBe("");
-    expect(checkedNamesLine(["혈압약"])).toBe("혈압약 를 대조했어요");
-    expect(checkedNamesLine(["혈압약", "오메가3", "비타민D"])).toBe("혈압약 · 오메가3 · 비타민D 를 대조했어요");
+    expect(checkedNamesLine(["혈압약"])).toBe("혈압약을 대조했어요");
+    expect(checkedNamesLine(["혈압약", "오메가3", "비타민D"])).toBe("혈압약 · 오메가3 · 비타민D를 대조했어요");
     expect(checkedNamesLine(["a", "b", "c", "d", "e"])).toBe("a · b · c 외 2개를 대조했어요");
   });
 });
