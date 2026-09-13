@@ -2,7 +2,7 @@ import {
   SUPPLEMENT_PRESETS, SUPPLEMENT_MORE, MEDICINE_PRESETS, AGES, CONDS, NONE_SUPPLEMENT, NONE_MEDICINE, NONE_CONDITION,
   toggleItem, addItem, checkItems, unmatchedNames, checkedCount, checkedNamesLine, EMPTY_DRAFT,
   isPreset, customNames, durToQuickFinding, mergeFindings, summarize, topFinding, groupByKind,
-  unmatchedDescription, PRESET_LABELS,
+  unmatchedDescription, PRESET_LABELS, isUnfinished,
 } from "../lib/quickCheck";
 import type { Finding } from "../lib/interactions";
 import type { QuickFinding, RuleKind } from "../lib/quickCheckRules";
@@ -168,5 +168,18 @@ describe("unmatchedDescription — 점검하지 못한 항목 설명", () => {
   it("제품명이 하나라도 섞이면 제품 검색 안내 문구", () => {
     expect(unmatchedDescription(["유산균", "락토핏 골드"])).toContain("제품 이름으로 검색");
     expect(unmatchedDescription(["락토핏 골드"])).toContain("제품 이름으로 검색");
+  });
+});
+
+describe("isUnfinished — 이름 화면의 \"고르다 만 점검\" 배너 조건", () => {
+  it("빈 초안(아직 판정 전, 저장한 적 없음)은 미완료", () => {
+    expect(EMPTY_DRAFT.committedAt).toBeNull();
+    expect(isUnfinished({ ...EMPTY_DRAFT, supplements: ["오메가3"] })).toBe(true);
+  });
+  it("판정 결과가 있으면 미완료가 아니다", () => {
+    expect(isUnfinished({ ...EMPTY_DRAFT, findings: [], analyzedAt: "2026-09-13T00:00:00.000Z" })).toBe(false);
+  });
+  it("서버에 저장한 뒤 입력만 남긴 초안(findings null, committedAt 있음)은 미완료가 아니다", () => {
+    expect(isUnfinished({ ...EMPTY_DRAFT, supplements: ["오메가3"], committedAt: "2026-09-13T00:00:00.000Z" })).toBe(false);
   });
 });

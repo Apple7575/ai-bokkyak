@@ -39,12 +39,20 @@ export type QuickCheckDraft = {
   durUnavailable?: boolean;
   /** 판정 주체: server=quick_check_v1 RPC(검수 문구), local=내장 규칙+DUR 폴백. 없으면 구버전 초안. */
   engine?: "server" | "local";
+  /** 마지막으로 서버(quick_check_results)에 저장한 시각(ISO). 저장 뒤 입력만 남기고 판정을 비우므로
+   *  findings===null 만으로는 "고르다 만 것"과 "저장 끝난 것"을 구분할 수 없다 — isUnfinished() 참고. */
+  committedAt: string | null;
 };
 
 export const EMPTY_DRAFT: QuickCheckDraft = {
   supplements: [], medicines: [], profile: { age: null, conditions: [] },
-  findings: null, unmatched: [], analyzedAt: null,
+  findings: null, unmatched: [], analyzedAt: null, committedAt: null,
 };
+
+/** 고르다 만 점검인가 — 판정 전이고 서버에 저장한 적도 없는 초안. 이름 화면의 "이어서 하기" 배너 조건. */
+export function isUnfinished(draft: QuickCheckDraft): boolean {
+  return draft.findings === null && !draft.committedAt;
+}
 
 /** 칩으로 고른 종류명인가. 종류명은 규칙이 맡고, 제품명(검색·사진)은 DUR이 맡는다. */
 export function isPreset(name: string): boolean {

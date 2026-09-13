@@ -6,7 +6,7 @@
 --
 -- 왜 RPC인가: migrate-rls-tier1.sql 이 anon 의 patients update 를 막는다. 그래서 update 한 줄을
 -- security definer 함수로 감쌌다. 함수 안에서만 세 가지를 검사한다.
---   not_found      그 환자가 없다
+--   not_found      그 환자가 없다(빈 카카오 id도 여기로)
 --   already_linked 이 환자는 이미 다른 카카오 계정에 묶여 있다(같은 계정이면 그냥 ok)
 --   taken          이 카카오 계정은 이미 다른 환자에 묶여 있다 → 앱은 "카카오로 불러오기"를 안내
 --
@@ -17,12 +17,18 @@ create or replace function public.link_kakao(p_patient_id uuid, p_kakao_id text)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare v_other uuid; v_current text;
 begin
+  if p_kakao_id is null or length(trim(p_kakao_id)) = 0 then return jsonb_build_object('ok', false, 'reason', 'not_found'); end if;
   select kakao_id into v_current from patients where id = p_patient_id;
   if not found then return jsonb_build_object('ok', false, 'reason', 'not_found'); end if;
   if v_current is not null and v_current <> p_kakao_id then return jsonb_build_object('ok', false, 'reason', 'already_linked'); end if;
   select id into v_other from patients where kakao_id = p_kakao_id and id <> p_patient_id;
   if found then return jsonb_build_object('ok', false, 'reason', 'taken'); end if;
-  update patients set kakao_id = p_kakao_id where id = p_patient_id;
+  -- 위 select와 update 사이에 다른 기기가 같은 kakao_id 를 먼저 묶었을 수 있다 — unique 위반은 taken 으로.
+  begin
+    update patients set kakao_id = p_kakao_id where id = p_patient_id;
+  exception when unique_violation then
+    return jsonb_build_object('ok', false, 'reason', 'taken');
+  end;
   return jsonb_build_object('ok', true);
 end $$;
 revoke all on function public.link_kakao(uuid, text) from public;

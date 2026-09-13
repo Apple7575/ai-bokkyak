@@ -4,7 +4,8 @@ import { QuickCheckDraft, EMPTY_DRAFT, checkItems } from "./quickCheck";
 import { isQuickFinding } from "./quickCheckRules";
 
 // 가입 전 "1분 복용 점검" 초안을 기기에 보관한다.
-// 가입이 끝나면 commitQuickCheckDraft()가 서버(quick_check_results)에 옮기고 지운다.
+// 판정이 끝나면 commitQuickCheckDraft()가 서버(quick_check_results)에 옮기고, 초안에는 입력(영양제·약·
+// 기본 정보)만 남긴다 — 결과 화면의 "다시 점검하기"가 같은 입력으로 다시 판정할 수 있게.
 
 const KEY = "quickcheck.draft.v1";
 
@@ -36,6 +37,7 @@ export async function loadDraft(): Promise<QuickCheckDraft | null> {
       durUnavailable: p.durUnavailable === true,
       // 판정 주체 — 모르는 값(구버전·깨진 값)은 버린다.
       engine: p.engine === "server" || p.engine === "local" ? p.engine : undefined,
+      committedAt: typeof p.committedAt === "string" ? p.committedAt : null,
     };
   } catch {
     return null; // 깨진 값은 없는 것으로
@@ -50,9 +52,10 @@ export async function clearDraft(): Promise<void> {
   await AsyncStorage.removeItem(KEY);
 }
 
-// 가입/로그인 직후 호출. 점검을 마친 초안이 있으면 서버에 한 줄 남기고 초안을 지운다.
-// 저장한 초안을 돌려주고, 저장할 것이 없으면 null. 실패는 삼키지 않고 던진다 —
-// 호출자가 Alert로 알리고 초안은 그대로 남겨 다음에 다시 시도할 수 있게.
+// 판정 직후(QuickCheckAnalyzing)·홈 진입 시 호출. 점검을 마친 초안이 있으면 서버에 한 줄 남기고
+// 초안에서 판정 결과만 비운다(입력은 보존). 저장한 초안(판정 결과 포함)을 돌려주고, 저장할 것이
+// 없으면 null. insert 실패는 삼키지 않고 던진다 — 호출자가 Alert로 알리고 초안은 그대로 남겨
+// 다음에 다시 시도할 수 있게.
 export async function commitQuickCheckDraft(patientId: string): Promise<QuickCheckDraft | null> {
   const draft = await loadDraft();
   if (!draft || !draft.findings) return null;
@@ -73,6 +76,16 @@ export async function commitQuickCheckDraft(patientId: string): Promise<QuickChe
     findings: draft.findings,
   });
   if (error) throw error;
-  await clearDraft();
+  // 서버에 남았으니 판정 결과는 비우고 입력만 남긴다. 여기서 실패해도 insert는 이미 성공했으므로
+  // 던지지 않는다 — 던지면 호출자가 "저장 실패"로 보고 다시 insert해 결과 행이 중복된다.
+  try {
+    await saveDraft({
+      ...draft, findings: null, unmatched: [], analyzedAt: null, durUnavailable: false,
+      unmappedIngredients: undefined, uncoveredConditions: undefined, engine: undefined,
+      committedAt: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.warn("quickCheckDraft: 저장 후 초안 정리 실패", e);
+  }
   return draft;
 }

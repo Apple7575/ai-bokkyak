@@ -137,7 +137,8 @@ export function QuickCheckAnalyzingScreen() {
       const wait = Math.max(0, MIN_MS - (Date.now() - started));
       await new Promise((res) => setTimeout(res, wait));
       if (!alive()) return;
-      // commit이 초안을 지웠으므로 결과는 params로 넘긴다. 저장 못 했으면 결과 화면이 초안에서 읽는다.
+      // commit이 초안의 판정 결과를 비웠으므로(입력은 남는다) 결과는 params로 넘긴다.
+      // 저장 못 했으면 초안에 결과가 남아 있어 결과 화면이 초안에서 읽는다.
       nav.replace("QuickCheckResult", committed ? {
         findings: committed.findings, unmatched: committed.unmatched, names: checkItems(committed),
         durUnavailable: committed.durUnavailable === true,

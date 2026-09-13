@@ -7,6 +7,7 @@ import { ScreenHeader } from "../components/ScreenHeader";
 import { IllustrationBanner } from "../components/IllustrationBanner";
 import { supabase } from "../lib/supabase";
 import { getPatientId, clearAll } from "../lib/storage";
+import { clearDraft } from "../lib/quickCheckDraft";
 import { colors, fontSizes, radii, spacing, minTouch } from "../theme/tokens";
 
 const PRIVACY_ART = require("../../assets/illustrations/privacy-lock.png");
@@ -93,6 +94,8 @@ export function PrivacyScreen() {
         if (error) throw error;
       }
       await clearAll();
+      // 1분 점검 초안도 지운다 — 남겨 두면 다음 사람의 환자로 저장(commit)될 수 있다.
+      await clearDraft();
       nav.reset({ index: 0, routes: [{ name: "NameEntry" }] });
     } catch {
       setDeleting(false);

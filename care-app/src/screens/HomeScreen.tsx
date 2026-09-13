@@ -9,7 +9,6 @@ import { supabase, Schedule, IntakeRecord } from "../lib/supabase";
 import { getPatientId, getPatientName, getKakaoBannerDismissed, setKakaoBannerDismissed } from "../lib/storage";
 import { isKakaoLinked, linkKakao } from "../lib/kakaoAccount";
 import { commitQuickCheckDraft } from "../lib/quickCheckDraft";
-import { checkItems } from "../lib/quickCheck";
 import { nextNotificationTime, todaySlot } from "../lib/schedule";
 import { hasExactAlarm } from "../lib/alarmPermissions";
 import { MedKind } from "../lib/medKind";
@@ -89,7 +88,8 @@ export function HomeScreen() {
   };
 
   // 점검 직후 결과 저장에 실패해 기기에 남은 초안이 있으면 홈이 뜰 때마다 다시 시도한다.
-  // 성공하면 결과 전체를 보여 준다. 실패하면 배너로 알리고 "다시 시도" 버튼을 준다 —
+  // 성공하면 조용히 배너만 내린다(결과는 점검 때 이미 봤다 — 홈에 들어왔는데 결과 화면이 다시 열리면
+  // 당황스럽다). 실패하면 배너로 알리고 "다시 시도" 버튼을 준다 —
   // 자동 재시도 실패는 조용히 넘기되(진입마다 Alert가 뜨면 성가시다), 수동 시도는 Alert로.
   const [draftPending, setDraftPending] = useState(false);
   // 한 번에 하나만 — commit은 단순 insert라 동시에 두 번 돌면 결과 행이 중복된다.
@@ -101,17 +101,8 @@ export function HomeScreen() {
     if (draftInFlight.current) return;
     draftInFlight.current = true;
     try {
-      const committed = await commitQuickCheckDraft(pid);
+      await commitQuickCheckDraft(pid);
       setDraftPending(false);
-      if (committed?.findings) {
-        nav.navigate("QuickCheckResult", {
-          findings: committed.findings, unmatched: committed.unmatched, names: checkItems(committed),
-          durUnavailable: committed.durUnavailable === true,
-          unmappedIngredients: committed.unmappedIngredients ?? [],
-          uncoveredConditions: committed.uncoveredConditions ?? [],
-          engine: committed.engine,
-        });
-      }
     } catch {
       setDraftPending(true);
       if (alertOnFail.current) Alert.alert("점검 결과를 저장하지 못했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
@@ -408,7 +399,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.card, paddingLeft: spacing.md, paddingRight: spacing.sm, paddingVertical: spacing.sm,
   },
   kakaoBannerText: { flex: 1, fontSize: fontSizes.body, lineHeight: 26, color: colors.text },
-  kakaoBannerLink: { minHeight: 44, paddingHorizontal: spacing.sm, justifyContent: "center" },
+  kakaoBannerLink: { minHeight: minTouch, paddingHorizontal: spacing.sm, justifyContent: "center" },
   kakaoBannerLinkText: { fontSize: fontSizes.body, fontWeight: "800", color: colors.primaryBlue },
   kakaoBannerClose: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   warnPerm: {

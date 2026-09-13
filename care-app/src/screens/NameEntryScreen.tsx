@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, TextInput, StyleSheet, Alert, ScrollView, Pressable, KeyboardAvoidingView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,6 +10,7 @@ import { supabase } from "../lib/supabase";
 import { enterDemo } from "../lib/demo";
 import { restoreWithKakao } from "../lib/kakaoAccount";
 import { loadDraft } from "../lib/quickCheckDraft";
+import { isUnfinished } from "../lib/quickCheck";
 import { colors, fontSizes, spacing, radii, minTouch, shadows } from "../theme/tokens";
 
 // 로고 이미지는 여백이 거의 없는 정사각형이라 카드 안쪽에 패딩을 준다.
@@ -26,26 +27,31 @@ export function NameEntryScreen() {
   const [name, setName] = useState("");
   const [hasUnfinishedDraft, setHasUnfinishedDraft] = useState(false);
   const [saving, setSaving] = useState(false);
+  // 두 번 눌러 환자가 두 명 만들어지지 않게 — ref는 동기 가드, state는 버튼 문구용.
+  const savingRef = useRef(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const [kakaoBusy, setKakaoBusy] = useState(false);
 
   // 점검을 고르다 말고 앱이 꺼진 경우 — 되돌아갈 길을 준다.
+  // (저장이 끝난 초안은 입력만 남아 findings가 null이지만 committedAt이 있어 여기 걸리지 않는다.)
   useEffect(() => {
     let alive = true;
-    void loadDraft().then((d) => { if (alive) setHasUnfinishedDraft(!!d && d.findings === null); });
+    void loadDraft().then((d) => { if (alive) setHasUnfinishedDraft(!!d && isUnfinished(d)); });
     return () => { alive = false; };
   }, []);
 
   const canStart = name.trim().length > 0;
 
   async function start() {
-    if (saving || !canStart) return;
+    if (savingRef.current || !canStart) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       const { data, error } = await supabase.from("patients")
         .insert({ name: name.trim() }).select("id").single();
       if (error || !data) {
-        Alert.alert("시작하지 못했어요", error?.message ?? "인터넷 연결을 확인하고 다시 시도해 주세요.");
+        console.warn("NameEntry: patients insert 실패", error?.message);
+        Alert.alert("시작하지 못했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
         setSaving(false);
         return;
       }
@@ -53,8 +59,11 @@ export function NameEntryScreen() {
       await setPatientName(name.trim());
       nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
     } catch (e) {
-      Alert.alert("시작하지 못했어요", (e as Error)?.message ?? "인터넷 연결을 확인하고 다시 시도해 주세요.");
+      console.warn("NameEntry: 시작 실패", (e as Error)?.message ?? e);
+      Alert.alert("시작하지 못했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
       setSaving(false);
+    } finally {
+      savingRef.current = false;
     }
   }
 

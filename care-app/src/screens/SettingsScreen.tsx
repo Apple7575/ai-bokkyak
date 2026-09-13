@@ -7,6 +7,7 @@ import notifee from "@notifee/react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { BigButton } from "../components/BigButton";
 import { clearAll, getPatientId, getPatientName } from "../lib/storage";
+import { clearDraft } from "../lib/quickCheckDraft";
 import { isKakaoLinked, linkKakao } from "../lib/kakaoAccount";
 import { colors, fontSizes, radii, spacing, shadows, tabBarClearance } from "../theme/tokens";
 
@@ -70,6 +71,8 @@ export function SettingsScreen() {
     // 기기에 남는 건 patientId뿐이고 clearAll()이 지운다. 같은 카카오 계정으로
     // 다시 로그인하면 kakao_id로 약장을 되찾는다.
     await clearAll();
+    // 1분 점검 초안도 지운다 — 남겨 두면 다음 사람의 환자로 저장(commit)될 수 있다.
+    await clearDraft();
     nav.reset({ index: 0, routes: [{ name: "NameEntry" }] });
   };
 

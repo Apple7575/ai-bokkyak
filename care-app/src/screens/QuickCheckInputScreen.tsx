@@ -55,6 +55,9 @@ export function QuickCheckInputScreen() {
   const [age, setAge] = useState<string | null>(null);
   const [conditions, setConditions] = useState<string[]>([]);
   const [name, setName] = useState("");
+  // 이미 환자가 있으면(홈에서 다시 점검) 3/3에 이름 칸을 두지 않는다 — 서버 이름 변경은 RLS가 막고,
+  // 기기에서만 바꾸면 서버와 어긋난다. null=아직 조회 전(그동안은 다음 버튼을 잠근다).
+  const [hasPatient, setHasPatient] = useState<boolean | null>(null);
   const [more, setMore] = useState(false); // 영양제 "더 보기" 펼침
   const [panel, setPanel] = useState<Panel>("none");
   // 저장 중 두 번 눌러 점검 화면이 두 번 열리지 않게(입력을 잠그는 게 아니라 재진입만 막는다).
@@ -76,7 +79,7 @@ export function QuickCheckInputScreen() {
   }, [panelOpen]);
 
   // 앞서 고르다 만 초안이 있으면 되살린다(앱을 껐다 켜도 처음부터 다시 고르지 않게).
-  // 이미 이름을 적은 사용자(홈에서 다시 점검)는 이름 칸을 채워 둔다.
+  // 이미 이름을 적은 사용자(홈에서 다시 점검)는 이름을 인사 한 줄에만 쓴다.
   useEffect(() => {
     let alive = true;
     void loadDraft().then((d) => {
@@ -88,6 +91,7 @@ export function QuickCheckInputScreen() {
       if (d.supplements.some((x) => (SUPPLEMENT_MORE as readonly string[]).includes(x))) setMore(true);
     });
     void getPatientName().then((n) => { if (alive && n) setName(n); });
+    void getPatientId().then((pid) => { if (alive) setHasPatient(pid !== null); });
     return () => { alive = false; };
   }, []);
 
@@ -99,7 +103,10 @@ export function QuickCheckInputScreen() {
   const presets: readonly string[] = step === "supplements" && more ? [...SUPPLEMENT_PRESETS, ...SUPPLEMENT_MORE] : (meta?.presets ?? []);
   const noneLabel = meta?.none ?? "";
   const customs = list.filter((x) => x !== noneLabel && !presets.includes(x));
-  const canNext = step === "profile" ? name.trim().length > 0 && age !== null : list.length > 0;
+  // 3/3: 환자가 이미 있으면 연령대만, 없으면 이름도 있어야 한다.
+  const canNext = step === "profile"
+    ? age !== null && hasPatient !== null && (hasPatient || name.trim().length > 0)
+    : list.length > 0;
 
   function onChip(label: string) { setList(toggleItem(list, label, noneLabel)); }
   function onAdd(label: string) { setList(addItem(list, label, noneLabel)); setPanel("none"); }
@@ -139,20 +146,23 @@ export function QuickCheckInputScreen() {
     nextBusy.current = true;
     setSaving(true);
     try {
-      // 환자 보장 — 이름 한 줄로 레코드를 만들고, 이미 있으면 이름만 갱신한다.
+      // 환자 보장 — 없으면 이름 한 줄로 레코드를 만든다. 이미 있으면 이름은 건드리지 않는다
+      // (3/3에 이름 칸이 없고, 기기에서만 바꾸면 서버와 어긋난다).
       try {
         const pid = await getPatientId();
         if (!pid) {
           const { data, error } = await supabase.from("patients").insert({ name: trimmed }).select("id").single();
           if (error || !data) {
-            Alert.alert("시작하지 못했어요", error?.message ?? "인터넷 연결을 확인하고 다시 시도해 주세요.");
+            console.warn("QuickCheckInput: patients insert 실패", error?.message);
+            Alert.alert("시작하지 못했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
             return;
           }
           await setPatient(data.id);
+          await setPatientName(trimmed);
         }
-        await setPatientName(trimmed);
       } catch (e) {
-        Alert.alert("시작하지 못했어요", (e as Error)?.message ?? "인터넷 연결을 확인하고 다시 시도해 주세요.");
+        console.warn("QuickCheckInput: 시작 실패", (e as Error)?.message ?? e);
+        Alert.alert("시작하지 못했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
         return;
       }
       try {
@@ -264,17 +274,23 @@ export function QuickCheckInputScreen() {
             <Text style={styles.title}>마지막으로 몇 가지만</Text>
             <Text style={styles.sub}>나이와 상태에 따라 주의할 조합이 달라요</Text>
 
-            <Text style={styles.question}>어떻게 불러드릴까요?</Text>
-            <TextInput
-              style={styles.nameInput}
-              value={name}
-              onChangeText={setName}
-              placeholder="홍길동"
-              placeholderTextColor={colors.textSecondary}
-              maxLength={20}
-              returnKeyType="done"
-              accessibilityLabel="이름"
-            />
+            {hasPatient ? (
+              <Text style={styles.greetLine}>{name.trim() ? `${name.trim()}님, 몇 가지만 더 여쭤볼게요.` : "몇 가지만 더 여쭤볼게요."}</Text>
+            ) : (
+              <>
+                <Text style={styles.question}>어떻게 불러드릴까요?</Text>
+                <TextInput
+                  style={styles.nameInput}
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="홍길동"
+                  placeholderTextColor={colors.textSecondary}
+                  maxLength={20}
+                  returnKeyType="done"
+                  accessibilityLabel="이름"
+                />
+              </>
+            )}
 
             <Text style={styles.question}>연령대가 어떻게 되세요?</Text>
             <View style={styles.gridTight}>
@@ -586,6 +602,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1.5,
     borderRadius: radii.button, fontSize: fontSizes.body, padding: 14, minHeight: minTouch, color: colors.text,
   },
+  // 3/3 이미 환자가 있을 때 이름 칸 대신 보이는 인사 한 줄.
+  greetLine: { marginTop: spacing.md, fontSize: fontSizes.emphasis, lineHeight: 30, fontWeight: "700", color: colors.primaryNavy },
   // 3/3 이름 칸 — NameEntry의 입력창과 같은 크기(높이 ≥56, 강조 글자).
   nameInput: {
     marginTop: 12, backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1.5,
