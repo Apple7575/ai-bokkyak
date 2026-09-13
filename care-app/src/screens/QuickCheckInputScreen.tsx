@@ -108,10 +108,10 @@ export function QuickCheckInputScreen() {
   function goBack() {
     if (stepIndex > 0) { setStep(STEP_ORDER[stepIndex - 1]); setPanel("none"); return; }
     if (nav.canGoBack()) nav.goBack();
-    else nav.reset({ index: 0, routes: [{ name: "RoleSelect" }] });
+    else nav.reset({ index: 0, routes: [{ name: "NameEntry" }] });
   }
-  // 건너뛰기 = 점검 없이 바로 가입으로.
-  function skip() { nav.reset({ index: 0, routes: [{ name: "RoleSelect" }] }); }
+  // 건너뛰기 = 점검 없이 이름 한 칸으로.
+  function skip() { nav.reset({ index: 0, routes: [{ name: "NameEntry" }] }); }
 
   async function next() {
     if (!canNext || nextBusy.current) return;

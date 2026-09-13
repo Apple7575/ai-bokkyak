@@ -169,7 +169,7 @@ export function QuickCheckAnalyzingScreen() {
         {failed ? (
           <View style={styles.actions}>
             <BigButton label="다시 시도" onPress={() => setAttempt((a) => a + 1)} />
-            <BigButton label="건너뛰고 가입하기" variant="secondary" onPress={() => nav.reset({ index: 0, routes: [{ name: "RoleSelect" }] })} />
+            <BigButton label="건너뛰고 시작하기" variant="secondary" onPress={() => nav.reset({ index: 0, routes: [{ name: "NameEntry" }] })} />
           </View>
         ) : null}
       </ScrollView>

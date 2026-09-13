@@ -5,7 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 //
 // care.role / care.patientCode 키는 더 쓰지 않지만 clearAll이 지울 수 있게
 // 남겨 둔다 — 이전 버전을 쓰던 기기에 값이 남아 있다.
-const KEYS = { patientId: "care.patientId", onboarded: "care.onboarded" };
+const KEYS = { patientId: "care.patientId", onboarded: "care.onboarded", patientName: "care.patientName" };
 const LEGACY_KEYS = ["care.role", "care.patientCode"];
 
 export async function getOnboarded(): Promise<boolean> {
@@ -20,6 +20,15 @@ export async function getPatientId(): Promise<string | null> {
 }
 export async function setPatient(id: string): Promise<void> {
   await AsyncStorage.setItem(KEYS.patientId, id);
+}
+
+// 이름은 결과·홈 인사말에 쓴다. 서버(patients.name)에도 있지만 화면을 열 때마다
+// 조회하지 않도록 기기에 같이 둔다. 환자 id와 함께 clearAll()로 지워진다.
+export async function getPatientName(): Promise<string | null> {
+  return AsyncStorage.getItem(KEYS.patientName);
+}
+export async function setPatientName(name: string): Promise<void> {
+  await AsyncStorage.setItem(KEYS.patientName, name);
 }
 export async function clearAll(): Promise<void> {
   await AsyncStorage.multiRemove([...Object.values(KEYS), ...LEGACY_KEYS]);

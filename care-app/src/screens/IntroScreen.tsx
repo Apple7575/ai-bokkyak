@@ -7,6 +7,7 @@ import { Check, Leaf, Link2, Package, Pill } from "lucide-react-native";
 import { Logo } from "../components/Logo";
 import { INTRO_SLIDES, SKIP_TARGET_INDEX, dotState, nextIndex, prevIndex } from "../lib/introSlides";
 import { setOnboarded } from "../lib/storage";
+import { restoreWithKakao } from "../lib/kakaoAccount";
 import { colors, fontSizes, minTouch, radii, shadows, spacing } from "../theme/tokens";
 
 // 인트로 — 브랜드 1장 → 온보딩 2장 → 시작 CTA, 총 4장을 한 화면에서 넘긴다.
@@ -141,10 +142,25 @@ export function IntroScreen() {
       leaving.current = false;
     }
   }
-  // 회의 2026-09-03: 점검과 알람 설정은 한 흐름이다 — 점검 → 가입 → 결과 →
-  // 복용 알람 설정. 건너뛰면 가입 후 바로 홈이다(RoleSelectScreen 참고).
-  const startQuickCheck = () => void leave([{ name: "RoleSelect" }, { name: "QuickCheckInput" }]);
-  const skipSetup = () => void leave([{ name: "RoleSelect" }]);
+  // 회의 2026-09-10(B안): 가입 화면이 없다. 점검은 3/3에서 이름을 받아 환자를 만들고
+  // 결과 → 복용 알람 설정으로 잇는다. 건너뛰면 이름 한 칸(NameEntry) → 바로 홈.
+  const startQuickCheck = () => void leave([{ name: "QuickCheckInput" }]);
+  const skipSetup = () => void leave([{ name: "NameEntry" }]);
+  // 휴대폰을 바꾼 사용자 — 카카오와 연결해 둔 예전 정보를 불러온다. 눌린 링크만 busy.
+  const [restoring, setRestoring] = useState(false);
+  async function restore() {
+    if (restoring || leaving.current) return;
+    setRestoring(true);
+    clearAuto();
+    try {
+      const r = await restoreWithKakao();
+      if (r.ok) { await leave([{ name: "Tabs" }]); return; }
+      if (!r.canceled) Alert.alert("카카오로 불러오기", r.message);
+    } catch {
+      Alert.alert("카카오로 불러오기", "인터넷 연결을 확인하고 다시 시도해 주세요.");
+    }
+    setRestoring(false);
+  }
 
   const slide = INTRO_SLIDES[index];
   const dots = dotState(index);
@@ -172,7 +188,7 @@ export function IntroScreen() {
         {index === 0 ? <Brand1 onTap={tapNext} /> : null}
         {index === 1 ? <Onboarding1 onNext={tapNext} /> : null}
         {index === 2 ? <Onboarding2 onNext={tapNext} /> : null}
-        {index === 3 ? <Cta onPrimary={startQuickCheck} onSecondary={skipSetup} /> : null}
+        {index === 3 ? <Cta onPrimary={startQuickCheck} onSecondary={skipSetup} onRestore={() => void restore()} restoring={restoring} /> : null}
       </Animated.View>
     </View>
   );
@@ -321,7 +337,7 @@ function Onboarding2({ onNext }: { onNext: () => void }) {
 // ── 4. 시작 CTA ─────────────────────────────────────────────────────────────
 const CHECKS = ["회원가입 없이 바로", "영양제·약 한 번에 분석", "사진·이름 일부로도 가능"];
 
-function Cta({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: () => void }) {
+function Cta({ onPrimary, onSecondary, onRestore, restoring }: { onPrimary: () => void; onSecondary: () => void; onRestore: () => void; restoring: boolean }) {
   return (
     <View style={styles.onb}>
       <ScrollView contentContainerStyle={styles.ctaCenter} showsVerticalScrollIndicator={false}>
@@ -357,6 +373,13 @@ function Cta({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: (
         <Pressable onPress={onSecondary} accessibilityRole="button" accessibilityLabel="지금은 건너뛰기"
           style={({ pressed }) => [styles.ctaSecondary, pressed && { opacity: 0.7 }]}>
           <Text style={styles.ctaSecondaryText}>지금은 건너뛰기</Text>
+        </Pressable>
+      </Reveal>
+      {/* 기기 이전 — 카카오와 연결해 둔 예전 정보 불러오기. 처음 쓰는 사람에게는 보조 링크다. */}
+      <Reveal delay={1900} duration={550}>
+        <Pressable onPress={onRestore} disabled={restoring} accessibilityRole="button" accessibilityLabel="카카오로 불러오기"
+          style={({ pressed }) => [styles.ctaRestore, (pressed || restoring) && { opacity: 0.6 }]}>
+          <Text style={styles.ctaRestoreText}>{restoring ? "불러오는 중…" : "이미 쓰던 계정이 있어요 · 카카오로 불러오기"}</Text>
         </Pressable>
       </Reveal>
     </View>
@@ -448,4 +471,6 @@ const styles = StyleSheet.create({
   ctaPrimaryText: { color: colors.white, fontSize: 21, fontWeight: "800", letterSpacing: -0.3 },
   ctaSecondary: { minHeight: minTouch, marginTop: spacing.sm, alignItems: "center", justifyContent: "center", borderRadius: radii.pill, backgroundColor: colors.primarySoft },
   ctaSecondaryText: { color: colors.primaryNavy, fontSize: fontSizes.emphasis, fontWeight: "700" },
+  ctaRestore: { minHeight: minTouch, marginTop: spacing.xs, alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.md },
+  ctaRestoreText: { color: colors.textSecondary, fontSize: fontSizes.body, fontWeight: "600", textAlign: "center" },
 });

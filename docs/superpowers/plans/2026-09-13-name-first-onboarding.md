@@ -65,16 +65,16 @@
   동작: `signInWithKakao()` → 실패면 그대로 전달 → `patients.select("id,name").eq("kakao_id", kakaoId).maybeSingle()` → 에러면 throw 대신 `{ok:false, canceled:false, message:"인터넷 연결을 확인해 주세요."}` → 없으면 `RESTORE_NOT_FOUND` → 있으면 `setPatient(id)`, `setPatientName(name)`, `setOnboarded()` 후 ok.
 - Produces route `NameEntry: undefined` (types.ts). `RoleSelect` 키 제거.
 
-- [ ] **Step 1: storage에 이름 저장 추가** — `KEYS`에 `patientName: "care.patientName"`, 두 함수 추가. 기존 테스트 없음(AsyncStorage 목 없음) — `npx tsc --noEmit`로 확인.
-- [ ] **Step 2: `kakaoAccount.test.ts` 작성(실패 확인)** — `restoreWithKakao`는 네트워크라 테스트하지 않는다. 대신 이 파일에 순수 함수 `restoreMessage(found: boolean): string`를 두지 말고, Task 3의 `linkResultMessage`를 위해 파일만 만든다. 이 Task에서는 테스트 파일에 `describe.todo`를 두지 말고, `restoreWithKakao` 의 not-found 문구 상수 export 를 `toBe`로 고정하는 1개 테스트만 둔다.
+- [x] **Step 1: storage에 이름 저장 추가** — `KEYS`에 `patientName: "care.patientName"`, 두 함수 추가. 기존 테스트 없음(AsyncStorage 목 없음) — `npx tsc --noEmit`로 확인.
+- [x] **Step 2: `kakaoAccount.test.ts` 작성(실패 확인)** — `restoreWithKakao`는 네트워크라 테스트하지 않는다. 대신 이 파일에 순수 함수 `restoreMessage(found: boolean): string`를 두지 말고, Task 3의 `linkResultMessage`를 위해 파일만 만든다. 이 Task에서는 테스트 파일에 `describe.todo`를 두지 말고, `restoreWithKakao` 의 not-found 문구 상수 export 를 `toBe`로 고정하는 1개 테스트만 둔다.
   ```ts
   jest.mock("../lib/supabase", () => ({ supabase: { from: jest.fn() } }));
   jest.mock("../lib/kakaoAuth", () => ({ signInWithKakao: jest.fn() }));
   import { RESTORE_NOT_FOUND } from "../lib/kakaoAccount";
   it("복구 실패 문구는 '이름으로 시작'을 안내한다", () => { expect(RESTORE_NOT_FOUND).toContain("이름으로 시작"); });
   ```
-- [ ] **Step 3: `kakaoAccount.ts` 구현** (위 인터페이스대로, RN import 없음: `storage`·`supabase`·`kakaoAuth`만).
-- [ ] **Step 4: `NameEntryScreen.tsx` 작성** — 구성(위에서 아래):
+- [x] **Step 3: `kakaoAccount.ts` 구현** (위 인터페이스대로, RN import 없음: `storage`·`supabase`·`kakaoAuth`만).
+- [x] **Step 4: `NameEntryScreen.tsx` 작성** — 구성(위에서 아래):
   - 상단 인셋, `KeyboardAvoidingView behavior="padding"` 최외곽(키보드 수정 커밋 19819f9와 같은 방식), ScrollView `keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"`.
   - 고르다 만 초안이 있으면(`loadDraft()` 결과가 있고 `findings === null`) 배너 Pressable "고르다 만 1분 점검이 있어요 · 이어서 하기" → `nav.navigate("QuickCheckInput")` (RoleSelect의 것을 옮긴다).
   - `Logo` + "모두의 복약".
@@ -84,9 +84,9 @@
   - `BigButton label="시작하기"` (busy면 "시작하는 중…", disabled=이름 비었을 때). onPress: `supabase.from("patients").insert({ name }).select("id").single()` → `setPatient(id)`, `setPatientName(name)` → `nav.reset({ index: 0, routes: [{ name: "Tabs" }] })`. 에러: `Alert.alert("시작하지 못했어요", error.message ?? "인터넷 연결을 확인하고 다시 시도해 주세요.")`, busy 해제.
   - 하단 보조 링크 두 개(Pressable, 본문 18px, 높이 ≥56): "이미 쓰던 계정이 있어요 · 카카오로 불러오기" → `restoreWithKakao()` → ok면 `nav.reset` Tabs, 아니면 canceled가 아닐 때만 `Alert.alert("카카오로 불러오기", message)`; "둘러보기 (데모)" → 기존 `enterDemo()` 그대로.
   - 스타일은 RoleSelect의 것을 가져오되 성별·생년월일 관련은 모두 삭제. `birthInput.ts`는 지우지 않는다(테스트가 있음).
-- [ ] **Step 5: 라우팅 교체** — `types.ts`: `RoleSelect` 삭제, `NameEntry: undefined` 추가. `RootNavigator.tsx`: import/Screen 교체, 초기 라우트 `!signedUp && !onboarded ? "Intro" : !signedUp ? "NameEntry" : "Tabs"`(알람 우선 로직은 그대로). `IntroScreen.tsx`: `startQuickCheck = () => leave([{ name: "QuickCheckInput" }])`, `skipSetup = () => leave([{ name: "NameEntry" }])`; CTA 하단(두 버튼 아래)에 Pressable "이미 쓰던 계정이 있어요 · 카카오로 불러오기" (textSecondary, 18px, 높이 56) → `restoreWithKakao()` → ok면 `leave([{ name: "Tabs" }])`, 아니면 canceled 아닐 때 Alert. 다른 파일의 `"RoleSelect"` 문자열을 전부 `"NameEntry"`로. `QuickCheckAnalyzingScreen.tsx`의 버튼 라벨 "건너뛰고 가입하기" → "건너뛰고 시작하기". `QuickCheckInputScreen.tsx`의 goBack 폴백·skip → `NameEntry`(Task 2에서 환자 유무에 따라 Tabs로 바꾼다).
-- [ ] **Step 6: 검증** — `npx tsc --noEmit`, `npm test` 통과. `grep -rn "RoleSelect" src` 결과 0건.
-- [ ] **Step 7: 커밋** — `feat: 가입 화면을 이름 한 칸(NameEntry)으로 — 카카오는 복구 링크로, RoleSelect 삭제`.
+- [x] **Step 5: 라우팅 교체** — `types.ts`: `RoleSelect` 삭제, `NameEntry: undefined` 추가. `RootNavigator.tsx`: import/Screen 교체, 초기 라우트 `!signedUp && !onboarded ? "Intro" : !signedUp ? "NameEntry" : "Tabs"`(알람 우선 로직은 그대로). `IntroScreen.tsx`: `startQuickCheck = () => leave([{ name: "QuickCheckInput" }])`, `skipSetup = () => leave([{ name: "NameEntry" }])`; CTA 하단(두 버튼 아래)에 Pressable "이미 쓰던 계정이 있어요 · 카카오로 불러오기" (textSecondary, 18px, 높이 56) → `restoreWithKakao()` → ok면 `leave([{ name: "Tabs" }])`, 아니면 canceled 아닐 때 Alert. 다른 파일의 `"RoleSelect"` 문자열을 전부 `"NameEntry"`로. `QuickCheckAnalyzingScreen.tsx`의 버튼 라벨 "건너뛰고 가입하기" → "건너뛰고 시작하기". `QuickCheckInputScreen.tsx`의 goBack 폴백·skip → `NameEntry`(Task 2에서 환자 유무에 따라 Tabs로 바꾼다).
+- [x] **Step 6: 검증** — `npx tsc --noEmit`, `npm test` 통과. `grep -rn "RoleSelect" src` 결과 0건.
+- [x] **Step 7: 커밋** — `feat: 가입 화면을 이름 한 칸(NameEntry)으로 — 카카오는 복구 링크로, RoleSelect 삭제`.
 
 ---
 

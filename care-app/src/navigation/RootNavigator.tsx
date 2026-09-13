@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RootStackParamList, TabParamList } from "./types";
 import { getPatientId, getOnboarded } from "../lib/storage";
 import { IntroScreen } from "../screens/IntroScreen";
-import { RoleSelectScreen } from "../screens/RoleSelectScreen";
+import { NameEntryScreen } from "../screens/NameEntryScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { RecordScreen } from "../screens/RecordScreen";
 import { RegisterMethodScreen } from "../screens/RegisterMethodScreen";
@@ -91,7 +91,7 @@ export function RootNavigator() {
     : !init.signedUp && !init.onboarded
       ? "Intro"
       : !init.signedUp
-        ? "RoleSelect"
+        ? "NameEntry"
         : "Tabs";
 
   return (
@@ -100,7 +100,7 @@ export function RootNavigator() {
       screenOptions={{ headerShown: false, contentStyle: styles.stack, animation: "slide_from_right" }}
     >
       <Stack.Screen name="Intro" component={IntroScreen} />
-      <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
+      <Stack.Screen name="NameEntry" component={NameEntryScreen} />
       <Stack.Screen name="Tabs" component={PatientTabs} />
       <Stack.Screen name="VoiceGuide" component={VoiceGuideScreen} />
       <Stack.Screen name="RegisterMethod" component={RegisterMethodScreen} />

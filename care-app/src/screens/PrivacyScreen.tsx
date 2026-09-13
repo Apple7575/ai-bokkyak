@@ -93,7 +93,7 @@ export function PrivacyScreen() {
         if (error) throw error;
       }
       await clearAll();
-      nav.reset({ index: 0, routes: [{ name: "RoleSelect" }] });
+      nav.reset({ index: 0, routes: [{ name: "NameEntry" }] });
     } catch {
       setDeleting(false);
       Alert.alert(

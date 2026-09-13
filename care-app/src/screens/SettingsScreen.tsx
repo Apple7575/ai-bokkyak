@@ -32,7 +32,7 @@ export function SettingsScreen() {
     // 기기에 남는 건 patientId뿐이고 clearAll()이 지운다. 같은 카카오 계정으로
     // 다시 로그인하면 kakao_id로 약장을 되찾는다.
     await clearAll();
-    nav.reset({ index: 0, routes: [{ name: "RoleSelect" }] });
+    nav.reset({ index: 0, routes: [{ name: "NameEntry" }] });
   };
 
   return (

@@ -16,9 +16,9 @@ import { colors, fontSizes, spacing, radii, minTouch, shadows } from "../theme/t
 
 // 점검 결과 (시안 V8 화면 12).
 //  · 가입 전: 요약 카드 + 첫 건만 보여 주고 나머지는 종류별 개수로 잠근다. 버튼을 누르면 가입 시트.
-//  · 가입 후(RoleSelect가 unlocked:true 로 보냄): 종류별로 전부 보여 주고 알람 설정으로 보낸다.
+//  · 가입 후(앞 화면이 unlocked:true 로 보냄): 종류별로 전부 보여 주고 알람 설정으로 보낸다.
 // 결과 데이터는 기기 초안에서 읽는다. 가입 직후에는 commit이 초안을 지우므로
-// RoleSelect가 넘겨준 findings 파라미터를 우선 쓴다.
+// 앞 화면이 넘겨준 findings 파라미터를 우선 쓴다.
 
 type State =
   | { phase: "loading" }
@@ -115,10 +115,10 @@ export function QuickCheckResultScreen() {
     return () => { alive = false; };
   }, [route.params]);
 
-  function toSignup(kakao: boolean) {
+  // Task 2(결과 전체 공개)에서 가입 시트와 함께 지운다. 지금은 이름 한 칸으로만 보낸다.
+  function toSignup(_kakao: boolean) {
     setSheet(null);
-    // kakaoAt: RoleSelect는 이미 스택 아래에 있어 params만 갱신된다 — 요청마다 다른 값으로 구분.
-    nav.navigate("RoleSelect", { from: "quickCheck", kakao, kakaoAt: kakao ? Date.now() : undefined });
+    nav.navigate("NameEntry");
   }
   function toAlarm() {
     nav.reset({ index: 1, routes: [{ name: "Tabs" }, { name: "VoiceGuide" }] });
