@@ -200,8 +200,8 @@
 
 ### Task 4: 마무리 검증
 
-- [ ] `cd care-app && npm test && npx tsc --noEmit`.
-- [ ] `grep -rn "RoleSelect\|patient_code\|회원가입" src` 0건.
-- [ ] 리뷰어(Claude) 1회: 세 커밋 합쳐서 정확성·AGENTS.md 준수. Codex는 쓰지 않는다(사용자 결정 2026-09-10).
-- [ ] 문서: 이 계획 파일의 체크박스 갱신, `docs/quick-check-server-gap.md`는 변경 없음.
-- [ ] 사용자에게: `migrate-kakao-link.sql` 실행 필요, 실기기 확인 항목(3/3 이름 입력 → 결과 전체 → 알람 설정 / 건너뛰기 → 이름 → 홈 / 인트로 카카오 불러오기 / 더보기 연결).
+- [x] `cd care-app && npm test && npx tsc --noEmit`.
+- [x] `grep -rn "RoleSelect\|patient_code\|회원가입" src` 0건.
+- [x] 리뷰어(Claude) 1회: 세 커밋 합쳐서 정확성·AGENTS.md 준수. Codex는 쓰지 않는다(사용자 결정 2026-09-10).
+- [x] 문서: 이 계획 파일의 체크박스 갱신, `docs/quick-check-server-gap.md`는 변경 없음.
+- [x] 사용자에게: `migrate-kakao-link.sql` 실행 필요, 실기기 확인 항목(3/3 이름 입력 → 결과 전체 → 알람 설정 / 건너뛰기 → 이름 → 홈 / 인트로 카카오 불러오기 / 더보기 연결).
