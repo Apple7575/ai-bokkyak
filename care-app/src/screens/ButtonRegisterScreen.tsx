@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, TextInput, ScrollView, StyleSheet, Alert } from "react-native";
+import { View, Text, TextInput, ScrollView, StyleSheet, Alert, KeyboardAvoidingView } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Pill } from "lucide-react-native";
@@ -116,9 +116,10 @@ export function ButtonRegisterScreen() {
   }
 
   return (
-    <View style={styles.screen}>
+    // Expo 54는 Android도 edge-to-edge라 키보드가 떠도 창이 안 줄어든다 — 두 플랫폼 모두 padding으로 밀어 올린다.
+    <KeyboardAvoidingView style={styles.screen} behavior="padding">
       <ScreenHeader title={editId ? "복약 수정" : "약 이름 입력"} />
-      <ScrollView contentContainerStyle={styles.c}>
+      <ScrollView contentContainerStyle={styles.c} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         {/* 약 이름 */}
         <View style={styles.section}>
           <Text style={styles.label}>약 이름</Text>
@@ -184,7 +185,7 @@ export function ButtonRegisterScreen() {
       <View style={[styles.footer, { paddingBottom: spacing.lg + insets.bottom }]}>
         <BigButton label={saving ? "저장 중…" : editId ? "수정 저장하기" : "다음"} onPress={save} />
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

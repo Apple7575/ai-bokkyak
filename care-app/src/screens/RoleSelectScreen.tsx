@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, TextInput, StyleSheet, Alert, ScrollView, Pressable, Keyboard } from "react-native";
+import { View, Text, TextInput, StyleSheet, Alert, ScrollView, Pressable, Keyboard, KeyboardAvoidingView } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { User, Eye, MessageCircle, ClipboardCheck } from "lucide-react-native";
@@ -187,10 +187,13 @@ export function RoleSelectScreen() {
   return (
     // 상단 인셋은 ScrollView 바깥에. contentContainerStyle에 주면 스크롤할 때
     // 내용이 상태바 밑으로 올라와 겹친다.
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
+    // Expo 54는 Android도 edge-to-edge라 키보드가 떠도 창이 안 줄어든다 — 두 플랫폼 모두 padding으로 밀어 올린다.
+    <KeyboardAvoidingView style={[styles.screen, { paddingTop: insets.top }]} behavior="padding">
     <ScrollView
       style={styles.scroll}
       contentContainerStyle={[styles.c, { paddingTop: spacing.xl }]}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
     >
       {/* 점검 결과 대기 배너 — 가입하면 바로 열린다는 걸 알린다 */}
       {hasDraft ? (
@@ -321,7 +324,7 @@ export function RoleSelectScreen() {
         <Text style={styles.demoText}>{demoLoading ? "데모 불러오는 중…" : "둘러보기 (데모)"}</Text>
       </Pressable>
     </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 const styles = StyleSheet.create({

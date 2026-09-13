@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   View, Text, ScrollView, StyleSheet, Pressable, TextInput, Alert, ActivityIndicator,
-  KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView, Keyboard,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -55,6 +55,19 @@ export function QuickCheckInputScreen() {
   const [panel, setPanel] = useState<Panel>("none");
   // 저장 중 두 번 눌러 점검 화면이 두 번 열리지 않게(입력을 잠그는 게 아니라 재진입만 막는다).
   const nextBusy = useRef(false);
+  const scrollRef = useRef<ScrollView>(null);
+
+  // 검색·직접 입력 패널은 스크롤 맨 아래에 붙는다(칩·버튼 아래). 열리면 끝까지 스크롤해
+  // 입력창이 화면에 들어오게 하고, 키보드가 올라와 화면이 줄어들 때도 한 번 더 맞춘다.
+  // (마운트 직후엔 레이아웃이 아직 없어 잠깐 뒤에 스크롤한다.)
+  const panelOpen = panel === "search" || panel === "manual";
+  useEffect(() => {
+    if (!panelOpen) return;
+    const scrollToPanel = () => scrollRef.current?.scrollToEnd({ animated: true });
+    const timer = setTimeout(scrollToPanel, 50);
+    const sub = Keyboard.addListener("keyboardDidShow", scrollToPanel);
+    return () => { clearTimeout(timer); sub.remove(); };
+  }, [panelOpen]);
 
   // 앞서 고르다 만 초안이 있으면 되살린다(앱을 껐다 켜도 처음부터 다시 고르지 않게).
   useEffect(() => {
@@ -122,9 +135,11 @@ export function QuickCheckInputScreen() {
   }
 
   return (
+    // Expo 54는 Android도 edge-to-edge라 키보드가 떠도 창이 안 줄어든다 — 두 플랫폼 모두 padding으로 밀어 올린다.
+    // (변위 계산이 이 뷰가 창 y=0에서 시작한다고 가정하므로 바깥에 다른 View로 감싸지 말 것.)
     <KeyboardAvoidingView
       style={[styles.screen, { paddingTop: insets.top }]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior="padding"
     >
       {/* 상단 바 — 뒤로 · 진행(3칸) · 건너뛰기 (시안 V8 segs) */}
       <View style={styles.header}>
@@ -143,8 +158,10 @@ export function QuickCheckInputScreen() {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={[styles.c, { paddingBottom: spacing.lg }]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         {meta && listStep ? (
           <>

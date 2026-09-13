@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { View, Text, TextInput, ScrollView, StyleSheet, Alert, ActivityIndicator, Pressable } from "react-native";
+import { View, Text, TextInput, ScrollView, StyleSheet, Alert, ActivityIndicator, Pressable, KeyboardAvoidingView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { Trash2 } from "lucide-react-native";
@@ -137,9 +137,10 @@ export function OcrRegisterScreen() {
   }
 
   return (
-    <View style={styles.screen}>
+    // Expo 54는 Android도 edge-to-edge라 키보드가 떠도 창이 안 줄어든다 — 두 플랫폼 모두 padding으로 밀어 올린다.
+    <KeyboardAvoidingView style={styles.screen} behavior="padding">
       <ScreenHeader title="사진으로 약 등록" />
-      <ScrollView contentContainerStyle={styles.c}>
+      <ScrollView contentContainerStyle={styles.c} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <IllustrationBanner source={OCR_ART} tone="sage" height={192} imageScale={0.84} />
         <Text style={styles.guide}>약봉투나 약 포장을 촬영하면 자동으로 읽어드려요.</Text>
 
@@ -230,7 +231,7 @@ export function OcrRegisterScreen() {
           </>
         ) : null}
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
