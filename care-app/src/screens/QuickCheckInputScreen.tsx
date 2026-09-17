@@ -67,9 +67,10 @@ export function QuickCheckInputScreen() {
   const scrollRef = useRef<ScrollView>(null);
 
   // 검색·직접 입력 패널은 스크롤 맨 아래에 붙는다(칩·버튼 아래). 열리면 끝까지 스크롤해
-  // 입력창이 화면에 들어오게 하고, 키보드가 올라와 화면이 줄어들 때도 한 번 더 맞춘다.
-  // (마운트 직후엔 레이아웃이 아직 없어 잠깐 뒤에 스크롤한다.)
-  const panelOpen = panel === "search" || panel === "manual";
+  // 패널(이름 검색·직접 입력·사진 추가)이 열리면 화면에 들어오게 스크롤하고, 키보드가 올라와
+  // 화면이 줄어들 때도 한 번 더 맞춘다. 사진 패널은 키보드가 없지만 스크롤 맨 아래에 붙어 있어
+  // 그냥 두면 사용자가 열린 줄 모른다(QA 2026-09-17). (마운트 직후엔 레이아웃이 없어 잠깐 뒤에.)
+  const panelOpen = panel !== "none";
   useEffect(() => {
     if (!panelOpen) return;
     const scrollToPanel = () => scrollRef.current?.scrollToEnd({ animated: true });
