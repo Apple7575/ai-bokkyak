@@ -8,6 +8,7 @@ import { RootStackParamList, TabParamList } from "./types";
 import { getPatientId, getOnboarded } from "../lib/storage";
 import { IntroScreen } from "../screens/IntroScreen";
 import { NameEntryScreen } from "../screens/NameEntryScreen";
+import { AlarmPromptScreen } from "../screens/AlarmPromptScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { RecordScreen } from "../screens/RecordScreen";
 import { RegisterMethodScreen } from "../screens/RegisterMethodScreen";
@@ -101,6 +102,7 @@ export function RootNavigator() {
     >
       <Stack.Screen name="Intro" component={IntroScreen} />
       <Stack.Screen name="NameEntry" component={NameEntryScreen} />
+      <Stack.Screen name="AlarmPrompt" component={AlarmPromptScreen} />
       <Stack.Screen name="Tabs" component={PatientTabs} />
       <Stack.Screen name="VoiceGuide" component={VoiceGuideScreen} />
       <Stack.Screen name="RegisterMethod" component={RegisterMethodScreen} />

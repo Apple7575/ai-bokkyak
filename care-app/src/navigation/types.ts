@@ -1,6 +1,7 @@
 export type RootStackParamList = {
   Intro: undefined;
   NameEntry: undefined;
+  AlarmPrompt: undefined;
   Tabs: undefined;
   VoiceGuide: undefined;
   RegisterMethod: undefined;

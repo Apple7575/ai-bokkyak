@@ -19,7 +19,7 @@ const LOGO_SIZE = 80;
 
 // 이름 한 칸 — 점검 없이 건너뛴 사용자(Case C·D)가 여기서 시작한다.
 // 회의 2026-09-10(B안): 별도 가입 화면은 없다. 이름만 받고 그 자리에서 환자 레코드를
-// 만든 뒤 바로 홈으로 간다. 성별·생년월일은 받지 않는다(결정 8).
+// 만든 뒤 알람 설정 물음(AlarmPrompt)을 거쳐 홈으로 간다. 성별·생년월일은 받지 않는다(결정 8).
 // 카카오는 "가입"이 아니라 "예전 정보 불러오기"(기기 이전) 링크로만 있다.
 export function NameEntryScreen() {
   const nav = useNavigation<any>();
@@ -57,7 +57,8 @@ export function NameEntryScreen() {
       }
       await setPatient(data.id);
       await setPatientName(name.trim());
-      nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
+      // 새 사용자(Case C·D)는 알람을 설정할지 먼저 묻는다. 복구·데모는 기존 사용자라 바로 홈.
+      nav.reset({ index: 0, routes: [{ name: "AlarmPrompt" }] });
     } catch (e) {
       console.warn("NameEntry: 시작 실패", (e as Error)?.message ?? e);
       Alert.alert("시작하지 못했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");

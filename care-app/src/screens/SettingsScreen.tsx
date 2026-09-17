@@ -73,7 +73,7 @@ export function SettingsScreen() {
     await clearAll();
     // 1분 점검 초안도 지운다 — 남겨 두면 다음 사람의 환자로 저장(commit)될 수 있다.
     await clearDraft();
-    nav.reset({ index: 0, routes: [{ name: "NameEntry" }] });
+    nav.reset({ index: 0, routes: [{ name: "Intro" }] });
   };
 
   return (
