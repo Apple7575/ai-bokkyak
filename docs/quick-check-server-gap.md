@@ -150,3 +150,19 @@ PPI·오를리스타트·인슐린 규칙은 DB 수정 전까지 안 걸린다.
 
 ### 오프라인
 2026-09-17 결정: 서버에 못 붙으면 판정하지 않고 "인터넷에 연결되지 않았어요"만 보여 준다. 내장 규칙 폴백 삭제.
+
+### (c) v2 배포 후 드러난 오탐 — 한쪽만 있어도 걸리는 규칙
+`rhodiola_ginseng_overstimulation`(홍경천 × 인삼)은 **인삼 단독** 또는 **홍경천 단독**으로도 발화한다
+(두 항이 모두 object 없이 precipitant/either로 등록된 것으로 보임). 앱에서 홍삼 버튼 하나만 골라도
+"인삼 × 홍경천" 주의가 뜬다. `interaction_rule_side.role`에서 한쪽을 object로 바꿔야 한다.
+SSRI·PPI·레보티록신 단독은 정상(0건).
+
+### 버튼만으로 걸리는 조합 (2026-09-17, 앱 v13 별칭 적용, 버튼 21개 전 쌍 + 임신 조건 실측)
+| 조합 | 규칙 |
+|---|---|
+| 철분 + 갑상선약 | iron_levothyroxine_absorption |
+| 종합비타민 + 갑상선약 | iron_levothyroxine_absorption, calcium_levothyroxine_absorption |
+| 단백질보충제 + 갑상선약 | soy_levothyroxine_absorption |
+| 홍삼 (단독) | rhodiola_ginseng_overstimulation — 위 (c) 오탐 |
+그 외 버튼 쌍 206개와 버튼+임신 조합은 전부 0건. 나머지 66개 규칙은 와파린·면역억제제·항생제·자몽·은행잎처럼
+버튼에 없는 약·성분을 요구한다 → 버튼 추가(당뇨약·항응고제·항생제·칼슘·비타민E·은행잎·세인트존스워트 등) 또는 칩 단위 규칙 검수 필요.
