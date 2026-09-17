@@ -1,6 +1,6 @@
 # 모두의 복약 — 데이터 명세서 (ERD)
 
-작성 2026-09-17 · 기준: Supabase 프로젝트 `atzosfqrzsfrveympcfj`, 저장소 `care-app/supabase/*.sql`, 상호작용 DB v1 검토 PDF(2026-08), 건기식 적재 SQL(`tools/hff/sql`). 행 수는 PDF 검토본(8월) 기준이며 현재는 규칙 70개 게시·성분 239종·건기식 약 46,000건.
+작성 2026-09-17 · 기준: Supabase 프로젝트 `atzosfqrzsfrveympcfj`, 저장소 `care-app/supabase/*.sql`, 상호작용 DB v1 검토 PDF(2026-08), 건기식 적재 SQL(`tools/hff/sql`). 행 수는 2026-09-17 실측(아래 0.1절). 테이블 정의의 '행' 표기는 PDF 검토본(8월) 기준이라 지금과 다를 수 있다.
 
 ## 0. 한눈에
 
@@ -9,11 +9,35 @@
 | 스키마 | 역할 | 테이블 | 앱 접근 |
 |---|---|---|---|
 | `public` | 환자·일정·복약 기록·지표 + 식약처 의약품/DUR 참조 자료 | 9 | anon 키로 직접(RLS tier1: 지표·점검 결과는 insert 전용, patients update 차단) |
-| `interaction` | 약사 검수 상호작용 규칙 DB v1 + 건기식 제품·원료 매핑 | 15 + 4 (+스테이징 1) | **직접 노출 없음.** `public.quick_check_v1(p_names, p_age, p_conditions)` RPC(security definer)만 읽는다 |
+| `interaction` | 약사 검수 상호작용 규칙 DB v1 + 건기식 제품·원료 매핑 + 파생·검수용 | 25 (설계 15 + 건기식 5 + 파생·검수 5) | **직접 노출 없음.** `public.quick_check_v1(p_names, p_age, p_conditions)` RPC(security definer)만 읽는다 |
 
 서버 함수 2개: `quick_check_v1`(1분 점검 판정, v2 로직 배포 2026-09-17), `link_kakao(p_patient_id, p_kakao_id)`(카카오 연결, patients.kakao_id 갱신).
 
 앱 흐름과 테이블: 온보딩 3/3 → `patients` insert → 판정 RPC → `quick_check_results` insert → 알람 설정 → `schedules` → 알람 응답 → `intake_records` upsert + `alarm_events` insert.
+
+### 0.1 실측 테이블·행 수 (2026-09-17, SQL Editor `information_schema` 조회)
+
+| 스키마 | 테이블 | 행 | 명세서 |
+|---|---|---|---|
+| public | patients | 115 | 1장 |
+| public | schedules | 134 | 1장 |
+| public | intake_records | 562 | 1장 |
+| public | alarm_events | 64 | 1장 |
+| public | voice_guide_events | 21 | 1장 |
+| public | quick_check_results | 35 | 1장 |
+| public | drug_product | 21,953 | 1장 (심평원 ATC 매핑 목록과 같은 건수) |
+| public | dur_product_ingredient | 12,352 | 1장 |
+| public | dur_contraindication | 1,706 | 1장 |
+| interaction | intake_class / intake_class_resolution | 27 / 42 | 2.2 |
+| interaction | substance / substance_class / substance_class_member | 239 / 35 / 66 | 2.2 |
+| interaction | effect_axis / substance_effect / substance_relation / substance_limit | 22 / 245 / 68 / 183 | 2.2 (limit는 I2710 상·하한 적재로 5→183) |
+| interaction | condition / interaction_rule / interaction_rule_side / rule_condition | 54 / 75 / 185 / 0 | 2.2 (규칙 75 중 게시 승인 70) |
+| interaction | evidence / rule_evidence / evidence_expression | 61 / 78 / 5 | 2.2, 2.3 |
+| interaction | hff_product / hff_product_ingredient / ingredient_substance_map / hff_stage | 45,996 / 627,157 / 2,749 / 45,996 | 2.3 |
+| interaction | hff_product_substance / hff_unmapped_ingredient | 253,403 / 17,210 | 2.4 (파생) |
+| interaction | substance_pair_candidate / review_expression / adverse_event | 876 / 5 / 0 | 2.4 |
+
+합계 34개(public 9 + interaction 25). 앱이 직접 여는 건 public 9개뿐이고, interaction은 전부 `quick_check_v1` 뒤에 있다.
 
 ## 1. public 스키마 ERD
 
@@ -627,10 +651,23 @@ erDiagram
 |---|---|---|
 | `report_no … etc_raw` | text | 9개 텍스트 컬럼 |
 
+### 2.4 저장소에 정의가 없는 테이블 5개 (Supabase에서 직접 만든 것 — 역할은 이름·행 수로 추정)
+
+| 테이블 | 행 | 추정 역할 | 서비스 사용 |
+|---|---|---|---|
+| `hff_product_substance` | 253,403 | 건기식 제품 → 성분을 미리 풀어 둔 파생 표 (hff_product_ingredient × ingredient_substance_map) | `quick_check_v1`은 원본 두 표를 직접 조인하므로 **미사용**. 검수·통계용으로 보임 |
+| `hff_unmapped_ingredient` | 17,210 | 성분 사전에 못 이은 원료명 목록 (검수 대기 큐) | 미사용 |
+| `substance_pair_candidate` | 876 | 같은 작용 축·같은 방향 성분 쌍 = 상가작용 규칙 **후보** (PDF Q2 질의 결과를 표로 저장) | 미사용. 검수 후 interaction_rule로 승격하는 용도 |
+| `review_expression` | 5 | 검수 상태(review_status 5종) → 화면 문구 | 미사용 (앱은 is_active만 봄) |
+| `adverse_event` | 0 | 부작용 보고용으로 만들어 둔 빈 표 | 미사용 |
+
+이 5개는 `care-app/supabase/*.sql`·`tools/hff/sql`·검토 PDF 어디에도 정의가 없다. DB 쪽에서 정확한 DDL과 용도를 적어 저장소에 넣어 두어야 다음 사람이 알 수 있다.
+
 ## 3. 알려진 데이터 이슈 (2026-09-17)
 1. `interaction_rule_side.role`: SSRI×SNRI, 인슐린×설폰요소제, RAS차단제×칼륨보존이뇨제, PPI×영양소 4종, 오를리스타트×비타민 6종이 모두 object라 항을 전부 골라야 걸린다 → 대안 항은 `either`로.
 2. `rhodiola_ginseng_overstimulation`: 인삼 단독·홍경천 단독으로도 발화(양쪽 다 object 없음) → 한쪽을 object로.
 3. `substance_class_member`에 아스피린·클로피도그렐이 항혈소판제/항혈전제 계열에 없음 → 심평원 ATC 매핑(B01AC)으로 채우기 권장.
 4. `intake_class`에 유산균·여드름약 없음, 알레르기약은 resolution 없음. 앱은 유산균→프로바이오틱스 별칭으로 우회.
 5. `interaction_rule_side.target_id`는 FK 없음(다형) — 성분 삭제 시 고아 행 가능. `assertions.sql A1`로 점검.
-6. 앱 버튼 ↔ DB 이름 대응은 앱의 `chipAliases.ts`·`conditionAliases.ts`에 있음. `npm run check:server`가 라이브 RPC와 대조한다.
+6. 저장소에 DDL이 없는 interaction 테이블 5개(2.4절) — 스키마 파일로 정리 필요.
+7. 앱 버튼 ↔ DB 이름 대응은 앱의 `chipAliases.ts`·`conditionAliases.ts`에 있음. `npm run check:server`가 라이브 RPC와 대조한다.
