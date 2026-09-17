@@ -138,12 +138,9 @@ export function QuickCheckResultScreen() {
   const names = state.phase === "ok" ? state.names : [];
   const unmatched = state.phase === "ok" ? state.unmatched : [];
   const unmappedIngredients = state.phase === "ok" ? state.unmappedIngredients : [];
-  // 서버가 아직 판정하지 못하는 기본 정보(신장질환, 간질환 — 연령대는 제외) — 서버 판정일 때만 뜻이 있다.
-  // 로컬 판정은 내장 규칙이 이 라벨을 직접 다룬다.
-  const uncoveredConditions = state.phase === "ok" && state.engine === "server" ? state.uncoveredConditions : [];
-  // 서버 판정에 연결하지 못해 로컬 규칙으로만 본 경우.
-  // durUnavailable 안내와 겹치면 이 안내가 더 넓은 사실이므로 이것만 보여 준다.
-  const localFallbackNote = state.phase === "ok" && state.engine === "local";
+  // 서버가 아직 판정하지 못하는 기본 정보(신장질환, 간질환 — 연령대는 제외).
+  // (판정은 서버 전용이다. engine="local" 은 내장 규칙이 있던 구버전 저장분에만 남아 있다.)
+  const uncoveredConditions = state.phase === "ok" ? state.uncoveredConditions : [];
   // 대조한 이름이 2개 미만이면 조합 점검 자체가 성립하지 않는다 — "이상 없음"이라 하면 안 된다.
   const nothingChecked = state.phase === "ok" && state.checkedCount < 2;
   const summary = summarize(findings);
@@ -174,16 +171,8 @@ export function QuickCheckResultScreen() {
           </>
         ) : null}
 
-        {/* ③ 안내 노트 — 서버 점검 폴백 고지: 로컬 규칙으로만 확인했음을 숨기지 않는다 */}
-        {localFallbackNote ? (
-          <View style={styles.durNote}>
-            <Text style={styles.note}>서버 점검에 연결하지 못해 기기에 저장된 기본 규칙으로만 확인했어요.</Text>
-            <BigButton label="다시 점검하기" variant="secondary" onPress={() => nav.replace("QuickCheckAnalyzing")} />
-          </View>
-        ) : null}
-
-        {/* 제품명 대조를 못 한 경우 — 규칙 결과만으로 넘어왔다. 위 폴백 고지가 있으면 그걸로 갈음. */}
-        {state.phase === "ok" && state.durUnavailable && !localFallbackNote ? (
+        {/* ③ 안내 노트 — 제품명 대조를 못 한 채 저장된 구버전 결과(지금 판정은 서버 전용이라 새로 생기지 않는다) */}
+        {state.phase === "ok" && state.durUnavailable ? (
           <View style={styles.durNote}>
             <Text style={styles.note}>인터넷 연결 문제로 제품명 자료 대조는 하지 못했어요. 연결을 확인하고 다시 대조해 보세요.</Text>
             <BigButton label="제품명 다시 대조하기" variant="secondary" onPress={() => nav.replace("QuickCheckAnalyzing")} />

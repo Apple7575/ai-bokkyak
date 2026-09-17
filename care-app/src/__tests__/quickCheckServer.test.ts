@@ -259,3 +259,104 @@ describe("serverToFindings — 칩 라벨 해석 검증(presetLabels)", () => {
     expect(r.unresolved).toEqual(["여드름약", "알레르기약", "유산균"]);
   });
 });
+
+describe("serverToFindings — 칩 별칭(aliasOf)", () => {
+  const PRESETS = new Set(["혈압약", "유산균", "홍삼", "오메가3"]);
+  const BP = new Map([["칼슘통로차단제", "혈압약"], ["RAS차단제", "혈압약"], ["칼륨보존이뇨제", "혈압약"]]);
+  const PROBIO = new Map([["프로바이오틱스", "유산균"]]);
+
+  it("matched의 별칭을 원래 칩 이름으로 바꾸고 결과 안에서 중복을 없앤다", () => {
+    const r = serverToFindings(
+      {
+        ...EMPTY,
+        resolved: [
+          { input: "혈압약", via: "chip", substance_ids: [1, 2] },
+          { input: "칼슘통로차단제", via: "chip", substance_ids: [3] },
+          { input: "자몽", via: "substance", substance_ids: [9] },
+        ],
+        findings: [
+          finding({ code: "calcium_channel_blocker_grapefruit", matched: ["자몽", "칼슘통로차단제"] }),
+          finding({ code: "x", matched: ["혈압약", "RAS차단제", "칼륨보존이뇨제"] }),
+        ],
+      },
+      PRESETS, BP
+    );
+    expect(r.findings.map((f) => f.title)).toEqual(["자몽 × 혈압약", "혈압약"]);
+    expect(r.findings[0]).toMatchObject({ a: "자몽", b: "혈압약" });
+    expect(r.unresolved).toEqual([]);
+  });
+  it("별칭이 unresolved에 있으면 뺀다 — 사용자가 넣은 이름이 아니다", () => {
+    const r = serverToFindings(
+      {
+        ...EMPTY,
+        resolved: [{ input: "혈압약", via: "chip", substance_ids: [1] }],
+        unresolved: ["칼륨보존이뇨제", "이상한이름"],
+      },
+      PRESETS, BP
+    );
+    expect(r.unresolved).toEqual(["이상한이름"]);
+  });
+  it("replace 칩(유산균)은 별칭 프로바이오틱스가 chip|substance+ids로 풀리면 점검한 것으로 치고, 결과 제목도 유산균으로", () => {
+    const r = serverToFindings(
+      {
+        ...EMPTY,
+        resolved: [
+          { input: "프로바이오틱스", via: "chip", substance_ids: [7] },
+          { input: "항생제", via: "chip", substance_ids: [8] },
+        ],
+        findings: [finding({ code: "probiotics_antibiotic_timing", matched: ["프로바이오틱스", "항생제"] })],
+      },
+      PRESETS, PROBIO
+    );
+    expect(r.unresolved).toEqual([]);
+    expect(r.findings.map((f) => f.title)).toEqual(["유산균 × 항생제"]);
+  });
+  it("replace 칩의 별칭이 unresolved면 칩(유산균)을 점검하지 못한 항목으로 올린다", () => {
+    const r = serverToFindings({ ...EMPTY, unresolved: ["프로바이오틱스"] }, PRESETS, PROBIO);
+    expect(r.unresolved).toEqual(["유산균"]);
+  });
+  it("replace 칩의 별칭이 hff_product로 풀리면 탈락시키고 그 결과도 버린다", () => {
+    const r = serverToFindings(
+      {
+        ...EMPTY,
+        resolved: [{ input: "프로바이오틱스", via: "hff_product", substance_ids: [3] }],
+        findings: [finding({ code: "p", matched: ["프로바이오틱스", "혈압약"] })],
+      },
+      PRESETS, PROBIO
+    );
+    expect(r.unresolved).toEqual(["유산균"]);
+    expect(r.findings).toEqual([]);
+  });
+  it("칩 자체는 ids 없이 풀렸어도 별칭 하나가 제대로 풀리면 점검한 것으로 친다", () => {
+    const r = serverToFindings(
+      {
+        ...EMPTY,
+        resolved: [
+          { input: "홍삼", via: "chip", substance_ids: [] },
+          { input: "인삼", via: "substance", substance_ids: [5] },
+        ],
+      },
+      PRESETS, new Map([["인삼", "홍삼"]])
+    );
+    expect(r.unresolved).toEqual([]);
+  });
+  it("칩도 별칭도 제대로 안 풀리면 여전히 탈락", () => {
+    const r = serverToFindings(
+      {
+        ...EMPTY,
+        resolved: [{ input: "홍삼", via: "chip", substance_ids: [] }],
+        unresolved: ["인삼"],
+      },
+      PRESETS, new Map([["인삼", "홍삼"]])
+    );
+    expect(r.unresolved).toEqual(["홍삼"]);
+  });
+  it("aliasOf 없이 부르면 기존 동작 그대로", () => {
+    const r = serverToFindings(
+      { ...EMPTY, unresolved: ["칼륨보존이뇨제"], findings: [finding({ matched: ["자몽", "칼슘통로차단제"] })] },
+      PRESETS
+    );
+    expect(r.unresolved).toEqual(["칼륨보존이뇨제"]);
+    expect(r.findings[0].title).toBe("자몽 × 칼슘통로차단제");
+  });
+});

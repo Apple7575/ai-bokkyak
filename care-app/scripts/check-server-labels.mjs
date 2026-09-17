@@ -6,9 +6,12 @@
 //
 // 검사:
 //  1. 종류명 칩(영양제·더 보기·복용약)을 하나씩 보내면 via chip|substance 로 풀리고 substance_ids 가
-//     비어 있지 않아야 한다. (2026-09-10 기준 유산균·알레르기약·여드름약은 ✖ — 서버 쪽 데이터 공백)
+//     비어 있지 않아야 한다. (2026-09-10 기준 유산균·알레르기약·여드름약은 ✖ — 서버 쪽 데이터 공백.
+//     유산균은 앱이 칩 대신 별칭 "프로바이오틱스"를 보내므로 실제 앱 경로는 [1b]가 검사한다.)
+//  1b. CHIP_ALIASES(chipAliases.ts)의 모든 별칭을 하나씩 보내면 via chip|substance + substance_ids 로 풀려야 한다.
 //  2. CONDITION_ALIASES 의 모든 별칭은 SENTINELS 로 살아 있음을 증명해야 한다(증거 없는 별칭은 ✖).
-//  3. 조합 센티널(철분+갑상선약 → iron_levothyroxine_absorption).
+//  3. 조합 센티널(철분+갑상선약 → iron_levothyroxine_absorption, 혈압약+칼슘통로차단제+자몽 → CCB·자몽,
+//     프로바이오틱스+항생제 → 유산균 별칭이 실제 규칙에 걸리는지).
 //  4. 앱 라벨 "임신·수유 중" 만 보내면 아무것도 안 걸린다는 사실(ℹ, 실패 아님) — 별칭이 필요한 이유.
 
 import { readFileSync } from "node:fs";
@@ -35,6 +38,7 @@ if (!URL_ || !KEY) {
 // --- 라벨 읽기 -------------------------------------------------------------
 // quickCheckLabels.ts 는 문자열 배열 상수만 담는 파일이다(파일 머리 주석 참고). 그래서 정규식으로 읽는다.
 // conditionAliases.ts 의 CONDITION_ALIASES 도 `"라벨": ["별칭", …]` 꼴만 담는다.
+// chipAliases.ts 의 CHIP_ALIASES 는 한 줄에 `"칩": { names: ["별칭", …] }` 또는 `…, replace: true }` 꼴.
 function stringArrayConst(src, name) {
   const m = src.match(new RegExp("export const " + name + /\s*=\s*\[([^\]]*)\]/.source));
   if (!m) throw new Error(`${name} 을(를) 찾지 못했습니다`);
@@ -55,12 +59,21 @@ function parseLabels() {
     aliases[m[1]] = [...m[2].matchAll(/"([^"]+)"/g)].map((x) => x[1]);
   }
   if (Object.keys(aliases).length === 0) throw new Error("CONDITION_ALIASES 에서 항목을 하나도 읽지 못했습니다 — 파일 형식이 바뀌었는지 확인");
-  return { supplements, medicines, aliases };
+
+  const chipSrc = read("src/lib/chipAliases.ts");
+  const chipBody = chipSrc.match(/CHIP_ALIASES[^=]*=\s*\{([\s\S]*?)\n\};/);
+  if (!chipBody) throw new Error("CHIP_ALIASES 를 찾지 못했습니다");
+  const chipAliases = {};
+  for (const m of chipBody[1].matchAll(/"([^"]+)":\s*\{\s*names:\s*\[([^\]]*)\]\s*(,\s*replace:\s*true)?\s*\}/g)) {
+    chipAliases[m[1]] = { names: [...m[2].matchAll(/"([^"]+)"/g)].map((x) => x[1]), replace: Boolean(m[3]) };
+  }
+  if (Object.keys(chipAliases).length === 0) throw new Error("CHIP_ALIASES 에서 항목을 하나도 읽지 못했습니다 — 파일 형식이 바뀌었는지 확인");
+  return { supplements, medicines, aliases, chipAliases };
 }
 
-let SUPPLEMENTS, MEDICINES, ALIASES;
+let SUPPLEMENTS, MEDICINES, ALIASES, CHIP_ALIASES;
 try {
-  ({ supplements: SUPPLEMENTS, medicines: MEDICINES, aliases: ALIASES } = parseLabels());
+  ({ supplements: SUPPLEMENTS, medicines: MEDICINES, aliases: ALIASES, chipAliases: CHIP_ALIASES } = parseLabels());
 } catch (e) {
   console.error(`✖ 라벨 파일 파싱 실패: ${e instanceof Error ? e.message : String(e)}`);
   process.exit(1);
@@ -74,6 +87,9 @@ const SENTINELS = [
 // 조합 센티널 — 라벨 두 개가 실제 규칙에 걸리는지.
 const COMBOS = [
   { names: ["철분", "갑상선약"], expectCode: "iron_levothyroxine_absorption" },
+  // 칩 별칭 센티널 — 앱이 실제로 보내는 꼴(칩 + 별칭 / replace 칩은 별칭만).
+  { names: ["혈압약", "칼슘통로차단제", "자몽"], expectCode: "calcium_channel_blocker_grapefruit" },
+  { names: ["프로바이오틱스", "항생제"], expectCode: "probiotics_antibiotic_timing" },
 ];
 
 // --- RPC ---------------------------------------------------------------------
@@ -97,21 +113,28 @@ const ok = (msg) => { pass++; console.log(`✔ ${msg}`); };
 const bad = (msg) => { fail++; console.log(`✖ ${msg}`); };
 const info = (msg) => console.log(`ℹ ${msg}`);
 
-// 1. 칩 해석
-async function checkChip(label) {
+// 1. 칩·별칭 해석 — 이름 하나만 보내 via chip|substance + substance_ids 를 요구한다.
+async function checkName(kind, label) {
   const res = await rpc([label]);
   const r = res.resolved.find((x) => x.input === label);
-  if (!r) return bad(`칩 "${label}": 해석 안 됨 (unresolved=${JSON.stringify(res.unresolved)})`);
+  if (!r) return bad(`${kind} "${label}": 해석 안 됨 (unresolved=${JSON.stringify(res.unresolved)})`);
   const ids = Array.isArray(r.substance_ids) ? r.substance_ids : [];
   const viaOk = r.via === "chip" || r.via === "substance";
-  if (viaOk && ids.length > 0) return ok(`칩 "${label}": via=${r.via}, substance_ids=${ids.length}개`);
-  bad(`칩 "${label}": via=${r.via}, substance_ids=${JSON.stringify(r.substance_ids)} (chip|substance + id 1개 이상이어야 함)`);
+  if (viaOk && ids.length > 0) return ok(`${kind} "${label}": via=${r.via}, substance_ids=${ids.length}개`);
+  bad(`${kind} "${label}": via=${r.via}, substance_ids=${JSON.stringify(r.substance_ids)} (chip|substance + id 1개 이상이어야 함)`);
 }
 
 async function main() {
   console.log(`서버: ${URL_}\n`);
   console.log("[1] 종류명 칩 해석");
-  for (const label of [...SUPPLEMENTS, ...MEDICINES]) await checkChip(label);
+  for (const label of [...SUPPLEMENTS, ...MEDICINES]) await checkName("칩", label);
+
+  console.log("\n[1b] 칩 별칭 해석");
+  const chipLabels = new Set([...SUPPLEMENTS, ...MEDICINES]);
+  for (const [chip, a] of Object.entries(CHIP_ALIASES)) {
+    if (!chipLabels.has(chip)) bad(`CHIP_ALIASES 의 "${chip}" 이(가) 칩 라벨이 아님`);
+    for (const alias of a.names) await checkName(`별칭 "${chip}"${a.replace ? "(대체)" : ""} →`, alias);
+  }
 
   console.log("\n[2] 조건 별칭 증거");
   for (const alias of ALL_ALIASES) {

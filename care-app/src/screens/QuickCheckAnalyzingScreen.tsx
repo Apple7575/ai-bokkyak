@@ -4,21 +4,19 @@ import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Check, ShieldCheck } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
-import { lookupIngredients, fetchContraindications } from "../lib/drugData";
-import { allIngredients, matchFindings, Finding, MedIngredients } from "../lib/interactions";
-import { checkItems, customNames, mergeFindings, unmatchedNames, QuickCheckDraft, QuickFinding, PRESET_LABELS } from "../lib/quickCheck";
-import { applyRules } from "../lib/quickCheckRules";
-import { runServerCheck, serverToFindings } from "../lib/quickCheckServer";
+import { checkItems, QuickCheckDraft, QuickFinding, PRESET_LABELS } from "../lib/quickCheck";
+import { expandChipNames } from "../lib/chipAliases";
+import { runServerCheck, serverToFindings, ServerCheckResult } from "../lib/quickCheckServer";
 import { serverConditionInput } from "../lib/conditionAliases";
 import { loadDraft, saveDraft, commitQuickCheckDraft } from "../lib/quickCheckDraft";
 import { getPatientId } from "../lib/storage";
 import { colors, fontSizes, spacing, radii, shadows } from "../theme/tokens";
 
 // 점검 중 화면 — 판정을 돌리면서 4단계 체크리스트를 순서대로 켠다.
-//  · 기본: 서버 판정(quick_check_v1 RPC) — 약사 검수를 거친 DB 문구를 그대로 받는다.
-//  · 서버 실패(에러·10초 타임아웃) 시 폴백: 기존 로컬 두 갈래.
-//    · 종류명 칩 + 기본 정보 → 상식 규칙(applyRules, 기기 안에서 즉시)
-//    · 제품명(검색·사진) → 식약처 DUR 병용금기(InteractionScreen과 같은 경로)
+//  · 판정은 서버(quick_check_v1 RPC) **전용** — 약사 검수를 거친 DB 문구를 그대로 받는다.
+//  · 서버 실패(에러·10초 타임아웃)면 판정하지 않는다(2026-09-17 결정). 인터넷 연결 안내와
+//    "다시 시도하기"만 보여 준다. 앱 내장 규칙·기기 DUR 폴백은 제거됐다 — 되살리지 말 것.
+//  · 종류명 칩은 chipAliases 로 서버 계열·성분 이름을 덧붙여 보내고, 응답에서 다시 칩 이름으로 되돌린다.
 // 조회가 순식간에 끝나도 최소 시간은 보여 준다 — 바로 넘어가면 "정말 봤나?" 싶어진다.
 // 판정이 끝나면 곧바로 서버(quick_check_results)에 저장한다 — 3/3에서 환자를 만들었으므로
 // 여기서 commit할 수 있다. 저장에 실패해도 결과는 보여 주고, 초안은 남겨 HomeScreen이 재시도한다.
@@ -27,64 +25,39 @@ const STEPS = ["약과 영양제 조합 확인", "성분 확인", "주의 조합
 const MIN_MS = 2400;
 const STEP_MS = MIN_MS / STEPS.length;
 
-type DurResult = { ok: true; findings: Finding[]; unmatched: string[] } | { ok: false };
-
-// 제품명만 DUR로 대조한다. 자료에서 못 찾은 이름(unmatched)은 대조에서 빠진다 — 빈 성분으로
-// 대조하면 "이상 없음"이 나와 버리므로 결과 화면이 이 목록을 반드시 보여 준다.
-async function analyzeDur(names: string[]): Promise<DurResult> {
-  if (names.length === 0) return { ok: true, findings: [], unmatched: [] };
-  const ing = await lookupIngredients(names);
-  if (!ing.ready) return { ok: false };
-  const unmatched = unmatchedNames(names, ing.data);
-  const matched = names.filter((n) => !unmatched.includes(n));
-  if (matched.length < 2) return { ok: true, findings: [], unmatched };
-  const meds: MedIngredients[] = matched.map((n) => ({ scheduleId: n, name: n, ingredients: ing.data[n] }));
-  const rules = await fetchContraindications(allIngredients(meds));
-  if (!rules.ready) return { ok: false };
-  return { ok: true, findings: matchFindings(meds, rules.data), unmatched };
-}
-
 type Analysis =
   | {
-      ok: true; findings: QuickFinding[]; unmatched: string[]; durUnavailable: boolean;
-      engine: "server" | "local"; unmappedIngredients?: string[]; uncoveredConditions?: string[];
+      ok: true; findings: QuickFinding[]; unmatched: string[]; durUnavailable: false;
+      engine: "server"; unmappedIngredients: string[]; uncoveredConditions: string[];
     }
   | { ok: false };
 
-// 1) 서버 판정(quick_check_v1) 먼저 — 검수된 문구를 그대로 받는다. 실패(throw)하면
-// 2) 로컬 폴백: 규칙은 기기 안에서 항상 된다. DUR이 실패해도 규칙 결과가 있으면
-//    durUnavailable 표시로 넘어가고, 보여 줄 것이 하나도 없을 때만 실패로 친다.
+// 서버 판정(quick_check_v1)만 — 검수된 문구를 그대로 받는다. 실패(throw)하면 ok:false 로
+// 돌려 화면이 연결 안내를 보여 준다. 로컬로 대신 판정하지 않는다.
 async function analyze(draft: QuickCheckDraft): Promise<Analysis> {
+  // 서버는 조건을 name_ko 문자열로만 비교한다 — 앱 라벨에 서버 조건명 별칭을 덧붙여 보내고,
+  // 서버가 판정하지 못하는 라벨(uncovered)은 결과 화면에서 알린다.
+  const cond = serverConditionInput(draft.profile);
+  // 칩 이름에도 서버 계열·성분 별칭을 덧붙인다(혈압약 → +칼슘통로차단제·RAS차단제 …, 유산균 → 프로바이오틱스).
+  // 초안의 names·checkedCount 는 사용자 입력(checkItems)만 쓴다 — 별칭은 응답에서 칩 이름으로 되돌린다.
+  const { send, aliasOf } = expandChipNames(checkItems(draft));
+  let res: ServerCheckResult;
   try {
-    // 서버는 조건을 name_ko 문자열로만 비교한다 — 앱 라벨에 서버 조건명 별칭을 덧붙여 보내고,
-    // 서버가 판정하지 못하는 라벨(uncovered)은 결과 화면에서 알린다.
-    const cond = serverConditionInput(draft.profile);
-    const res = await runServerCheck({ names: checkItems(draft), age: cond.age, conditions: cond.conditions });
-    // 칩이 제대로 풀리지 않은 것(유산균→임의 제품, 알레르기약→성분 없음)도 "점검하지 못한 항목"으로.
-    const mapped = serverToFindings(res, PRESET_LABELS);
-    return {
-      ok: true, findings: mapped.findings,
-      // unmatched는 **입력 이름**만(unresolved) — checkedCount가 입력 이름 수에서 빼는 단위라
-      // 원료명을 섞으면 계산이 깨진다. 원료명은 unmappedIngredients로 따로 싣는다.
-      unmatched: mapped.unresolved,
-      unmappedIngredients: mapped.unmappedIngredients,
-      uncoveredConditions: cond.uncovered,
-      durUnavailable: false, engine: "server",
-    };
+    res = await runServerCheck({ names: send, age: cond.age, conditions: cond.conditions });
   } catch {
-    // 서버가 안 되면 아래 로컬 경로로 폴백한다.
+    return { ok: false };
   }
-  const ruleFindings = applyRules({ supplements: draft.supplements, medicines: draft.medicines, profile: draft.profile });
-  const custom = customNames(checkItems(draft));
-  let dur: DurResult;
-  try {
-    dur = await analyzeDur(custom);
-  } catch {
-    dur = { ok: false };
-  }
-  if (dur.ok) return { ok: true, findings: mergeFindings(ruleFindings, dur.findings), unmatched: dur.unmatched, durUnavailable: false, engine: "local" };
-  if (ruleFindings.length === 0) return { ok: false };
-  return { ok: true, findings: mergeFindings(ruleFindings, []), unmatched: [], durUnavailable: true, engine: "local" };
+  // 칩이 제대로 풀리지 않은 것(알레르기약→성분 없음 등)도 "점검하지 못한 항목"으로.
+  const mapped = serverToFindings(res, PRESET_LABELS, aliasOf);
+  return {
+    ok: true, findings: mapped.findings,
+    // unmatched는 **입력 이름**만(unresolved) — checkedCount가 입력 이름 수에서 빼는 단위라
+    // 원료명을 섞으면 계산이 깨진다. 원료명은 unmappedIngredients로 따로 싣는다.
+    unmatched: mapped.unresolved,
+    unmappedIngredients: mapped.unmappedIngredients,
+    uncoveredConditions: cond.uncovered,
+    durUnavailable: false, engine: "server",
+  };
 }
 
 export function QuickCheckAnalyzingScreen() {
@@ -117,7 +90,7 @@ export function QuickCheckAnalyzingScreen() {
       try {
         await saveDraft({
           ...draft, findings: r.findings, unmatched: r.unmatched, durUnavailable: r.durUnavailable,
-          // 로컬 판정이면 undefined — 이전 서버 판정의 값이 남지 않게 항상 덮어쓴다.
+          // 이전 판정의 값이 남지 않게 항상 덮어쓴다.
           unmappedIngredients: r.unmappedIngredients,
           uncoveredConditions: r.uncoveredConditions,
           engine: r.engine, analyzedAt: new Date().toISOString(),
@@ -166,12 +139,15 @@ export function QuickCheckAnalyzingScreen() {
           <View style={styles.heroIcon}>
             {failed ? <ShieldCheck size={44} color={colors.textSecondary} /> : <ActivityIndicator size="large" color={colors.primaryBlue} />}
           </View>
-          <Text style={styles.title}>{failed ? "점검을 마치지 못했어요" : "복용 조합을 점검하고 있어요"}</Text>
+          <Text style={styles.title}>
+            {failed === "network" ? "인터넷에 연결되지 않았어요" : failed === "storage" ? "점검을 마치지 못했어요" : "복용 조합을 점검하고 있어요"}
+          </Text>
           <Text style={styles.sub}>
             {failed === "storage"
               ? "결과를 기기에 저장하지 못했어요. 저장 공간을 확인하고 다시 시도해 주세요."
               : failed === "network"
-                ? "인터넷 연결을 확인하고 다시 시도해 주세요. 지금 건너뛰어도 나중에 다시 점검할 수 있어요."
+                // 서버 판정 전용 — 인터넷이 없으면 판정 자체를 하지 않는다(내장 규칙 폴백 없음).
+                ? "연결 상태를 확인한 뒤 다시 점검해 주세요. 인터넷이 없으면 복용 조합을 판정할 수 없어요."
                 : "약과 영양제 조합을 확인하고 식약처 자료와 대조합니다. 잠시만 기다려 주세요."}
           </Text>
         </View>
@@ -193,7 +169,7 @@ export function QuickCheckAnalyzingScreen() {
 
         {failed ? (
           <View style={styles.actions}>
-            <BigButton label="다시 시도" onPress={() => setAttempt((a) => a + 1)} />
+            <BigButton label="다시 시도하기" onPress={() => setAttempt((a) => a + 1)} />
             {hasPatient ? (
               <BigButton label="건너뛰고 홈으로" variant="secondary" onPress={() => nav.reset({ index: 0, routes: [{ name: "Tabs" }] })} />
             ) : (

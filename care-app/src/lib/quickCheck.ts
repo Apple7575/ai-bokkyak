@@ -1,11 +1,9 @@
 // "1분 복용 점검" — 순수 로직 (RN/네트워크 의존 없음, jest 대상).
 //
-// 영양제·복용약을 고르게 하고 두 갈래로 점검한다.
-//  · 종류명 칩(혈압약, 오메가3 …) + 기본 정보 → 상식 규칙(quickCheckRules.ts, 약사 검수 전)
-//  · 검색·사진으로 넣은 제품명 → 식약처 DUR 병용금기(interactions.ts)
-// 결과는 QuickFinding 하나로 합쳐 종류별로 전부 보여 준다(회의 2026-09-10: 잠금 없음).
+// 영양제·복용약(종류명 칩 + 검색·사진 제품명)과 기본 정보를 골라 서버(quick_check_v1)가 판정한다.
+// 판정은 서버 전용(2026-09-17) — 앱 내장 규칙·기기 DUR 폴백은 없다.
+// 결과는 QuickFinding 목록으로 종류별로 전부 보여 준다(회의 2026-09-10: 잠금 없음).
 
-import type { Finding } from "./interactions";
 import { QuickFinding, RuleKind, KIND_ORDER, sortFindings } from "./quickCheckRules";
 
 export type { QuickFinding, RuleKind } from "./quickCheckRules";
@@ -31,13 +29,12 @@ export type QuickCheckDraft = {
   unmatched: string[];
   /** 서버 판정 전용: 제품은 찾았지만 성분 매핑이 없던 원료명(입력 이름 아님, 8개까지). 없으면 undefined. */
   unmappedIngredients?: string[];
-  /** 서버 판정 전용: 사용자가 고른 기본 정보 중 서버가 아직 판정하지 못하는 라벨(신장질환, 60대 이상 …).
-   *  로컬 판정은 내장 규칙이 이 라벨을 직접 다루므로 undefined. 매 판정마다 덮어쓴다. */
+  /** 사용자가 고른 기본 정보 중 서버가 아직 판정하지 못하는 라벨(신장질환, 60대 이상 …). 매 판정마다 덮어쓴다. */
   uncoveredConditions?: string[];
   analyzedAt: string | null;    // ISO 시각
-  /** 제품명 DUR 대조를 네트워크 문제로 못 했지만 규칙 결과는 있어 넘어간 경우 */
+  /** 구버전(내장 규칙 폴백 시절)에서 제품명 DUR 대조를 못 한 채 저장된 결과. 지금 판정은 서버 전용이라 항상 false. */
   durUnavailable?: boolean;
-  /** 판정 주체: server=quick_check_v1 RPC(검수 문구), local=내장 규칙+DUR 폴백. 없으면 구버전 초안. */
+  /** 판정 주체. 지금은 항상 server(quick_check_v1 RPC, 검수 문구). local=내장 규칙 폴백이 있던 구버전 저장분. 없으면 더 오래된 초안. */
   engine?: "server" | "local";
   /** 마지막으로 서버(quick_check_results)에 저장한 시각(ISO). 저장 뒤 입력만 남기고 판정을 비우므로
    *  findings===null 만으로는 "고르다 만 것"과 "저장 끝난 것"을 구분할 수 없다 — isUnfinished() 참고. */
@@ -104,20 +101,6 @@ export function checkItems(draft: Pick<QuickCheckDraft, "supplements" | "medicin
     if (!out.includes(n)) out.push(n);
   }
   return out;
-}
-
-/** 식약처 DUR 병용금기 → QuickFinding (우선 확인, 태그 "함께 복용 시 주의") */
-export function durToQuickFinding(f: Finding): QuickFinding {
-  return {
-    kind: "priority", a: f.medA, b: f.medB, title: `${f.medA} × ${f.medB}`,
-    message: f.reason ?? "식약처 병용금기 고시에 함께 쓰지 말라고 되어 있는 조합이에요.",
-    tag: "함께 복용 시 주의", source: "dur", notice_no: f.notice_no,
-  };
-}
-
-/** 규칙 결과와 DUR 결과를 합쳐 정렬(우선 → 시간 → 중복 → 주의) */
-export function mergeFindings(rules: QuickFinding[], dur: Finding[]): QuickFinding[] {
-  return sortFindings([...rules, ...dur.map(durToQuickFinding)]);
 }
 
 export type Summary = { total: number; byKind: Record<RuleKind, number> };

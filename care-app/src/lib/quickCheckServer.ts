@@ -1,7 +1,8 @@
 // "1분 복용 점검" — 서버 판정(quick_check_v1 RPC). 회의 결정: 약사 검수를 거친 DB 문구를
 // **그대로** 보여 준다(앱에서 덧붙이거나 고쳐 쓰지 않는다).
-// 서버가 실패하면 화면(QuickCheckAnalyzingScreen)이 기존 로컬 판정
-// (quickCheckRules.applyRules + 식약처 DUR)으로 폴백한다.
+// 서버 판정 **전용**이다(2026-09-17 결정): 서버에 못 닿으면 화면(QuickCheckAnalyzingScreen)이
+// 연결 안내를 보여 주고 끝낸다. 앱 내장 규칙·기기 DUR로 대신 판정하지 않는다.
+// 칩 이름은 chipAliases.expandChipNames 로 서버 계열·성분 이름 별칭을 덧붙여 보낸다.
 //
 // serverToFindings는 순수 함수(jest 대상). runServerCheck만 네트워크를 탄다.
 
@@ -43,7 +44,7 @@ export type ServerCheckResult = {
 
 const TIMEOUT_MS = 10_000;
 
-/** 서버 판정 호출. 에러·타임아웃(10초)·빈 응답이면 던진다 — 호출자가 로컬 판정으로 폴백. */
+/** 서버 판정 호출. 에러·타임아웃(10초)·빈 응답이면 던진다 — 호출자가 연결 안내로 실패 처리한다. */
 export async function runServerCheck(
   input: { names: string[]; age: string | null; conditions: string[] }
 ): Promise<ServerCheckResult> {
@@ -114,34 +115,57 @@ function shouldDemote(r: ServerResolved, matchedAnywhere: ReadonlySet<string>): 
   return !hasIds && !matchedAnywhere.has(r.input);
 }
 
+// 별칭이 chip|substance 로 풀리고 성분 id가 있으면 "제대로 풀렸다".
+function resolvedProperly(r: ServerResolved | undefined): boolean {
+  return !!r && (r.via === "chip" || r.via === "substance")
+    && Array.isArray(r.substance_ids) && r.substance_ids.length > 0;
+}
+
 /** 서버 응답을 앱의 QuickFinding 목록으로 옮긴다(정렬 포함). 순수 함수.
  *  · unresolved: 아무 데서도 못 찾은 **입력 이름** — 결과 화면의 "점검하지 못한 항목"이자
  *    checkedCount 계산 단위(입력 이름과 같은 단위여야 한다).
  *    presetLabels를 주면, 그 라벨 중 칩으로 제대로 풀리지 않은 것(shouldDemote 참고)도
  *    서버 unresolved 뒤에 붙이고(중복 제거) 그 이름이 걸린 규칙 결과는 뺀다. 칩이 아닌 입력(제품명)은 그대로.
+ *  · aliasOf(chipAliases.expandChipNames): 별칭 → 칩. 서버 응답의 별칭 이름을 전부 칩 이름으로 되돌린다 —
+ *    matched는 칩 이름으로 바꿔 제목이 "혈압약 × 자몽"이 되게 하고(결과 안 중복 제거), unresolved의
+ *    별칭은 사용자 입력이 아니므로 뺀다. 칩은 칩 자체 또는 별칭 중 하나가 chip|substance+ids로 풀리면
+ *    점검한 것으로 친다(replace 칩은 별칭만 있다).
  *  · unmappedIngredients: 제품은 찾았지만 성분 매핑이 없던 **원료명**(중복 제거, 8개까지) —
  *    입력 이름이 아니므로 unmatched에 섞지 않는다. */
 export function serverToFindings(
   res: ServerCheckResult,
-  presetLabels?: ReadonlySet<string>
+  presetLabels?: ReadonlySet<string>,
+  aliasOf?: ReadonlyMap<string, string>
 ): { findings: QuickFinding[]; unresolved: string[]; unmappedIngredients: string[] } {
+  const toChip = (name: string) => aliasOf?.get(name) ?? name;
+  const findings = res.findings.map((f) => ({ ...f, matched: [...new Set(f.matched.map(toChip))] }));
+  const aliasesByChip = new Map<string, string[]>();
+  if (aliasOf) {
+    for (const [alias, chip] of aliasOf) {
+      const list = aliasesByChip.get(chip);
+      if (list) list.push(alias); else aliasesByChip.set(chip, [alias]);
+    }
+  }
   // 칩이 제대로 풀리지 않은 입력(shouldDemote 참고). 이 이름이 걸린 규칙 결과는 버린다 —
   // "유산균 × 혈압약"과 "점검하지 못한 항목: 유산균"이 같이 뜨면 안 된다. DUR 행에는 입력 이름이
   // 없으므로 그대로 둔다.
   // 순서는 presetLabels(앱 버튼 순서)를 따른다 — 서버 resolved 순서에 기대면 화면 순서가 흔들린다.
   const demoted = new Set<string>();
   if (presetLabels) {
-    const matchedAnywhere = new Set(res.findings.flatMap((f) => f.matched));
+    const matchedAnywhere = new Set(findings.flatMap((f) => f.matched));
     const byInput = new Map(res.resolved.map((r) => [r.input, r] as const));
     for (const label of presetLabels) {
+      const aliases = aliasesByChip.get(label) ?? [];
+      if (aliases.some((a) => resolvedProperly(byInput.get(a)))) continue; // 별칭 하나라도 제대로 풀리면 점검한 것
       const r = byInput.get(label);
-      if (r && shouldDemote(r, matchedAnywhere)) demoted.add(label);
+      if (r) { if (shouldDemote(r, matchedAnywhere)) demoted.add(label); }
+      else if (aliases.length > 0) demoted.add(label); // replace 칩: 칩은 안 보냈고 별칭도 못 풀렸다
     }
   }
   // 감수하는 손실: matched 가 3개 이상인 규칙도 그중 하나가 탈락하면 통째로 버린다. 클라이언트는
   // 어느 이름이 규칙의 어느 역할(object/precipitant)인지 모르므로 부분 유지가 불가능하다.
   // 서버가 matched 를 역할별로 돌려주면 그때 좁힐 수 있다.
-  const ruleFindings: QuickFinding[] = res.findings.filter((f) => !f.matched.some((m) => demoted.has(m))).map((f) => ({
+  const ruleFindings: QuickFinding[] = findings.filter((f) => !f.matched.some((m) => demoted.has(m))).map((f) => ({
     kind: kindOf(f),
     a: f.matched[0] ?? "",
     b: f.matched[1] ?? "",
@@ -171,7 +195,8 @@ export function serverToFindings(
   });
   // unmapped를 "제품: 원료"로 다 늘어놓으면 너무 길다 — 원료명만 중복 제거해 8개까지.
   const unmappedIngredients = [...new Set(res.unmapped.map((u) => u.ingredient))].slice(0, UNMAPPED_CAP);
-  const unresolved = [...res.unresolved];
+  // 별칭은 사용자가 넣은 이름이 아니다 — 서버가 못 찾았어도 "점검하지 못한 항목"에 올리지 않는다.
+  const unresolved = res.unresolved.filter((n) => !aliasOf?.has(n));
   for (const name of demoted) if (!unresolved.includes(name)) unresolved.push(name);
   return {
     findings: sortFindings([...ruleFindings, ...durFindings]),

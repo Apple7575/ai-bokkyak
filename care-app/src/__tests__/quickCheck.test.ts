@@ -1,16 +1,12 @@
 import {
   SUPPLEMENT_PRESETS, SUPPLEMENT_MORE, MEDICINE_PRESETS, AGES, CONDS, NONE_SUPPLEMENT, NONE_MEDICINE, NONE_CONDITION,
   toggleItem, addItem, checkItems, unmatchedNames, checkedCount, checkedNamesLine, EMPTY_DRAFT,
-  isPreset, customNames, durToQuickFinding, mergeFindings, summarize, topFinding, groupByKind,
+  isPreset, customNames, summarize, topFinding, groupByKind,
   unmatchedDescription, PRESET_LABELS, isUnfinished,
 } from "../lib/quickCheck";
-import type { Finding } from "../lib/interactions";
 import type { QuickFinding, RuleKind } from "../lib/quickCheckRules";
 
-const dur = (a: string, b: string, reason: string | null = null): Finding => ({
-  medA: a, medB: b, ingredientA: "x", ingredientB: "y", reason, notice_no: "2024-1",
-});
-const f = (a: string, b: string, kind: RuleKind = "priority"): QuickFinding => ({
+const f =(a: string, b: string, kind: RuleKind = "priority"): QuickFinding => ({
   kind, a, b, title: `${a} × ${b}`, message: "m", tag: "t", source: "rule",
 });
 
@@ -128,20 +124,6 @@ describe("isPreset / customNames", () => {
     expect(isPreset("아연")).toBe(true);
     expect(isPreset("노바스크정")).toBe(false);
     expect(customNames(["혈압약", "노바스크정", "오메가3"])).toEqual(["노바스크정"]);
-  });
-});
-
-describe("durToQuickFinding / mergeFindings", () => {
-  it("DUR 결과는 우선 확인 + 고시 번호를 가진다", () => {
-    const q = durToQuickFinding(dur("A정", "B정", "함께 쓰면 안 됨"));
-    expect(q).toEqual({ kind: "priority", a: "A정", b: "B정", title: "A정 × B정", message: "함께 쓰면 안 됨", tag: "함께 복용 시 주의", source: "dur", notice_no: "2024-1" });
-  });
-  it("사유가 없으면 기본 문구", () => {
-    expect(durToQuickFinding(dur("A", "B")).message).toContain("병용금기");
-  });
-  it("합치면 kind 순서로 정렬된다(DUR은 우선 확인이므로 앞으로)", () => {
-    const m = mergeFindings([f("철분", "갑상선약", "timing"), f("종합비타민", "비타민D", "overlap")], [dur("A", "B")]);
-    expect(m.map((x) => [x.kind, x.source])).toEqual([["priority", "dur"], ["timing", "rule"], ["overlap", "rule"]]);
   });
 });
 
