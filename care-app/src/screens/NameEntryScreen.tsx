@@ -2,12 +2,11 @@ import React, { useEffect, useRef, useState } from "react";
 import { View, Text, TextInput, StyleSheet, Alert, ScrollView, Pressable, KeyboardAvoidingView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Eye, MessageCircle, ClipboardCheck } from "lucide-react-native";
+import { MessageCircle, ClipboardCheck } from "lucide-react-native";
 import { Logo } from "../components/Logo";
 import { BigButton } from "../components/BigButton";
 import { setPatient, setPatientName } from "../lib/storage";
 import { supabase } from "../lib/supabase";
-import { enterDemo } from "../lib/demo";
 import { restoreWithKakao } from "../lib/kakaoAccount";
 import { loadDraft } from "../lib/quickCheckDraft";
 import { isUnfinished } from "../lib/quickCheck";
@@ -29,7 +28,6 @@ export function NameEntryScreen() {
   const [saving, setSaving] = useState(false);
   // 두 번 눌러 환자가 두 명 만들어지지 않게 — ref는 동기 가드, state는 버튼 문구용.
   const savingRef = useRef(false);
-  const [demoLoading, setDemoLoading] = useState(false);
   const [kakaoBusy, setKakaoBusy] = useState(false);
 
   // 점검을 고르다 말고 앱이 꺼진 경우 — 되돌아갈 길을 준다.
@@ -82,18 +80,6 @@ export function NameEntryScreen() {
     setKakaoBusy(false);
   }
 
-  async function startDemo() {
-    if (demoLoading) return;
-    setDemoLoading(true);
-    try {
-      await enterDemo();
-      nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
-    } catch {
-      Alert.alert("데모를 불러오지 못했어요", "인터넷 연결을 확인해 주세요.");
-      setDemoLoading(false);
-    }
-  }
-
   return (
     // 상단 인셋은 ScrollView 바깥에. contentContainerStyle에 주면 스크롤할 때
     // 내용이 상태바 밑으로 올라와 겹친다.
@@ -139,25 +125,17 @@ export function NameEntryScreen() {
 
       <BigButton label={saving ? "시작하는 중…" : "시작하기"} onPress={() => void start()} disabled={!canStart || saving} showArrow />
 
-      {/* 보조 링크 — 기기 이전(카카오 복구)과 데모. 주 버튼보다 조용하게. */}
+      {/* 카카오 로그인 — 기기 이전(복구). 카카오 공식 버튼 색(노랑 #FEE500·검정 글씨)이라 한눈에 알아본다. */}
       <Pressable
         onPress={() => void restore()}
         disabled={kakaoBusy}
         accessibilityRole="button"
-        style={({ pressed }) => [styles.linkBtn, (pressed || kakaoBusy) && { opacity: 0.6 }]}
+        style={({ pressed }) => [styles.kakaoBtn, (pressed || kakaoBusy) && { opacity: 0.85 }]}
       >
-        <MessageCircle size={20} color={colors.kakaoInk} fill={colors.kakao} />
-        <Text style={styles.linkText}>{kakaoBusy ? "불러오는 중…" : "이미 쓰던 계정이 있어요 · 카카오로 불러오기"}</Text>
+        <MessageCircle size={24} color={colors.kakaoInk} fill={colors.kakaoInk} />
+        <Text style={styles.kakaoText}>{kakaoBusy ? "불러오는 중…" : "카카오 로그인"}</Text>
       </Pressable>
-      <Pressable
-        onPress={() => void startDemo()}
-        disabled={demoLoading}
-        accessibilityRole="button"
-        style={({ pressed }) => [styles.linkBtn, (pressed || demoLoading) && { opacity: 0.6 }]}
-      >
-        <Eye size={18} color={colors.textSecondary} />
-        <Text style={styles.linkText}>{demoLoading ? "데모 불러오는 중…" : "둘러보기 (데모)"}</Text>
-      </Pressable>
+      <Text style={styles.kakaoHint}>이미 쓰던 분은 카카오로 약과 기록을 그대로 불러와요.</Text>
     </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -190,9 +168,10 @@ const styles = StyleSheet.create({
     borderRadius: radii.button, fontSize: fontSizes.emphasis, padding: 14, minHeight: minTouch, color: colors.text,
   },
   hint: { fontSize: fontSizes.body, lineHeight: 26, color: colors.textSecondary, marginTop: spacing.md },
-  linkBtn: {
+  kakaoBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
-    minHeight: minTouch, paddingHorizontal: spacing.md,
+    minHeight: minTouch, borderRadius: radii.button, backgroundColor: colors.kakao, marginTop: spacing.md,
   },
-  linkText: { fontSize: fontSizes.body, color: colors.textSecondary, fontWeight: "600", flexShrink: 1, textAlign: "center" },
+  kakaoText: { fontSize: fontSizes.emphasis, fontWeight: "800", color: colors.kakaoInk },
+  kakaoHint: { fontSize: fontSizes.body, color: colors.textSecondary, textAlign: "center", marginTop: spacing.sm },
 });
