@@ -1,4 +1,9 @@
--- 1분 복용 점검 서버 판정 RPC v2 (2026-09-06)
+-- 1분 복용 점검 서버 판정 RPC v3 (2026-09-20)
+--
+-- v3: 계열 다리. 규칙의 항은 '스타틴'·'항혈소판제' 같은 가짜 성분(substance.kind='drug_class_generic')을
+--     가리키는데, 실제 약(아스피린 등)은 substance_class_member 로만 계열에 소속돼 있어 안 걸렸다.
+--     substance_class.generic_substance_id(→ migrate-class-bridge.sql)로 실제 성분 → 계열 → 가짜 성분을
+--     사용자 집합(_subs)에 보태고, matched 에도 실제 약 이름이 나오게 한다.
 --
 -- v2: 인수인계 문서(§1) 반영 — object 항은 전부, precipitant 항은 하나 이상 충족(함정 1·2 방지).
 --     조건은 code 또는 name_ko 로 매칭. reassurance_ko·evidence_expression(label/phrasing) 반환.
@@ -88,6 +93,15 @@ begin
   -- ── 2. 사용자 집합 ──────────────────────────────────────────────────────
   create temp table _subs on commit drop as
     select distinct substance_id from _res where substance_id is not null;
+  -- v3: 실제 성분이 속한 계열의 가짜 성분(drug_class_generic)도 사용자 집합에 넣는다.
+  --     예) 아스피린(85) ∈ antiplatelet → 항혈소판제(59) 추가 → '항혈소판제 × 오메가-3' 규칙 발화.
+  insert into _subs
+  select distinct c.generic_substance_id
+  from substance_class_member m
+  join _subs u on u.substance_id = m.substance_id
+  join substance_class c on c.id = m.class_id
+  where c.generic_substance_id is not null
+    and not exists (select 1 from _subs x where x.substance_id = c.generic_substance_id);
   create temp table _classes on commit drop as
     select distinct class_id from _res where class_id is not null
     union
@@ -183,6 +197,11 @@ begin
             from interaction_rule_side s
             join _res r2 on
                  (s.target_type = 'substance'       and r2.substance_id = s.target_id)
+              -- v3: 항이 가짜 성분(계열)이면 그 계열에 속한 실제 약 입력도 matched 에 포함
+              or (s.target_type = 'substance'       and exists (
+                     select 1 from substance_class c
+                     join substance_class_member m on m.class_id = c.id
+                     where c.generic_substance_id = s.target_id and m.substance_id = r2.substance_id))
               or (s.target_type = 'substance_class' and (r2.class_id = s.target_id or exists (
                      select 1 from substance_class_member m
                      where m.class_id = s.target_id and m.substance_id = r2.substance_id)))
