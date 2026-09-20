@@ -14,8 +14,8 @@
 -- 실행 순서 (Supabase SQL Editor):  §0 → §1(확인) → §2 → §4(검증). §3 은 참고.
 
 -- ── §0. ATC 앞자리 → 성분군 대응표 (세션 임시 테이블) ─────────────────────────
-create temp table if not exists _atc_class (prefix text, class_code text, note text);
-truncate _atc_class;
+drop table if exists _atc_class; drop table if exists _single; drop table if exists _cand;
+create temp table _atc_class (prefix text, class_code text, note text);
 insert into _atc_class (prefix, class_code, note) values
   -- 지질
   ('C10AA', 'statin', 'HMG-CoA 환원효소 억제제'),
@@ -145,14 +145,14 @@ insert into _atc_class (prefix, class_code, note) values
   ('J05AE', 'protease_inhibitor', 'HIV 단백분해효소 억제제'), ('J05AG', 'nnrti', 'NNRTI'), ('J05AJ', 'integrase_inhibitor', '인테그라제 억제제');
 
 -- 단일 성분 제품만: 같은 제품코드에 성분이 1개인 것
-create temp table if not exists _single as
+create temp table _single as
 select d.product_code, d.ingredient
 from public.dur_product_ingredient d
 group by d.product_code, d.ingredient
 having (select count(distinct ingredient) from public.dur_product_ingredient x where x.product_code = d.product_code) = 1;
 
 -- 성분 × 계열 후보: 근거 제품 수와 ATC 예시
-create temp table if not exists _cand as
+create temp table _cand as
 select s.id as substance_id, s.code as substance_code, s.name_ko,
        c.id as class_id, c.code as class_code, c.name_ko as class_name,
        count(distinct p.product_code) as n_products,
@@ -172,11 +172,11 @@ from _cand
 where not already and n_products >= 2
 order by class_code, n_products desc, substance_code;
 
--- ── §2. 적용 — §1 을 확인했으면 실행 ────────────────────────────────────────
--- insert into interaction.substance_class_member (substance_id, class_id)
--- select substance_id, class_id from _cand
--- where not already and n_products >= 2
--- on conflict do nothing;
+-- ── §2. 적용 (2026-09-20 부터 주석 없이 바로 실행 — §1 미리보기는 1차에서 확인 완료) ──────
+insert into interaction.substance_class_member (substance_id, class_id)
+select substance_id, class_id from _cand
+where not already and n_products >= 2
+on conflict do nothing;
 
 -- ── §3. 검수 목록 — 근거 제품이 1개뿐인 것(자동으로 넣지 않음) ───────────────
 select substance_code, name_ko, class_code, class_name, n_products, atc_codes
@@ -195,7 +195,7 @@ select s.code, s.name_ko, c.code as class_code
 from interaction.substance_class_member m
 join interaction.substance s on s.id = m.substance_id
 join interaction.substance_class c on c.id = m.class_id
-where s.code in ('aspirin', 'clopidogrel', 'atorvastatin', 'omeprazole', 'sertraline', 'amlodipine', 'metformin')
+where s.code in ('aspirin', 'clopidogrel', 'atorvastatin', 'amlodipine', 'metformin', 'warfarin', 'losartan')
 order by s.code, c.code;
 
 -- 그리고 앱과 같은 호출로 확인:
