@@ -1,4 +1,4 @@
--- 성분 → 성분군(substance_class_member) 자동 채우기 — ATC 코드 기반 (2026-09-20)
+-- 성분 → 성분군(substance_class_member) 자동 채우기 — ATC 코드 기반 (2026-09-20, 2단계 계열 추가)
 --
 -- 왜: 검수 규칙은 "항혈소판제 × 오메가-3"처럼 계열 이름으로 적혀 있는데, substance_class_member 가
 --     66행뿐이라 아스피린·클로피도그렐 같은 흔한 약이 계열에 소속돼 있지 않아 규칙이 안 걸렸다.
@@ -113,7 +113,36 @@ insert into _atc_class (prefix, class_code, note) values
   ('A11CA', 'fat_soluble_vitamin', '비타민 A'), ('A11CC', 'fat_soluble_vitamin', '비타민 D'),
   ('A11HA03', 'fat_soluble_vitamin', '비타민 E'), ('B02BA', 'fat_soluble_vitamin', '비타민 K'),
   ('A12AA', 'polyvalent_cation', '칼슘'), ('A12CC', 'polyvalent_cation', '마그네슘'),
-  ('A12CB', 'polyvalent_cation', '아연'), ('B03AA', 'polyvalent_cation', '철(2가)'), ('B03AB', 'polyvalent_cation', '철(3가)');
+  ('A12CB', 'polyvalent_cation', '아연'), ('B03AA', 'polyvalent_cation', '철(2가)'), ('B03AB', 'polyvalent_cation', '철(3가)'),
+  -- ── 2단계(migrate-class-bridge-2.sql 로 만든 계열) ─────────────────────────
+  ('B01A', 'antithrombotic', '항혈전제 전체(항응고+항혈소판)'),
+  ('A10', 'antidiabetic_drug', '혈당강하제 전체(인슐린 포함)'),
+  ('C02', 'antihypertensive', '혈압약'), ('C03', 'antihypertensive', '이뇨제(혈압약으로도)'),
+  ('C07', 'antihypertensive', '베타차단제'), ('C08', 'antihypertensive', 'CCB'), ('C09', 'antihypertensive', 'RAS'),
+  ('N06A', 'antidepressant', '항우울제 전체'),
+  ('N05C', 'hypnotic', '수면제'),
+  ('N05BA', 'benzodiazepine', '벤조디아제핀 항불안'), ('N05CD', 'benzodiazepine', '벤조디아제핀 수면'), ('N03AE', 'benzodiazepine', '클로나제팜'),
+  ('C03CA', 'loop_diuretic', '루프이뇨제'),
+  ('C03AA', 'thiazide_diuretic', '티아지드'), ('C03BA', 'thiazide_diuretic', '티아지드 유사'),
+  ('B01AE', 'doac', '다비가트란'), ('B01AF', 'doac', 'Xa 억제제'),
+  ('A02BA', 'h2_blocker', 'H2 차단제'),
+  ('A10BK', 'sglt2_inhibitor', 'SGLT2'), ('A10BH', 'dpp4_inhibitor', 'DPP-4'),
+  ('H02AB', 'glucocorticoid', '전신 글루코코르티코이드'),
+  ('B03XA', 'esa', '조혈자극제'),
+  ('C02CA', 'alpha_blocker', '알파차단제(혈압)'), ('G04CA', 'alpha_blocker', '알파차단제(전립선)'),
+  ('G04BD', 'antimuscarinic', '요실금 항무스카린'),
+  ('G04BD', 'anticholinergic', '요실금'), ('N04AA', 'anticholinergic', '항파킨슨 항콜린'), ('A03BA', 'anticholinergic', '벨라돈나'), ('A03BB', 'anticholinergic', '벨라돈나 반합성'),
+  ('N06DA', 'cholinesterase_inhibitor', '치매약(도네페질 등)'),
+  ('L03AB', 'interferon', '인터페론'),
+  ('L04AE', 's1p_modulator', 'S1P 조절제(핑골리모드 등, ATC 2024)'),
+  ('J05', 'antiviral', '전신 항바이러스제'),
+  ('R03BA', 'inhaled_corticosteroid', '흡입 스테로이드'),
+  ('R03AC12', 'laba', '살메테롤'), ('R03AC13', 'laba', '포르모테롤'), ('R03AC18', 'laba', '인다카테롤'), ('R03AC19', 'laba', '올로다테롤'),
+  ('R03AK', 'laba', 'LABA+ICS 복합'), ('R03AL', 'laba', 'LABA+항콜린 복합'),
+  ('R03', 'bronchodilator', '기관지확장제 전체'),
+  ('L04AX05', 'antifibrotic', '피르페니돈'), ('L01EX09', 'antifibrotic', '닌테다닙'),
+  ('J04A', 'antituberculosis_drug', '항결핵제'),
+  ('J05AE', 'protease_inhibitor', 'HIV 단백분해효소 억제제'), ('J05AG', 'nnrti', 'NNRTI'), ('J05AJ', 'integrase_inhibitor', '인테그라제 억제제');
 
 -- 단일 성분 제품만: 같은 제품코드에 성분이 1개인 것
 create temp table if not exists _single as
