@@ -13,8 +13,9 @@ from interaction.substance s where s.kind = 'drug_class_generic' and c.generic_s
   (c.code = 'k_sparing_diuretic' and s.code = 'potassium_sparing_diuretic'));
 
 -- 2) 새 계열 행 — code 는 가짜 성분 code 와 같게, 이름은 가짜 성분 이름 그대로
-insert into interaction.substance_class (code, name_ko, generic_substance_id)
-select s.code, s.name_ko, s.id
+-- kind 는 NOT NULL 이라 기존 계열(statin)의 값을 그대로 복사한다.
+insert into interaction.substance_class (code, kind, name_ko, generic_substance_id)
+select s.code, (select c0.kind from interaction.substance_class c0 where c0.code = 'statin'), s.name_ko, s.id
 from interaction.substance s
 where s.kind = 'drug_class_generic'
   and s.code in ('antithrombotic','antidiabetic_drug','antihypertensive','antidepressant','hypnotic','benzodiazepine',
