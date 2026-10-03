@@ -11,7 +11,7 @@ import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { normalizeRepeatDays } from "../lib/schedule";
-import { repeatSummary } from "../lib/repeatDays";
+import { repeatSummaryFor } from "../lib/repeatDays";
 import { TimeOfDay, TIME_OF_DAYS, defaultHourFor, timeOfDayForHour, slotLabel } from "../lib/timeOfDay";
 import { buildDoseRows } from "../lib/medSummary";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
@@ -50,6 +50,8 @@ export function DoseTimeScreen() {
   });
   const [editing, setEditing] = useState<TimeOfDay | null>(null); // 시각 고르는 중인 시간대
   const [repeatDays, setRepeatDays] = useState<number[]>([]);
+  // "요일 직접 고르기"를 눌러 둔 상태. 요일이 비어 있으면 미완성이라 저장하지 않는다(매일로 저장되면 안 된다).
+  const [repeatCustom, setRepeatCustom] = useState(false);
   const [amount, setAmount] = useState<string>("1정");
   const [saving, setSaving] = useState(false);
 
@@ -73,6 +75,7 @@ export function DoseTimeScreen() {
   async function save(): Promise<void> {
     if (saving) return;
     if (!medicineName.trim()) { Alert.alert("약 이름이 없어요"); return; }
+    if (repeatCustom && repeatDays.length === 0) { Alert.alert("요일을 골라 주세요", "직접 고르기를 눌렀으면 요일을 하나 이상 골라 주세요."); return; }
     setSaving(true);
     const pid = await getPatientId();
     if (!pid) { setSaving(false); return; }
@@ -176,7 +179,11 @@ export function DoseTimeScreen() {
 
         {/* 반복 */}
         <Text style={styles.section}>반복</Text>
-        <RepeatPicker value={repeatDays} onChange={setRepeatDays} />
+        <RepeatPicker
+          value={repeatDays}
+          custom={repeatCustom}
+          onChange={(days, custom) => { setRepeatDays(days); setRepeatCustom(custom); }}
+        />
 
         {/* 1회 복용량 */}
         <Text style={styles.section}>1회 복용량</Text>
@@ -195,7 +202,7 @@ export function DoseTimeScreen() {
 
       <View style={[styles.footer, { paddingBottom: spacing.lg + insets.bottom }]}>
         {/* 저장 직전에 반복을 한 번 더 문장으로 되읽어 준다 — 일요일만으로 저장되는 실수 방지 */}
-        <Text style={styles.footerSummary}>{repeatSummary(repeatDays)}</Text>
+        <Text style={styles.footerSummary}>{repeatSummaryFor(repeatDays, repeatCustom)}</Text>
         <Pressable
           onPress={() => { void save(); }}
           disabled={saving}

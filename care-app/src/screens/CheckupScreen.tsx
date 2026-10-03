@@ -105,7 +105,9 @@ export function CheckupScreen() {
 
         const name = (patient as Patient | null)?.name;
         if (items.length === 0) {
+          // 홈의 pending과 같은 기준 — 오늘 이미 복용 완료한 일정은 다음 복약 후보가 아니다.
           const nx = ((schs ?? []) as Schedule[])
+            .filter((s) => !done.has(s.id))
             .map((s) => ({ at: nextNotificationTime(s, now), name: s.medicine_name }))
             .sort((a, b) => a.at.getTime() - b.at.getTime())[0];
           setNextDose(nx ?? null);

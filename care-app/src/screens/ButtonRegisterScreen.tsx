@@ -13,7 +13,7 @@ import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders, cancelSchedule } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { normalizeRepeatDays } from "../lib/schedule";
-import { repeatSummary } from "../lib/repeatDays";
+import { presetOf, repeatSummaryFor } from "../lib/repeatDays";
 import {
   TimeOfDay, TIME_OF_DAYS, isTimeOfDay, timeOfDayForHour, hourForTimeOfDay,
 } from "../lib/timeOfDay";
@@ -32,6 +32,8 @@ export function ButtonRegisterScreen() {
   const [minute, setMinute] = useState(0);
   // 빈 배열 = 매일(설계 결정 #1). RepeatPicker가 정규화된 요일 배열을 넘긴다.
   const [repeatDays, setRepeatDays] = useState<number[]>([]);
+  // "요일 직접 고르기"를 눌러 둔 상태. 요일이 비어 있으면 미완성이라 저장하지 않는다.
+  const [repeatCustom, setRepeatCustom] = useState(false);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false); // 더블탭 동기 가드(state는 비동기)
 
@@ -42,7 +44,9 @@ export function ButtonRegisterScreen() {
       const { data } = await supabase.from("schedules").select("*").eq("id", editId).single();
       if (data) {
         setName(data.medicine_name);
-        setHour(data.hour); setMinute(data.minute); setRepeatDays(data.repeat_days ?? []);
+        setHour(data.hour); setMinute(data.minute);
+        const savedDays: number[] = data.repeat_days ?? [];
+        setRepeatDays(savedDays); setRepeatCustom(presetOf(savedDays) === "custom");
         // 기존에 저장된 시간대가 시각과 어긋나 있으면(구버전 데이터) 시각 기준으로 바로잡는다.
         const saved = data.time_of_day;
         setTod(isTimeOfDay(saved) && saved === timeOfDayForHour(data.hour) ? saved : timeOfDayForHour(data.hour));
@@ -71,6 +75,7 @@ export function ButtonRegisterScreen() {
       nav.navigate("DoseTime", { medicineName: name.trim() });
       return;
     }
+    if (repeatCustom && repeatDays.length === 0) { Alert.alert("요일을 골라 주세요", "직접 고르기를 눌렀으면 요일을 하나 이상 골라 주세요."); return; }
     savingRef.current = true; // 첫 await 전에 동기 잠금
     setSaving(true);
     const pid = await getPatientId();
@@ -160,7 +165,11 @@ export function ButtonRegisterScreen() {
 
         {/* 반복 — 빈도를 문장으로 묻고(매일/평일만/주말만/직접 고르기) 결과를 한 문장으로 되읽는다 */}
         <View style={styles.section}>
-          <RepeatPicker value={repeatDays} onChange={setRepeatDays} />
+          <RepeatPicker
+            value={repeatDays}
+            custom={repeatCustom}
+            onChange={(days, custom) => { setRepeatDays(days); setRepeatCustom(custom); }}
+          />
         </View>
         </>
         ) : (
@@ -172,7 +181,7 @@ export function ButtonRegisterScreen() {
 
       {/* 하단 저장 버튼 — 시스템 네비게이션 바와 겹치지 않게 하단 여백 확보 */}
       <View style={[styles.footer, { paddingBottom: spacing.lg + insets.bottom }]}>
-        {editId ? <Text style={styles.footerSummary}>{repeatSummary(repeatDays)}</Text> : null}
+        {editId ? <Text style={styles.footerSummary}>{repeatSummaryFor(repeatDays, repeatCustom)}</Text> : null}
         <BigButton label={saving ? "저장 중…" : editId ? "수정 저장하기" : "다음"} onPress={save} />
       </View>
     </KeyboardAvoidingView>

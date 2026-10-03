@@ -328,7 +328,7 @@ export function VoiceGuideScreen() {
               <>
                 <Pressable onPress={() => acceptDefaults(true)}
                   style={({ pressed }) => [styles.wideBtn, pressed && { opacity: 0.9 }]}>
-                  <Check size={22} color="#fff" />
+                  <Check size={22} color={colors.white} />
                   <Text style={styles.wideText}>네, 이 시간으로 할게요</Text>
                 </Pressable>
                 <Pressable onPress={() => acceptDefaults(false)}
@@ -358,7 +358,7 @@ export function VoiceGuideScreen() {
             </View>
             <Pressable onPress={() => confirm(true)}
               style={({ pressed }) => [styles.wideBtn, pressed && { opacity: 0.9 }]}>
-              <Check size={22} color="#fff" />
+              <Check size={22} color={colors.white} />
               <Text style={styles.wideText}>네, 맞아요</Text>
             </Pressable>
             <Pressable onPress={() => confirm(false)}
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
   },
   chipOn: { backgroundColor: colors.primaryBlue, borderColor: colors.primaryBlue },
   chipText: { fontSize: 19, fontWeight: "800", color: colors.textSecondary },
-  chipTextOn: { color: "#fff" },
+  chipTextOn: { color: colors.white },
   timeCard: {
     flexDirection: "row", alignItems: "center", gap: spacing.sm,
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
     minHeight: minTouch, borderRadius: radii.button, backgroundColor: colors.primaryBlue,
   },
-  wideText: { fontSize: 20, fontWeight: "800", color: "#fff" },
+  wideText: { fontSize: 20, fontWeight: "800", color: colors.white },
   wideBtnGhost: {
     alignItems: "center", justifyContent: "center", minHeight: minTouch,
     borderRadius: radii.button, backgroundColor: colors.cardBg,

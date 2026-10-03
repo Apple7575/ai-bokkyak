@@ -33,8 +33,8 @@ export async function logAlarmEvent(args: {
 // 알파 테스트에서 "어디서 막히는가"를 보려면 단계별 이탈과 폴백 비율이 필요하다.
 //   · step            : 어느 단계에서 끝났나 (done / skipped)
 //   · buttonFallback  : 버튼으로 진행한 횟수
-//   · tapInterrupt    : 화면을 눌러 안내 음성을 끊은 횟수
-//                       (많으면 멘트가 길어 답답하다는 뜻)
+//   · tapInterrupt    : 항상 0 — 2026-10-03 음성 안내 제거. 안내 음성을 화면 터치로 끊던
+//                       횟수였고, 서버 컬럼(tap_interrupt_count) 호환을 위해 자리만 남겼다.
 //
 // noReply / fail / echoFiltered 는 음성 입력이 있던 시절의 지표라 지금은 항상 0이다.
 // 컬럼을 지우지 않고 남겨 둔 것은 음성 입력을 되살릴 때 마이그레이션 없이 돌아오기
@@ -44,7 +44,7 @@ export async function logAlarmEvent(args: {
 export async function logGuideEvent(args: {
   step: string;
   buttonFallback: number;
-  /** 화면을 눌러 안내를 끊은 횟수 */
+  /** 항상 0 — 2026-10-03 음성 안내 제거(옛 "안내 음성을 끊은 횟수") */
   tapInterrupt: number;
   noReply?: number;
   fail?: number;

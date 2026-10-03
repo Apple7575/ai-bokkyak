@@ -1,5 +1,5 @@
 import {
-  presetOf, daysForPreset, repeatSummary, relativeDay, WEEKDAYS, WEEKEND, DAY_FULL,
+  presetOf, daysForPreset, repeatSummary, repeatSummaryFor, relativeDay, WEEKDAYS, WEEKEND, DAY_FULL,
 } from "../lib/repeatDays";
 
 describe("presetOf", () => {
@@ -19,7 +19,10 @@ describe("presetOf", () => {
   it("그 외는 직접 고르기", () => {
     expect(presetOf([0])).toBe("custom");
     expect(presetOf([1, 3])).toBe("custom");
-    expect(presetOf([0, 1, 2, 3, 4, 5, 6])).toBe("custom");
+  });
+  it("일곱 요일을 모두 고르면 매일이다", () => {
+    expect(presetOf([0, 1, 2, 3, 4, 5, 6])).toBe("daily");
+    expect(presetOf([6, 5, 4, 3, 2, 1, 0, 0])).toBe("daily");
   });
 });
 
@@ -57,6 +60,20 @@ describe("repeatSummary", () => {
   });
   it("DAY_FULL은 일요일부터 토요일까지", () => {
     expect(DAY_FULL).toEqual(["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"]);
+  });
+});
+
+describe("repeatSummaryFor", () => {
+  it("직접 고르기 상태에서 요일이 없으면 고르라고 한다 — 매일로 읽히지 않게", () => {
+    expect(repeatSummaryFor([], true)).toBe("요일을 골라 주세요");
+  });
+  it("직접 고르기 상태라도 요일이 있으면 그 요일 문장", () => {
+    expect(repeatSummaryFor([1, 3], true)).toBe("월요일·수요일에만 알려 드려요");
+    expect(repeatSummaryFor([1, 2, 3, 4, 5], true)).toBe("평일에만 알려 드려요");
+  });
+  it("직접 고르기가 아니면 repeatSummary와 같다", () => {
+    expect(repeatSummaryFor([], false)).toBe("매일 알려 드려요");
+    expect(repeatSummaryFor([0, 6], false)).toBe("주말에만 알려 드려요");
   });
 });
 

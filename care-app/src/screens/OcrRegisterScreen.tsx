@@ -25,9 +25,13 @@ const OCR_ART = require("../../assets/illustrations/ocr-envelope.png");
 const HOURS = [7, 8, 9, 12, 13, 18, 19, 20, 21];
 const MINUTES = [0, 15, 30, 45];
 
+// 인식 결과 한 줄 + 화면 상태. repeatCustom은 "요일 직접 고르기"를 눌러 둔 상태 —
+// 요일이 비어 있으면 미완성이라 등록하지 않는다(매일로 저장되면 안 된다). DB에는 넣지 않는다.
+type Item = ParsedSchedule & { repeatCustom: boolean };
+
 export function OcrRegisterScreen() {
   const nav = useNavigation<any>();
-  const [items, setItems] = useState<ParsedSchedule[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -50,7 +54,7 @@ export function OcrRegisterScreen() {
     setCandidates(next);
   }
 
-  function patch(i: number, p: Partial<ParsedSchedule>) {
+  function patch(i: number, p: Partial<Item>) {
     setItems((prev) => prev.map((it, idx) => (idx === i ? { ...it, ...p } : it)));
   }
   function remove(i: number) {
@@ -77,7 +81,7 @@ export function OcrRegisterScreen() {
       setLoading(true);
       setScanned(true);
       const meds = await gptOcrPrescription(res.assets[0].base64);
-      setItems(meds);
+      setItems(meds.map((m) => ({ ...m, repeatCustom: false })));
       setCandidates({});
       // 후보 조회는 부가 기능 — 실패해도 등록 흐름을 막지 않는다.
       if (meds.length > 0) findCandidates(meds).catch(() => {});
@@ -94,6 +98,10 @@ export function OcrRegisterScreen() {
 
   async function registerAll() {
     if (items.length === 0 || savingRef.current) return;
+    if (items.some((it) => it.repeatCustom && it.repeat_days.length === 0)) {
+      Alert.alert("요일을 골라 주세요", "직접 고르기를 눌렀으면 요일을 하나 이상 골라 주세요.");
+      return;
+    }
     savingRef.current = true; // 첫 await 전에 동기적으로 잠가 더블탭 중복 등록 방지
     setSaving(true);
     const pid = await getPatientId();
@@ -211,7 +219,11 @@ export function OcrRegisterScreen() {
                 ))}</View>
 
                 <View style={styles.repeatWrap}>
-                  <RepeatPicker value={it.repeat_days} onChange={(days) => patch(i, { repeat_days: days })} />
+                  <RepeatPicker
+                    value={it.repeat_days}
+                    custom={it.repeatCustom}
+                    onChange={(days, custom) => patch(i, { repeat_days: days, repeatCustom: custom })}
+                  />
                 </View>
               </View>
             ))}

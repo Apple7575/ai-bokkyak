@@ -19,10 +19,10 @@ function sameDays(a: number[], b: number[]): boolean {
   return a.length === b.length && a.every((x, i) => x === b[i]);
 }
 
-/** [] → daily, [1..5] → weekdays, [0,6] → weekend, 그 외 → custom */
+/** [] 또는 일곱 요일 전부 → daily, [1..5] → weekdays, [0,6] → weekend, 그 외 → custom */
 export function presetOf(days: number[]): RepeatPreset {
   const d = normalizeRepeatDays(days);
-  if (d.length === 0) return "daily";
+  if (d.length === 0 || d.length === 7) return "daily";
   if (sameDays(d, WEEKDAYS)) return "weekdays";
   if (sameDays(d, WEEKEND)) return "weekend";
   return "custom";
@@ -50,6 +50,17 @@ export function repeatSummary(days: number[]): string {
       return `${d.map((x) => DAY_FULL[x]).join("·")}에만 알려 드려요`;
     }
   }
+}
+
+/**
+ * 화면 상태를 반영한 요약. "요일 직접 고르기"를 눌러 두고 아직 하나도 안 골랐으면
+ * 빈 배열이라도 "매일"이라고 말하지 않는다 — 그대로 저장하면 매일로 울리기 때문에
+ * 화면은 이 상태를 미완성으로 보고 저장을 막는다.
+ */
+export function repeatSummaryFor(days: number[], custom: boolean): string {
+  const d = normalizeRepeatDays(days);
+  if (custom && d.length === 0) return "요일을 골라 주세요";
+  return repeatSummary(d);
 }
 
 function startOfDay(d: Date): Date {
