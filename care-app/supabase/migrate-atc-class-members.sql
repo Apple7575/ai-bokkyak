@@ -14,7 +14,7 @@
 -- 실행 순서 (Supabase SQL Editor):  §0 → §1(확인) → §2 → §4(검증). §3 은 참고.
 
 -- ── §0. ATC 앞자리 → 성분군 대응표 (세션 임시 테이블) ─────────────────────────
-drop table if exists _atc_class; drop table if exists _single; drop table if exists _evid; drop table if exists _cand;
+drop table if exists _atc_class; drop table if exists _single; drop table if exists _evid; drop table if exists _cand; drop table if exists _combo_evid;
 create temp table _atc_class (prefix text, class_code text, note text);
 insert into _atc_class (prefix, class_code, note) values
   -- 지질
@@ -164,9 +164,11 @@ union
 select s.id, p.product_code, p.atc_code
 from interaction.substance s
 join public.drug_product p on p.atc_code is not null
- -- 괄호 안이 성분명으로 시작하면 인정: '(로사르탄칼륨)', '(시타글립틴인산염수화물)' 처럼 염이 붙는다.
- and (p.product_name like '%(' || s.name_ko || '%'
-      or exists (select 1 from unnest(coalesce(s.aliases, '{}'::text[])) al where length(al) >= 3 and p.product_name like '%(' || al || '%'));
+ -- 괄호 안이 성분명으로 시작하고 쉼표·가운뎃점이 없는 것만 = 단일 성분: '(로사르탄칼륨)' 은 되고
+ -- '(암로디핀베실산염,아토르바스타틴칼슘)' 같은 복합제는 제외 (복합제를 넣으면 암로디핀이 스타틴 계열에 들어가는 오류).
+ and (p.product_name ~ ('\(' || s.name_ko || '[^,·()]*\)')
+      or exists (select 1 from unnest(coalesce(s.aliases, '{}'::text[])) al
+                 where length(al) >= 3 and p.product_name ~ ('\(' || al || '[^,·()]*\)')));
 
 -- 성분 × 계열 후보: 근거 제품 수와 ATC 예시
 create temp table _cand as
@@ -187,6 +189,25 @@ select substance_code, name_ko, class_code, class_name, n_products, atc_codes
 from _cand
 where not already and n_products >= 2
 order by class_code, n_products desc, substance_code;
+
+-- ── §2a. 정리 — 이전 실행(복합제 포함 버그)으로 들어간 잘못된 소속 제거 ──────────────────
+-- 복합제 괄호에서만 근거가 나오는 (성분, 계열) 쌍: 단일 성분 근거(_cand)에 없으면 지운다.
+create temp table _combo_evid as
+select s.id as substance_id, p.atc_code
+from interaction.substance s
+join public.drug_product p on p.atc_code is not null
+ and (p.product_name like '%(' || s.name_ko || '%' or exists (
+       select 1 from unnest(coalesce(s.aliases, '{}'::text[])) al where length(al) >= 3 and p.product_name like '%(' || al || '%'))
+ and p.product_name ~ '\([^()]*[,·][^()]*\)';
+delete from interaction.substance_class_member m
+using (
+  select distinct ce.substance_id, c.id as class_id
+  from _combo_evid ce
+  join _atc_class a on ce.atc_code like a.prefix || '%'
+  join interaction.substance_class c on c.code = a.class_code
+) bad
+where m.substance_id = bad.substance_id and m.class_id = bad.class_id
+  and not exists (select 1 from _cand k where k.substance_id = m.substance_id and k.class_id = m.class_id and k.n_products >= 2);
 
 -- ── §2. 적용 (2026-09-20 부터 주석 없이 바로 실행 — §1 미리보기는 1차에서 확인 완료) ──────
 insert into interaction.substance_class_member (substance_id, class_id)
