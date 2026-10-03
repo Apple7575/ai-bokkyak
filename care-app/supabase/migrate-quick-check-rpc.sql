@@ -1,4 +1,4 @@
--- 1분 복용 점검 서버 판정 RPC v3 (2026-09-20)
+-- 1분 복용 점검 서버 판정 RPC v3.1 (2026-10-03: aliases 매칭 추가)
 --
 -- v3: 계열 다리. 규칙의 항은 '스타틴'·'항혈소판제' 같은 가짜 성분(substance.kind='drug_class_generic')을
 --     가리키는데, 실제 약(아스피린 등)은 substance_class_member 로만 계열에 소속돼 있어 안 걸렸다.
@@ -59,7 +59,8 @@ begin
   insert into _res
   select i.input, 'substance', null, s.id, null
   from _inp i
-  join substance s on s.name_ko = i.input
+  -- v3.1: aliases(염 포함 표기 등)로도 찾는다. 예) '메트포르민염산염' → metformin
+  join substance s on (s.name_ko = i.input or i.input = any(coalesce(s.aliases, '{}'::text[])))
   where not exists (select 1 from _res r where r.input = i.input);
 
   -- 건기식 제품명 (부분 일치, 가장 짧은 이름 = 가장 그럴듯한 것 1개)
