@@ -2,7 +2,7 @@ import React, { useCallback, useState } from "react";
 import { Image, View, Text, Pressable, ScrollView, StyleSheet, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { Volume2, Gauge, Type, Shield, LogOut, ChevronRight } from "lucide-react-native";
+import { Volume2, Type, Shield, LogOut, ChevronRight } from "lucide-react-native";
 import notifee from "@notifee/react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { BigButton } from "../components/BigButton";
@@ -19,7 +19,7 @@ type MenuItem = { Icon: IconType; label: string; color: string; sub?: string; ro
 
 const menuItems: MenuItem[] = [
   { Icon: Volume2, label: "알림 소리 설정", color: colors.primaryBlue, route: "AlarmSound" },
-  { Icon: Gauge, label: "음성 안내 속도", color: colors.primaryBlue, route: "VoiceSpeed" },
+  // "음성 안내 속도"는 2026-10-03에 뺐다 — 앱이 읽어 주는 곳이 없어져 설정할 대상이 없다.
   // 아직 만들지 않은 기능은 눌러도 아무 일이 없는 대신 "준비 중"이라고 밝힌다
   // (QA에서 "버튼이 안 눌림"으로 보고됨).
   { Icon: Type, label: "큰 글씨 모드", color: colors.textSecondary, sub: "준비 중이에요" },

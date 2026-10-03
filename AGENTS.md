@@ -10,15 +10,18 @@
   **보호자 기능은 없다** — 6자리 `patient_code`로 보호자가 읽기 전용 열람하는
   기능은 회의 결정으로 제거됐다. 되살리자는 제안을 하지 말 것. 코드에도 흔적이
   없어야 한다(`patient_code`, 역할 구분, 코드 입력 화면).
-- **음성:** **출력(TTS) 전용이다. 음성 인식(STT)은 없다.**
-  앱이 읽어 주고, 사용자는 화면 버튼으로 답한다 (복약 확인 화면도 2026-10-03부터 글자만). 회의 결정으로 음성 AI를 전부
+- **음성:** **앱은 문장을 읽어 주지 않고(TTS 없음), 음성 인식(STT)도 없다.**
+  안내는 화면 글자와 알람 소리로 하고, 사용자는 화면 버튼으로 답한다 (복약 확인 화면도 2026-10-03부터 글자만). 회의 결정으로 음성 AI를 전부
   제거했다 — AI 건강전화(Realtime + WebRTC), 음성으로 약 등록, 온보딩 음성 응답.
   되살리자는 제안을 하지 말 것. 코드에 마이크·녹음·음성 인식 흔적이 없어야 한다
   (`RECORD_AUDIO`, `NSMicrophoneUsageDescription`, `expo-speech-recognition`,
   `react-native-webrtc`, `?op=realtime-token`).
-  TTS 경로는 두 가지다: 엣지 함수 `?op=tts`(문장 → mp3, `lib/tts.ts`),
-  알람 소리 mp3(`lib/alarmRinger.ts`). (알람 설정 안내는 2026-10-03부터 글자만 —
-  녹음 멘트 재생(`cuePlayer`)과 `assets/voice/V*.mp3`는 지웠다.)
+  앱이 내는 소리는 알람 소리 mp3(`lib/alarmRinger.ts`, `assets/sounds`) 하나뿐이다.
+  문장을 읽어 주는 곳은 더 없다 — 클라이언트 TTS(`lib/tts.ts`, `?op=tts` 호출부,
+  `ttsCache`/`ttsSpeed`/`voiceSettings`)와 "음성 안내 속도" 설정(`VoiceSpeedScreen`)은
+  2026-10-03에 지웠다. 엣지 함수의 `?op=tts`는 나중에 쓸 수도 있어 서버에만 남겨 뒀고,
+  앱에서는 부르지 않는다. (알람 설정 안내도 같은 날부터 글자만 — 녹음 멘트
+  재생(`cuePlayer`)과 `assets/voice/V*.mp3`는 지웠다.)
 - **알림:** `expo-notifications` 로컬 예약 알림.
 
 설계 문서: `docs/superpowers/specs/2026-06-11-care-mvp-design.md`
@@ -39,9 +42,10 @@
 
 ## 코드 컨벤션
 
-- TTS는 좁은 교체 가능 인터페이스 뒤에 둔다(`lib/tts.ts`). 나중에 더 좋은
-  모델로 바꿀 때 이 파일만 교체. 화면이 음성 SDK를 직접 호출하지 말 것.
-- **소리가 버튼을 막으면 안 된다.** TTS 재생·저장·재예약을 하나의 `await`로 묶어
+- 소리는 좁은 교체 가능 인터페이스 뒤에 둔다(`lib/alarmRinger.ts`). TTS를 다시
+  붙이게 되면 같은 식으로 `lib/` 모듈 하나에 가둘 것. 화면이 음성 SDK를 직접
+  호출하지 말 것.
+- **소리가 버튼을 막으면 안 된다.** 소리 재생·저장·재예약을 하나의 `await`로 묶어
   입력을 잠그지 말 것. 선택은 즉시 반영하고 나머지는 뒤에서 처리한다
   (QA 2026-08-20에서 알림 소리 설정·음성 속도 설정이 이 문제로 지적됐다).
 - 순수 로직(`intent.ts`, `schedule.ts`, `parse.ts`)은 RN/네트워크 의존이 없어야

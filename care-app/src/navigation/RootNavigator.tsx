@@ -23,7 +23,6 @@ import { SnoozeCountdownScreen } from "../screens/SnoozeCountdownScreen";
 import { CheckupScreen } from "../screens/CheckupScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { AlarmSoundScreen } from "../screens/AlarmSoundScreen";
-import { VoiceSpeedScreen } from "../screens/VoiceSpeedScreen";
 import { PrivacyScreen } from "../screens/PrivacyScreen";
 import { CabinetScreen } from "../screens/CabinetScreen";
 import { MedicineDetailScreen } from "../screens/MedicineDetailScreen";
@@ -115,7 +114,6 @@ export function RootNavigator() {
       <Stack.Screen name="SnoozeCountdown" component={SnoozeCountdownScreen} />
       <Stack.Screen name="Checkup" component={CheckupScreen} />
       <Stack.Screen name="AlarmSound" component={AlarmSoundScreen} />
-      <Stack.Screen name="VoiceSpeed" component={VoiceSpeedScreen} />
       <Stack.Screen name="Privacy" component={PrivacyScreen} />
       <Stack.Screen name="MedicineDetail" component={MedicineDetailScreen} />
       <Stack.Screen name="Interaction" component={InteractionScreen} />
