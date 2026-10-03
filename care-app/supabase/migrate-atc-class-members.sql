@@ -164,8 +164,9 @@ union
 select s.id, p.product_code, p.atc_code
 from interaction.substance s
 join public.drug_product p on p.atc_code is not null
- and (p.product_name like '%(' || s.name_ko || ')%'
-      or exists (select 1 from unnest(coalesce(s.aliases, '{}'::text[])) al where p.product_name like '%(' || al || ')%'));
+ -- 괄호 안이 성분명으로 시작하면 인정: '(로사르탄칼륨)', '(시타글립틴인산염수화물)' 처럼 염이 붙는다.
+ and (p.product_name like '%(' || s.name_ko || '%'
+      or exists (select 1 from unnest(coalesce(s.aliases, '{}'::text[])) al where length(al) >= 3 and p.product_name like '%(' || al || '%'));
 
 -- 성분 × 계열 후보: 근거 제품 수와 ATC 예시
 create temp table _cand as
