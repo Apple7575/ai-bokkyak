@@ -14,7 +14,7 @@
 -- 실행 순서 (Supabase SQL Editor):  §0 → §1(확인) → §2 → §4(검증). §3 은 참고.
 
 -- ── §0. ATC 앞자리 → 성분군 대응표 (세션 임시 테이블) ─────────────────────────
-drop table if exists _atc_class; drop table if exists _single; drop table if exists _cand;
+drop table if exists _atc_class; drop table if exists _single; drop table if exists _evid; drop table if exists _cand;
 create temp table _atc_class (prefix text, class_code text, note text);
 insert into _atc_class (prefix, class_code, note) values
   -- 지질
@@ -151,18 +151,33 @@ from public.dur_product_ingredient d
 group by d.product_code, d.ingredient
 having (select count(distinct ingredient) from public.dur_product_ingredient x where x.product_code = d.product_code) = 1;
 
+-- 성분 ↔ 제품 근거 (두 경로)
+--   A. DUR 단일 성분 제품 (dur_product_ingredient.ingredient = substance.code)
+--   B. 식약처 전체 제품명의 괄호 성분명이 substance.name_ko 또는 aliases 와 같은 제품
+--      (DUR 에는 복합제로만 있는 로사르탄·암로디핀 같은 약을 잡기 위함, 2026-10-03)
+create temp table _evid as
+select s.id as substance_id, p.product_code, p.atc_code
+from interaction.substance s
+join _single sg on sg.ingredient = s.code
+join public.drug_product p on p.product_code = sg.product_code and p.atc_code is not null
+union
+select s.id, p.product_code, p.atc_code
+from interaction.substance s
+join public.drug_product p on p.atc_code is not null
+ and (p.product_name like '%(' || s.name_ko || ')%'
+      or exists (select 1 from unnest(coalesce(s.aliases, '{}'::text[])) al where p.product_name like '%(' || al || ')%'));
+
 -- 성분 × 계열 후보: 근거 제품 수와 ATC 예시
 create temp table _cand as
 select s.id as substance_id, s.code as substance_code, s.name_ko,
        c.id as class_id, c.code as class_code, c.name_ko as class_name,
-       count(distinct p.product_code) as n_products,
-       string_agg(distinct p.atc_code, ',' order by p.atc_code) as atc_codes,
+       count(distinct e.product_code) as n_products,
+       string_agg(distinct e.atc_code, ',' order by e.atc_code) as atc_codes,
        exists (select 1 from interaction.substance_class_member m
                where m.substance_id = s.id and m.class_id = c.id) as already
 from interaction.substance s
-join _single sg on sg.ingredient = s.code
-join public.drug_product p on p.product_code = sg.product_code and p.atc_code is not null
-join _atc_class a on p.atc_code like a.prefix || '%'
+join _evid e on e.substance_id = s.id
+join _atc_class a on e.atc_code like a.prefix || '%'
 join interaction.substance_class c on c.code = a.class_code
 group by s.id, s.code, s.name_ko, c.id, c.code, c.name_ko;
 
