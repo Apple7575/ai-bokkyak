@@ -16,8 +16,9 @@
   되살리자는 제안을 하지 말 것. 코드에 마이크·녹음·음성 인식 흔적이 없어야 한다
   (`RECORD_AUDIO`, `NSMicrophoneUsageDescription`, `expo-speech-recognition`,
   `react-native-webrtc`, `?op=realtime-token`).
-  TTS 경로는 세 가지다: 엣지 함수 `?op=tts`(문장 → mp3, `lib/tts.ts`),
-  미리 만들어 둔 안내 mp3(`lib/cuePlayer.ts`), 알람 소리 mp3(`lib/alarmRinger.ts`).
+  TTS 경로는 두 가지다: 엣지 함수 `?op=tts`(문장 → mp3, `lib/tts.ts`),
+  알람 소리 mp3(`lib/alarmRinger.ts`). (알람 설정 안내는 2026-10-03부터 글자만 —
+  녹음 멘트 재생(`cuePlayer`)과 `assets/voice/V*.mp3`는 지웠다.)
 - **알림:** `expo-notifications` 로컬 예약 알림.
 
 설계 문서: `docs/superpowers/specs/2026-06-11-care-mvp-design.md`

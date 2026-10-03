@@ -1,7 +1,8 @@
 // 음성 가이드 상태머신 — 순수 로직 (RN/네트워크 의존 없음, jest 대상).
 //
 // 문서 §4(플로우)를 옮긴 것이다. 화면은 이 함수들이 돌려주는 다음 상태와
-// 재생할 멘트를 따르기만 한다. 오디오 재생은 화면이 맡는다.
+// 보여 줄 문구를 따르기만 한다. 문구를 화면에 그리는 일은 화면이 맡는다.
+// (2026-10-03부터 이 문구는 글자로만 보여 준다 — 녹음 재생은 없다.)
 //
 // 음성 입력을 뺐다: 대답은 전부 화면 터치로 받는다. 그래서 문서 §5의 예외 규칙
 // (무응답 재안내 V11, 인식 실패 V12·V13, 2회 실패 후 음성 종료)은 성립하지 않아
@@ -26,7 +27,7 @@ export type GuideState = {
   count: number | null;
   slots: Slot[];
   times: DoseTime[];
-  /** 식후 기본값을 제안한 상태인가 (V03 재생 후 확인 버튼 대기) */
+  /** 식후 기본값을 제안한 상태인가 (V03을 보여 준 뒤 확인 버튼 대기) */
   proposedDefaults: boolean;
 };
 
@@ -40,7 +41,7 @@ export const INITIAL_STATE: GuideState = {
 
 export type Transition = {
   state: GuideState;
-  /** 순서대로 재생할 멘트. 빈 배열이면 재생하지 않는다. */
+  /** 순서대로 보여 줄 문구. 빈 배열이면 문구를 바꾸지 않는다. */
   play: CueId[];
 };
 
@@ -48,14 +49,14 @@ function enter(state: GuideState, step: Step, patch: Partial<GuideState> = {}): 
   return { ...state, ...patch, step };
 }
 
-// 각 단계에 들어갈 때 재생할 멘트 (문서 §4).
+// 각 단계에 들어갈 때 보여 줄 문구 (문서 §4).
 export function cuesForStep(step: Step): CueId[] {
   switch (step) {
     case "count": return ["V01"];
     case "time": return ["V02"];
     case "confirm": return ["V04"];
     // 회의 2026-09-03: 점검과 알람은 한 흐름이 됐다 — 알람 설정을 마친 사용자에게
-    // 위험 분석(V06)을 다시 제안하지 않는다. V06 녹음·대본은 voiceScript.ts에 남아 있다.
+    // 위험 분석(V06)을 다시 제안하지 않는다. V06 대본은 voiceScript.ts에 남아 있다.
     case "done": return ["V05"];
     case "skipped": return ["V14"];
   }
@@ -94,8 +95,8 @@ export function onSkip(state: GuideState): Transition {
   return { state: enter(state, "skipped"), play: ["V14"] };
 }
 
-// 중간 이탈 후 재개 (문서 §5): V01은 최초 1회만 전체 재생하고,
-// 재개할 때는 그 단계의 멘트만 재생한다.
+// 중간 이탈 후 재개 (문서 §5): V01은 최초 1회만 전부 보여 주고,
+// 재개할 때는 그 단계의 문구만 보여 준다.
 export function cuesForResume(step: Step): CueId[] {
   return step === "count" ? ["V01"] : cuesForStep(step);
 }

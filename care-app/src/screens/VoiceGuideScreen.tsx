@@ -1,16 +1,14 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Image, View, Text, ScrollView, StyleSheet, Pressable, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Volume2, Check, ChevronLeft, Clock } from "lucide-react-native";
+import { Check, ChevronLeft, Clock } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { isKakaoLinked, linkKakao } from "../lib/kakaoAccount";
 import { ensurePermission, scheduleReminders } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
-import { playCues, stopCues, currentCueId } from "../lib/cuePlayer";
-import { useTypedCaption } from "../hooks/useTypedCaption";
 import { CUES, CueId, DISCLAIMER } from "../lib/voiceScript";
 import { DoseTime, Slot, SLOTS, afterMealTimes } from "../lib/voiceParse";
 import { slotLabel } from "../lib/timeOfDay";
@@ -26,15 +24,26 @@ const VOICE_ART = require("../../assets/illustrations/voice-companion.png");
 
 // 복용 알람 설정 온보딩 (문서 §4).
 //
-// 안내는 음성으로, 대답은 화면 터치로 받는다. 음성 입력(STT)은 뺐다 —
+// 안내는 글자로, 대답은 화면 터치로 받는다. 음성 입력(STT)은 뺐다 —
 // 인식 실패·에코·마이크 권한이라는 실패 지점이 셋이나 되는데, 온보딩은
 // 여기서 막히면 앱 자체를 못 쓰는 자리라 확실한 길 하나만 남겼다.
-// 그래서 멘트도 "말씀해 주세요"가 아니라 "아래에서 골라 주세요"라고 한다.
+// 그래서 문구도 "말씀해 주세요"가 아니라 "아래에서 골라 주세요"라고 한다.
+//
+// 2026-10-03 팀 결정: 이 화면은 글자만 보여 준다. 녹음 멘트 재생·음성 길이에
+// 맞춘 자막 타이핑·화면 탭으로 재생 중단은 모두 뺐다(재생기·타이핑 훅·mp3 삭제).
+// 문장은 여전히 voiceScript.ts 한 곳에 있고, 어느 단계에 어느 문장을 보여 줄지는
+// voiceGuideFlow.ts가 정한다. 한 단계에 문장이 여럿이면 줄바꿈으로 이어 붙여
+// 한 번에 전부 보여 준다.
 //
 // 온보딩에서는 약 이름을 받지 않는다 — 횟수와 시간만 정한다(문서 §1).
 // 약 이름은 나중에 약장의 간편 등록에서 받는다. (회의 2026-09-03: 알람 설정을
 // 마치면 바로 홈이다 — 위험 분석을 여기서 다시 제안하지 않는다. 점검은
 // 인트로 → 1분 점검 → 가입 → 결과 → 알람 설정의 한 흐름으로만 잇는다.)
+
+// 단계에 딸린 문장(들)을 화면에 보여 줄 한 덩어리로 합친다. 여럿이면 줄바꿈으로 잇는다.
+function captionFor(ids: CueId[]): string {
+  return ids.map((id) => CUES[id].text).join("\n");
+}
 
 function ampm(h: number, m: number): string {
   const ap = h < 12 ? "오전" : "오후";
@@ -46,11 +55,9 @@ export function VoiceGuideScreen() {
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [state, setState] = useState<GuideState>(INITIAL_STATE);
-  // caption은 멘트 원문(접근성·폴백용), typed는 음성 길이에 맞춰 타이핑되는 표시본.
-  const [caption, setCaption] = useState<string>(CUES.V01.text);
-  const typed = useTypedCaption();
+  // 지금 단계의 안내 문구. 들어서는 즉시 전문을 그대로 보여 준다.
+  const [caption, setCaption] = useState<string>(captionFor(cuesForStep("count")));
   const [saving, setSaving] = useState(false);
-  const [speaking, setSpeaking] = useState(false);
   // 지금 시각을 조정 중인 시간 카드. 시안대로 고른 카드에만 −/+ 를 띄운다.
   const [editing, setEditing] = useState<number | null>(null);
   // 완료 단계의 카카오 "연결" 카드 — 회의 2026-09-10: 카카오는 기기 이전용 연결. 미연결(false)일 때만 띄운다.
@@ -60,28 +67,16 @@ export function VoiceGuideScreen() {
 
   const stateRef = useRef(state);
   stateRef.current = state;
-  // 로그 (문서 §7): 어디서 막히는지 보려면 진행 방식과 안내를 끊은 횟수가 필요하다.
+  // 로그 (문서 §7): 어디서 막히는지 보려면 진행 방식이 필요하다.
+  // tapInterrupt는 음성을 끊은 횟수였다 — 글자만 보여 주는 지금은 늘 0이지만
+  // 로그 스키마(voice_guide_events.tap_interrupt_count)는 그대로라 열은 남긴다.
   const stats = useRef({ buttonFallback: 0, tapInterrupt: 0 });
 
-  // 멘트를 재생하고 자막을 그 길이에 맞춰 친다.
-  const runCues = useCallback(async (ids: CueId[]) => {
+  // 단계에 딸린 문구를 즉시 전부 보여 준다. 빈 배열이면 지금 문구를 유지한다.
+  function showCues(ids: CueId[]) {
     if (ids.length === 0) return;
-    setCaption(CUES[ids[ids.length - 1]].text);
-    setSpeaking(true);
-    await playCues(ids, (id, durationMs) => {
-      setCaption(CUES[id].text);
-      typed.begin(CUES[id].text, durationMs);
-    });
-    setSpeaking(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // 첫 진입: V01 재생
-  useEffect(() => {
-    void runCues(cuesForStep("count"));
-    return () => { void stopCues(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    setCaption(captionFor(ids));
+  }
 
   // 완료 단계에 들어서면 연결 상태를 한 번 조회한다.
   useEffect(() => {
@@ -114,23 +109,12 @@ export function VoiceGuideScreen() {
     }
   }
 
-  // 화면 탭 = 안내 건너뛰기. 이미 아는 내용을 끝까지 듣고 있을 필요는 없다.
-  // 끊더라도 자막은 전문으로 채워 둔다 — 반쯤 친 문장이 남으면 읽을 수가 없다.
-  function skipNarration() {
-    const playing = currentCueId();
-    if (!playing) return;
-    void stopCues();
-    typed.finish(CUES[playing].text);
-    setSpeaking(false);
-    stats.current.tapInterrupt++;
-  }
-
   function pickCount(n: number) {
     stats.current.buttonFallback++;
     const t = onPickCount(stateRef.current, n);
     setState(t.state);
     setEditing(null);
-    void runCues(t.play);
+    showCues(t.play);
   }
 
   // 시간대 칩 탭 — 그 시간대의 카드를 조정 대상으로 고른다 (시안).
@@ -146,12 +130,12 @@ export function VoiceGuideScreen() {
     if (s.times.length === 0) {
       const times = afterMealTimes(s.slots);
       setState({ ...s, times, proposedDefaults: true });
-      void runCues(["V03"]);
+      showCues(["V03"]);
       return;
     }
     const t = onPickTimes(s, s.times);
     setState(t.state);
-    void runCues(t.play);
+    showCues(t.play);
   }
 
   // V03(식후 기본값 제안)에 대한 응답.
@@ -159,7 +143,7 @@ export function VoiceGuideScreen() {
     stats.current.buttonFallback++;
     const t = onAcceptDefaults(stateRef.current, ok);
     setState(t.state);
-    void runCues(t.play);
+    showCues(t.play);
   }
 
   function confirm(ok: boolean) {
@@ -167,13 +151,13 @@ export function VoiceGuideScreen() {
     const t = onConfirm(stateRef.current, ok);
     setState(t.state);
     setEditing(null);
-    void runCues(t.play);
+    showCues(t.play);
   }
 
   function skip() {
     const t = onSkip(stateRef.current);
     setState(t.state);
-    void runCues(t.play);
+    showCues(t.play);
     void logGuideEvent({ step: "skipped", ...stats.current });
     setTimeout(() => nav.reset({ index: 0, routes: [{ name: "Tabs" }] }), 1500);
   }
@@ -227,19 +211,18 @@ export function VoiceGuideScreen() {
   const progress = stepIndex(state.step);
 
   // 뒤로: 한 단계 되돌린다. 첫 단계에서 누르면 안내를 그만두고 앞 화면으로.
-  // 되돌아간 단계의 멘트를 다시 재생해 어디로 왔는지 소리로도 알려 준다.
+  // 되돌아간 단계의 문구를 다시 보여 줘 어디로 왔는지 알려 준다.
   function goBack() {
-    void stopCues();
     setEditing(null);
     const s = stateRef.current;
     if (s.step === "time") {
       setState({ ...s, step: "count", proposedDefaults: false });
-      void runCues(cuesForStep("count"));
+      showCues(cuesForStep("count"));
       return;
     }
     if (s.step === "confirm") {
       setState({ ...s, step: "time" });
-      void runCues(cuesForStep("time"));
+      showCues(cuesForStep("time"));
       return;
     }
     if (nav.canGoBack()) nav.goBack();
@@ -248,8 +231,7 @@ export function VoiceGuideScreen() {
   return (
     // 상단 인셋은 ScrollView 바깥에. contentContainerStyle에 주면 스크롤할 때
     // 내용이 상태바 밑으로 올라와 겹친다.
-    <Pressable style={[styles.screen, { paddingTop: insets.top }]} onPress={skipNarration}
-      accessibilityRole="button" accessibilityLabel="안내 건너뛰기">
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
       <ScrollView contentContainerStyle={[styles.c, { paddingTop: spacing.md, paddingBottom: spacing.xl + insets.bottom }]}>
         {/* 헤더 — 뒤로가기 · 진행 표시(4칸) · 건너뛰기 (시안 + 문서 §4) */}
         <View style={styles.header}>
@@ -276,23 +258,14 @@ export function VoiceGuideScreen() {
           ) : <View style={styles.skipBtn} />}
         </View>
 
-        {/* 안내 음성 인디케이터 — 마이크가 아니라 스피커다. 듣는 게 아니라 말하는 중이라는 뜻. */}
         <View style={styles.voiceArtCard}>
           <Image source={VOICE_ART} style={styles.voiceArt} resizeMode="contain" />
         </View>
 
-        <View style={styles.micWrap}>
-          <View style={[styles.micHalo, speaking && styles.micHaloOn]}>
-            <View style={styles.micCircle}>
-              <Volume2 size={40} color={speaking ? colors.primaryBlue : colors.textSecondary} />
-            </View>
-          </View>
-          <Text style={styles.listenLabel}>
-            {speaking ? "안내해 드리고 있어요" : "아래에서 골라 주세요"}
-          </Text>
-        </View>
-
-        <Text style={styles.caption}>{typed.display || caption}</Text>
+        {/* 안내 문구 — 소리 없이 글자로만. 들어서는 즉시 전문이 보인다. */}
+        <Text style={styles.caption} accessibilityRole="text" accessibilityLiveRegion="polite">
+          {caption}
+        </Text>
 
         {/* 단계 1 — 횟수 버튼 2x2 (문서 §4) */}
         {state.step === "count" ? (
@@ -420,7 +393,7 @@ export function VoiceGuideScreen() {
           </>
         ) : null}
       </ScrollView>
-    </Pressable>
+    </View>
   );
 }
 
@@ -443,17 +416,6 @@ const styles = StyleSheet.create({
     marginTop: 6, fontSize: 13, fontWeight: "700", color: colors.textSecondary,
   },
   skipText: { fontSize: fontSizes.body, color: colors.textSecondary, fontWeight: "600" },
-  micWrap: { alignItems: "center", gap: spacing.sm },
-  micHalo: {
-    width: 128, height: 128, borderRadius: 999, alignItems: "center", justifyContent: "center",
-    backgroundColor: colors.canvasMuted,
-  },
-  micHaloOn: { backgroundColor: colors.primarySoft },
-  micCircle: {
-    width: 92, height: 92, borderRadius: 999, backgroundColor: colors.cardBg,
-    alignItems: "center", justifyContent: "center",
-  },
-  listenLabel: { fontSize: fontSizes.body, color: colors.textSecondary, fontWeight: "700" },
   caption: {
     fontSize: 21, color: colors.text, lineHeight: 32, textAlign: "center",
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
