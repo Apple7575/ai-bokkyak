@@ -1,10 +1,11 @@
-// 복약 확인(TTS + 화면 터치) 순서와 문구 — 순수 로직 (RN/네트워크 의존 없음, jest 대상).
+// 복약 확인(글자 + 화면 터치) 순서와 문구 — 순수 로직 (RN/네트워크 의존 없음, jest 대상).
 //
 // 원래 이 자리에는 AI 건강전화(OpenAI Realtime + WebRTC 양방향 통화)가 있었다.
 // 회의 결정 2026-08-20으로 음성 AI를 전부 걷어냈다:
 //   · 마이크가 스피커 소리와 주변 소음을 물어 엉뚱한 말이 인식됐다(QA).
 //   · 어르신에게는 말로 답하는 것보다 큰 버튼을 누르는 편이 확실하다.
-// 남긴 것은 "TTS로 읽어주고, 답은 화면 터치로" 한 방향뿐이다. 음성 인식은 없다.
+// 남긴 것은 "문구를 보여주고, 답은 화면 터치로" 한 방향뿐이다. 음성 인식은 없다.
+// 2026-10-03부터 TTS 읽기도 뺐다 — 아래 문구는 화면 표시용이다.
 
 import { slotLabel } from "./timeOfDay";
 
@@ -59,7 +60,7 @@ export function checkupTimeLabel(dose: CheckupDose): string {
   return `${slotLabel(dose.time_of_day)} ${hh}:${mm}`;
 }
 
-/** 다 끝난 뒤 들려줄 말. asked는 물어본 개수, taken은 "먹었어요"로 답한 개수. */
+/** 다 끝난 뒤 보여줄 말. asked는 물어본 개수, taken은 "먹었어요"로 답한 개수. */
 export function checkupSummary(asked: number, taken: number): string {
   if (asked === 0) return "오늘 확인할 약이 없어요. 편안한 하루 보내세요.";
   if (taken === asked) return `${asked}개 모두 드셨네요. 잘하셨어요.`;

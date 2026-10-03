@@ -1,3 +1,4 @@
+// 2026-10-03 현재 호출처는 VoiceSpeedScreen 미리듣기뿐 (복약 확인·사진 등록은 글자만으로 바뀜).
 import Constants from "expo-constants";
 import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system/legacy";

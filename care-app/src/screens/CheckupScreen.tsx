@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Animated, View, Text, StyleSheet, Pressable, ActivityIndicator, Vibration } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Volume2, Check, X, Clock } from "lucide-react-native";
+import { Check, X, Clock } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { CareCheckIcon } from "../components/CareIcons";
 import { MedicineMark } from "../components/MedicineMark";
@@ -11,21 +11,22 @@ import { getPatientId } from "../lib/storage";
 import { recordIntake } from "../lib/records";
 import { todaySlot, nextNotificationTime } from "../lib/schedule";
 import { relativeDay } from "../lib/repeatDays";
-import { speak, stopSpeaking } from "../lib/tts";
 import {
   buildCheckupList, checkupGreeting, checkupPrompt, checkupTimeLabel,
   checkupSummary, answerToStatus, CheckupAnswer,
 } from "../lib/checkup";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 
-// 복약 확인 — TTS가 읽어주고, 답은 화면 터치로 한다.
+// 복약 확인 — 글자만 보여주고, 답은 화면 터치로 한다. 음성 없음.
 //
 // 이 화면은 AI 건강전화(OpenAI Realtime + WebRTC 양방향 통화)를 대체한다.
-// 회의 결정 2026-08-20: 음성 AI(마이크·음성 인식)를 전부 걷어내고, 말은 앱이
-// 하고 결정은 손으로 하게 한다. 나중에 음성을 다시 넣을 때 이 화면만 바꾸면 된다.
+// 회의 결정 2026-08-20: 음성 AI(마이크·음성 인식)를 전부 걷어내고 TTS+터치로 바꿨다.
+// 회의 결정 2026-10-03: 알람 설정 화면과 같은 이유(글씨와 음성이 같이 나오면 별로)로
+// TTS 읽기도 뺐다. 인사·질문 문구(checkupGreeting/checkupPrompt)는 표시용으로만 남는다.
+// 알람 소리(alarmRinger)는 그대로다.
 //
 // 지키는 것:
-//   · 소리는 절대 버튼을 막지 않는다. TTS는 뒤에서 돌고, 버튼은 언제나 눌린다
+//   · 저장은 절대 버튼을 막지 않는다. 선택은 즉시 반영하고 기록은 뒤에서 한다
 //     (QA 2026-08-20에서 "적용될 때까지 다른 버튼이 안 눌린다"로 지적된 패턴).
 //   · 기록은 recordIntake(upsert) — 같은 (schedule, 시각)에 중복 행이 생기지 않는다.
 //   · 슬롯은 todaySlot. 아직 안 울린 오늘의 미래 회차도 확인 대상이라, doseSlot으로
@@ -49,8 +50,8 @@ export function CheckupScreen() {
   const [list, setList] = useState<Schedule[]>([]);
   const [index, setIndex] = useState(0);
   const [takenCount, setTakenCount] = useState(0);
-  const [speaking, setSpeaking] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [patientName, setPatientName] = useState<string | undefined>(undefined);
   // 오늘 확인할 약이 없을 때 보여줄 다음 복약 — 홈과 같은 계산(활성 일정 → 다음 알림 시각 중 가장 이른 것).
   // 홈은 "다음 복약 시간"을 보여주는데 여기서는 "없어요"만 말하면 화면끼리 모순돼 보인다 (QA 2026-10-03).
   const [nextDose, setNextDose] = useState<{ at: Date; name: string } | null>(null);
@@ -61,14 +62,6 @@ export function CheckupScreen() {
   // 화면을 떠난 뒤 늦게 도착한 응답이 상태를 되살리지 않게 한다.
   const aliveRef = useRef(true);
   const doneScale = useRef(new Animated.Value(0.65)).current;
-
-  // 소리는 항상 곁다리로 — 실패해도 화면 흐름을 막지 않는다.
-  const say = useCallback((text: string) => {
-    setSpeaking(true);
-    speak(text)
-      .catch(() => {})
-      .finally(() => { if (aliveRef.current) setSpeaking(false); });
-  }, []);
 
   useEffect(() => {
     aliveRef.current = true;
@@ -103,7 +96,7 @@ export function CheckupScreen() {
         if (!aliveRef.current) return;
         setList(items);
 
-        const name = (patient as Patient | null)?.name;
+        setPatientName((patient as Patient | null)?.name ?? undefined);
         if (items.length === 0) {
           // 홈의 pending과 같은 기준 — 오늘 이미 복용 완료한 일정은 다음 복약 후보가 아니다.
           const nx = ((schs ?? []) as Schedule[])
@@ -112,12 +105,8 @@ export function CheckupScreen() {
             .sort((a, b) => a.at.getTime() - b.at.getTime())[0];
           setNextDose(nx ?? null);
           setPhase("done");
-          say(checkupSummary(0, 0));
         } else {
           setPhase("asking");
-          // 인사와 첫 질문을 한 번에 읽어준다 — 두 번 나눠 부르면 speak()가 앞 것을
-          // 끊어버려 인사만 들리고 질문이 사라진다.
-          say(`${checkupGreeting(name)} ${checkupPrompt(items[0])}`);
         }
       } catch (e: any) {
         if (!aliveRef.current) return;
@@ -125,8 +114,8 @@ export function CheckupScreen() {
         setPhase("error");
       }
     })();
-    return () => { aliveRef.current = false; void stopSpeaking(); };
-  }, [say]);
+    return () => { aliveRef.current = false; };
+  }, []);
 
   useEffect(() => {
     if (phase !== "done" || takenCount === 0) return;
@@ -145,12 +134,7 @@ export function CheckupScreen() {
     const next = index + 1;
     if (a === "먹었어요") setTakenCount((c) => c + 1);
     setIndex(next);
-    if (next < list.length) {
-      say(checkupPrompt(list[next]));
-    } else {
-      setPhase("done");
-      say(checkupSummary(list.length, takenCount + (a === "먹었어요" ? 1 : 0)));
-    }
+    if (next >= list.length) setPhase("done");
 
     if (!status || !pid) return; // "나중에"는 기록하지 않는다
     try {
@@ -231,6 +215,8 @@ export function CheckupScreen() {
       <ScreenHeader title="복약 확인" />
 
       <View style={s.body}>
+        {/* 글자만 — 예전에 TTS가 읽던 인사·질문을 그대로 화면에 띄운다(2026-10-03). */}
+        {index === 0 ? <Text style={s.greeting}>{checkupGreeting(patientName)}</Text> : null}
         <Text style={s.progress}>{`${index + 1} / ${list.length}`}</Text>
 
         <View style={s.card}>
@@ -240,9 +226,7 @@ export function CheckupScreen() {
         </View>
 
         <View style={s.question}>
-          {/* 소리가 나오는 중임을 보여줄 뿐, 버튼을 막지는 않는다 */}
-          <Volume2 size={22} color={speaking ? colors.primaryBlue : colors.textSecondary} />
-          <Text style={s.questionText}>드셨어요?</Text>
+          <Text style={s.questionText}>{checkupPrompt(dose)}</Text>
         </View>
       </View>
 
@@ -284,6 +268,7 @@ const s = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: spacing.md },
   centerText: { fontSize: fontSizes.body, color: colors.textSecondary, textAlign: "center" },
   errorText: { fontSize: 20, color: colors.dangerRed, textAlign: "center", lineHeight: 30 },
+  greeting: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text, textAlign: "center", lineHeight: 32, marginBottom: spacing.sm },
   progress: { fontSize: fontSizes.body, fontWeight: "700", color: colors.textSecondary, marginBottom: spacing.md },
   card: {
     width: "100%", backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
@@ -291,8 +276,8 @@ const s = StyleSheet.create({
   },
   medName: { fontSize: 32, fontWeight: "800", color: colors.primaryNavy, textAlign: "center", marginTop: spacing.md },
   medTime: { fontSize: 21, color: colors.textSecondary, marginTop: spacing.xs },
-  question: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.lg },
-  questionText: { fontSize: 26, fontWeight: "800", color: colors.text },
+  question: { alignItems: "center", marginTop: spacing.lg, paddingHorizontal: spacing.sm },
+  questionText: { fontSize: 26, fontWeight: "800", color: colors.text, textAlign: "center", lineHeight: 38 },
   footer: { padding: spacing.md, gap: spacing.sm },
   answerBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,

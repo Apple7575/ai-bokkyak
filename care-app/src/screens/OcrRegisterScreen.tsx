@@ -18,7 +18,6 @@ import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
-import { speak } from "../lib/tts";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
 const OCR_ART = require("../../assets/illustrations/ocr-envelope.png");
 
@@ -125,7 +124,6 @@ export function OcrRegisterScreen() {
         // 알림 예약은 베스트에포트 — 실패해도 일정은 이미 저장됐으므로 재등록(중복)하지 않는다.
         if (granted) { try { await scheduleReminders(data.id, data.medicine_name, it.hour, it.minute, days, it.time_of_day); } catch {} }
       }
-      await speak("복약 일정을 등록했습니다.");
       // 사진 인식 → 확인 화면 → 등록 → '내 약장' 탭 (C-05 확정).
       // reset으로 스택을 비워 하단 탭이 유지되고 뒤로가기가 등록 화면으로 안 돌아가게.
       nav.reset({ index: 0, routes: [{ name: "Tabs", params: { screen: "Cabinet" } }] });

@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, Pressable, Image, Alert } from "rea
 import notifee from "@notifee/react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Bell, User, Clock, Pencil, Volume2, ChevronRight, AlertTriangle, X } from "lucide-react-native";
+import { Bell, User, Clock, Pencil, ClipboardCheck, ChevronRight, AlertTriangle, X } from "lucide-react-native";
 import { MedicineMark } from "../components/MedicineMark";
 import { supabase, Schedule, IntakeRecord } from "../lib/supabase";
 import { getPatientId, getPatientName, getKakaoBannerDismissed, setKakaoBannerDismissed } from "../lib/storage";
@@ -291,13 +291,13 @@ export function HomeScreen() {
           </View>
         ) : null}
 
-        {/* AI 건강전화(양방향 음성 통화)를 걷어내고 TTS+터치 확인으로 바꿨다
+        {/* AI 건강전화(양방향 음성 통화)를 걷어내고 터치 확인으로 바꿨다(2026-10-03부터 글자만, 음성 없음)
             (회의 결정 2026-08-20). 알람 시간 변경은 '내 약장'의 수정 버튼에서 한다. */}
         <Pressable
           onPress={() => nav.navigate("Checkup")}
           style={({ pressed }) => [styles.voiceBtn, pressed && { opacity: 0.9 }]}
         >
-          <Volume2 size={22} color={colors.white} />
+          <ClipboardCheck size={22} color={colors.white} />
           <Text style={styles.voiceBtnText}>오늘 복약 확인하기</Text>
         </Pressable>
       </View>
