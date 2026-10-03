@@ -7,6 +7,7 @@ import { BigButton } from "../components/BigButton";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { IllustrationBanner } from "../components/IllustrationBanner";
 import { TimeChip } from "../components/TimeChip";
+import { RepeatPicker } from "../components/RepeatPicker";
 import { gptOcrPrescription } from "../lib/ocr";
 import { ParsedSchedule } from "../lib/parse";
 import { normalizeRepeatDays } from "../lib/schedule";
@@ -23,7 +24,6 @@ const OCR_ART = require("../../assets/illustrations/ocr-envelope.png");
 
 const HOURS = [7, 8, 9, 12, 13, 18, 19, 20, 21];
 const MINUTES = [0, 15, 30, 45];
-const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 export function OcrRegisterScreen() {
   const nav = useNavigation<any>();
@@ -55,13 +55,6 @@ export function OcrRegisterScreen() {
   }
   function remove(i: number) {
     setItems((prev) => prev.filter((_, idx) => idx !== i));
-  }
-  function toggleDay(i: number, d: number) {
-    setItems((prev) => prev.map((it, idx) => {
-      if (idx !== i) return it;
-      const has = it.repeat_days.includes(d);
-      return { ...it, repeat_days: has ? it.repeat_days.filter((x) => x !== d) : [...it.repeat_days, d] };
-    }));
   }
 
   async function capture(source: "camera" | "library") {
@@ -217,12 +210,8 @@ export function OcrRegisterScreen() {
                   <TimeChip key={m} label={`${m}분`} selected={it.minute === m} onPress={() => patch(i, { minute: m })} />
                 ))}</View>
 
-                <Text style={styles.cardLabel}>반복 요일 (없으면 매일)</Text>
-                <View style={styles.row}>
-                  <TimeChip label="매일" selected={it.repeat_days.length === 0} onPress={() => patch(i, { repeat_days: [] })} />
-                  {DAYS.map((d, di) => (
-                    <TimeChip key={d} label={d} selected={it.repeat_days.includes(di)} onPress={() => toggleDay(i, di)} />
-                  ))}
+                <View style={styles.repeatWrap}>
+                  <RepeatPicker value={it.repeat_days} onChange={(days) => patch(i, { repeat_days: days })} />
                 </View>
               </View>
             ))}
@@ -266,4 +255,5 @@ const styles = StyleSheet.create({
     borderRadius: radii.button, fontSize: fontSizes.body, color: colors.text, padding: 14,
   },
   row: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -6 },
+  repeatWrap: { marginTop: spacing.md },
 });

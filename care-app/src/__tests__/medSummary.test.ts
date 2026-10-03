@@ -69,12 +69,12 @@ describe("describeRepeat", () => {
   it("매일", () => {
     expect(describeRepeat(groupByMedicine([d("1", "약", "아침", 8)])[0])).toBe("매일");
   });
-  it("요일 나열 (정렬)", () => {
-    expect(describeRepeat(groupByMedicine([d("1", "약", "아침", 8, 0, [5, 1, 3])])[0])).toBe("월·수·금요일");
+  it("요일 나열 (정렬, 전체 이름 — 한 글자 요일은 매일과 헷갈린다 QA 2026-10-03)", () => {
+    expect(describeRepeat(groupByMedicine([d("1", "약", "아침", 8, 0, [5, 1, 3])])[0])).toBe("월요일·수요일·금요일");
   });
   it("여러 행의 요일을 합친다", () => {
     const g = groupByMedicine([d("1", "약", "아침", 8, 0, [1]), d("2", "약", "저녁", 20, 0, [3])])[0];
-    expect(describeRepeat(g)).toBe("월·수요일");
+    expect(describeRepeat(g)).toBe("월요일·수요일");
   });
 });
 
@@ -113,7 +113,7 @@ describe("describeDoseRepeat", () => {
     expect(describeDoseRepeat({ ...base, repeat_days: [] })).toBe("매일");
   });
   it("요일은 정렬·중복제거해서 보여준다", () => {
-    expect(describeDoseRepeat({ ...base, repeat_days: [2, 0, 2, 1] })).toBe("일·월·화요일");
+    expect(describeDoseRepeat({ ...base, repeat_days: [2, 0, 2, 1] })).toBe("일요일·월요일·화요일");
   });
 });
 

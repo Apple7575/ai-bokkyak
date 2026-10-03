@@ -10,6 +10,7 @@ import { getPatientId, getPatientName, getKakaoBannerDismissed, setKakaoBannerDi
 import { isKakaoLinked, linkKakao } from "../lib/kakaoAccount";
 import { commitQuickCheckDraft } from "../lib/quickCheckDraft";
 import { nextNotificationTime, todaySlot } from "../lib/schedule";
+import { relativeDay } from "../lib/repeatDays";
 import { hasExactAlarm } from "../lib/alarmPermissions";
 import { MedKind } from "../lib/medKind";
 import { getKindMap, resolveKind } from "../lib/medStore";
@@ -278,7 +279,9 @@ export function HomeScreen() {
           ) : null}
         </View>
 
-        <Text style={styles.heroTime}>{next ? fmt(next.at) : "등록된 약이 없어요"}</Text>
+        {/* 시각만 크게 쓰면 내일 알람이 오늘 것처럼 보인다 — 날짜 맥락을 먼저 (QA 2026-10-03) */}
+        {next ? <Text style={styles.heroDay}>{relativeDay(next.at, new Date())}</Text> : null}
+        <Text style={[styles.heroTime, !next && { marginTop: spacing.md }]}>{next ? fmt(next.at) : "등록된 약이 없어요"}</Text>
         {next ? (
           <View style={styles.heroMedRow}>
             <Text style={styles.heroMed}>{next.s.medicine_name}</Text>
@@ -309,7 +312,11 @@ export function HomeScreen() {
           </Pressable>
         </View>
         {rows.length === 0 ? (
-          <Text style={styles.empty}>오늘 드실 약이 없어요.</Text>
+          <Text style={styles.empty}>
+            {next
+              ? `오늘은 드실 약이 없어요. 다음은 ${relativeDay(next.at, new Date())} ${fmt(next.at)} · ${next.s.medicine_name}`
+              : "오늘 드실 약이 없어요."}
+          </Text>
         ) : (
           rows.map((r) => (
             <Pressable
@@ -425,7 +432,8 @@ const styles = StyleSheet.create({
     marginLeft: "auto", width: 44, height: 44, borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.14)", alignItems: "center", justifyContent: "center",
   },
-  heroTime: { color: colors.white, fontSize: fontSizes.hero, fontWeight: "800", marginTop: spacing.md, letterSpacing: -1 },
+  heroDay: { color: colors.white, opacity: 0.8, fontSize: fontSizes.body, fontWeight: "700", marginTop: spacing.md },
+  heroTime: { color: colors.white, fontSize: fontSizes.hero, fontWeight: "800", letterSpacing: -1 },
   heroMedRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: 2 },
   heroMed: { color: colors.white, fontSize: 22, fontWeight: "700", flexShrink: 1 },
   heroBadge: { backgroundColor: "rgba(255,255,255,0.25)", borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 3 },

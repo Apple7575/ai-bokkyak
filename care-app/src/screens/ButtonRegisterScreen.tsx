@@ -7,11 +7,13 @@ import { BigButton } from "../components/BigButton";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { TimeChip } from "../components/TimeChip";
 import { WheelPicker } from "../components/WheelPicker";
+import { RepeatPicker } from "../components/RepeatPicker";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders, cancelSchedule } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { normalizeRepeatDays } from "../lib/schedule";
+import { repeatSummary } from "../lib/repeatDays";
 import {
   TimeOfDay, TIME_OF_DAYS, isTimeOfDay, timeOfDayForHour, hourForTimeOfDay,
 } from "../lib/timeOfDay";
@@ -19,7 +21,6 @@ import { colors, fontSizes, spacing, radii } from "../theme/tokens";
 
 const HOUR_VALUES = Array.from({ length: 24 }, (_, i) => i);   // 0~23시 전부 스크롤로 선택
 const MINUTE_VALUES = Array.from({ length: 60 }, (_, i) => i); // 0~59분 전부 스크롤로 선택
-const DAYS = ["일", "월", "화", "수", "목", "금", "토"]; // index 0=일 … 6=토
 
 export function ButtonRegisterScreen() {
   const nav = useNavigation<any>();
@@ -29,7 +30,7 @@ export function ButtonRegisterScreen() {
   const [tod, setTod] = useState<TimeOfDay>("아침");
   const [hour, setHour] = useState(8);
   const [minute, setMinute] = useState(0);
-  // 빈 배열 = 매일(설계 결정 #1). 요일 칩을 토글하면 해당 요일만 반복.
+  // 빈 배열 = 매일(설계 결정 #1). RepeatPicker가 정규화된 요일 배열을 넘긴다.
   const [repeatDays, setRepeatDays] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false); // 더블탭 동기 가드(state는 비동기)
@@ -58,11 +59,6 @@ export function ButtonRegisterScreen() {
   function pickHour(h: number) {
     setHour(h);
     setTod(timeOfDayForHour(h));
-  }
-
-  function toggleDay(d: number) {
-    setRepeatDays((prev) =>
-      prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]);
   }
 
   async function save() {
@@ -162,16 +158,9 @@ export function ButtonRegisterScreen() {
           <Text style={styles.hint}>{`${tod} 시간대로 ${hour}시 ${minute}분에 알려드려요.`}</Text>
         </View>
 
-        {/* 반복 요일 — 선택 안 하면 매일 */}
+        {/* 반복 — 빈도를 문장으로 묻고(매일/평일만/주말만/직접 고르기) 결과를 한 문장으로 되읽는다 */}
         <View style={styles.section}>
-          <Text style={styles.label}>반복 요일</Text>
-          <Text style={styles.hint}>요일을 고르지 않으면 매일 알려드려요.</Text>
-          <View style={styles.row}>
-            <TimeChip label="매일" selected={repeatDays.length === 0} onPress={() => setRepeatDays([])} />
-            {DAYS.map((d, i) => (
-              <TimeChip key={d} label={d} selected={repeatDays.includes(i)} onPress={() => toggleDay(i)} />
-            ))}
-          </View>
+          <RepeatPicker value={repeatDays} onChange={setRepeatDays} />
         </View>
         </>
         ) : (
@@ -183,6 +172,7 @@ export function ButtonRegisterScreen() {
 
       {/* 하단 저장 버튼 — 시스템 네비게이션 바와 겹치지 않게 하단 여백 확보 */}
       <View style={[styles.footer, { paddingBottom: spacing.lg + insets.bottom }]}>
+        {editId ? <Text style={styles.footerSummary}>{repeatSummary(repeatDays)}</Text> : null}
         <BigButton label={saving ? "저장 중…" : editId ? "수정 저장하기" : "다음"} onPress={save} />
       </View>
     </KeyboardAvoidingView>
@@ -215,6 +205,7 @@ const styles = StyleSheet.create({
   },
   input: { flex: 1, fontSize: fontSizes.body, color: colors.text, paddingVertical: 16 },
   row: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -6 },
+  footerSummary: { fontSize: fontSizes.body, fontWeight: "700", color: colors.primaryNavy, textAlign: "center", marginBottom: spacing.sm },
   wheelRow: { flexDirection: "row", justifyContent: "center", gap: spacing.lg, paddingVertical: spacing.sm },
   footer: {
     paddingHorizontal: spacing.lg,

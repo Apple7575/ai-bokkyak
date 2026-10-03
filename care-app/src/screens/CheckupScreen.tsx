@@ -9,7 +9,8 @@ import { MedicineMark } from "../components/MedicineMark";
 import { supabase, Schedule, Patient } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { recordIntake } from "../lib/records";
-import { todaySlot } from "../lib/schedule";
+import { todaySlot, nextNotificationTime } from "../lib/schedule";
+import { relativeDay } from "../lib/repeatDays";
 import { speak, stopSpeaking } from "../lib/tts";
 import {
   buildCheckupList, checkupGreeting, checkupPrompt, checkupTimeLabel,
@@ -32,6 +33,13 @@ import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 
 type Phase = "loading" | "asking" | "done" | "error";
 
+function fmt(d: Date): string {
+  const h = d.getHours(), m = d.getMinutes();
+  const ap = h < 12 ? "오전" : "오후";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${ap} ${h12}:${String(m).padStart(2, "0")}`;
+}
+
 export function CheckupScreen() {
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -43,6 +51,9 @@ export function CheckupScreen() {
   const [takenCount, setTakenCount] = useState(0);
   const [speaking, setSpeaking] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
+  // 오늘 확인할 약이 없을 때 보여줄 다음 복약 — 홈과 같은 계산(활성 일정 → 다음 알림 시각 중 가장 이른 것).
+  // 홈은 "다음 복약 시간"을 보여주는데 여기서는 "없어요"만 말하면 화면끼리 모순돼 보인다 (QA 2026-10-03).
+  const [nextDose, setNextDose] = useState<{ at: Date; name: string } | null>(null);
 
   const patientIdRef = useRef<string | null>(null);
   // 이 확인 세션의 기준 날짜. 자정을 넘겨도 시작한 날의 슬롯에 기록한다.
@@ -94,6 +105,10 @@ export function CheckupScreen() {
 
         const name = (patient as Patient | null)?.name;
         if (items.length === 0) {
+          const nx = ((schs ?? []) as Schedule[])
+            .map((s) => ({ at: nextNotificationTime(s, now), name: s.medicine_name }))
+            .sort((a, b) => a.at.getTime() - b.at.getTime())[0];
+          setNextDose(nx ?? null);
           setPhase("done");
           say(checkupSummary(0, 0));
         } else {
@@ -185,6 +200,11 @@ export function CheckupScreen() {
             <CareCheckIcon size={72} color={colors.successGreen} accent={colors.white} />
           </Animated.View>
           <Text style={s.doneText}>{checkupSummary(list.length, takenCount)}</Text>
+          {list.length === 0 && nextDose ? (
+            <Text style={s.nextText}>
+              {`다음 복약: ${relativeDay(nextDose.at, new Date())} ${fmt(nextDose.at)} · ${nextDose.name}`}
+            </Text>
+          ) : null}
           {saveFailed ? (
             <Text style={s.warnText}>
               일부 기록을 저장하지 못했어요.{"\n"}인터넷 연결을 확인하고 기록 화면에서 확인해 주세요.
@@ -230,7 +250,7 @@ export function CheckupScreen() {
           style={({ pressed }) => [s.answerBtn, s.yesBtn, pressed && { opacity: 0.9 }]}
           accessibilityRole="button"
         >
-          <Check size={26} color="#fff" />
+          <Check size={26} color={colors.white} />
           <Text style={s.answerText}>먹었어요</Text>
         </Pressable>
 
@@ -239,7 +259,7 @@ export function CheckupScreen() {
           style={({ pressed }) => [s.answerBtn, s.noBtn, pressed && { opacity: 0.9 }]}
           accessibilityRole="button"
         >
-          <X size={26} color="#fff" />
+          <X size={26} color={colors.white} />
           <Text style={s.answerText}>아직 안 먹었어요</Text>
         </Pressable>
 
@@ -278,7 +298,7 @@ const s = StyleSheet.create({
   },
   yesBtn: { backgroundColor: colors.successGreen },
   noBtn: { backgroundColor: colors.warningOrange },
-  answerText: { fontSize: 24, fontWeight: "800", color: "#fff" },
+  answerText: { fontSize: 24, fontWeight: "800", color: colors.white },
   laterBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
     minHeight: minTouch, borderRadius: radii.button,
@@ -291,9 +311,10 @@ const s = StyleSheet.create({
   },
   doneText: { fontSize: 24, fontWeight: "800", color: colors.primaryNavy, textAlign: "center", lineHeight: 36 },
   warnText: { fontSize: fontSizes.body, color: colors.dangerRed, textAlign: "center", lineHeight: 26 },
+  nextText: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text, textAlign: "center", lineHeight: 32 },
   primaryBtn: {
     minHeight: 60, borderRadius: radii.button, backgroundColor: colors.primaryBlue,
     alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.xl,
   },
-  primaryBtnText: { fontSize: 21, fontWeight: "800", color: "#fff" },
+  primaryBtnText: { fontSize: 21, fontWeight: "800", color: colors.white },
 });

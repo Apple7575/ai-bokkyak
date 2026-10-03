@@ -5,20 +5,21 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Pill, Sun, Sunset, Moon, Clock, Check } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { WheelPicker } from "../components/WheelPicker";
+import { RepeatPicker } from "../components/RepeatPicker";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { ensurePermission, scheduleReminders } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { normalizeRepeatDays } from "../lib/schedule";
+import { repeatSummary } from "../lib/repeatDays";
 import { TimeOfDay, TIME_OF_DAYS, defaultHourFor, timeOfDayForHour, slotLabel } from "../lib/timeOfDay";
 import { buildDoseRows } from "../lib/medSummary";
 import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 
 // C-09 복용시점 등록 — 모든 등록 경로(이름 검색·사진·직접 입력)가 수렴하는 공통 관문.
 // 시간대를 여러 개 고를 수 있고, 고른 시간대마다 schedule 행이 하나씩 생긴다.
-// 요일을 하나도 고르지 않으면 repeat_days=[] = 매일 (설계 결정 #1).
+// 반복은 RepeatPicker(매일/평일만/주말만/직접 고르기)로 받고, repeat_days=[] = 매일 (설계 결정 #1).
 
-const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const AMOUNTS = ["1정", "2정", "1포"];
 const HOUR_VALUES = Array.from({ length: 24 }, (_, i) => i);
 const MINUTE_VALUES = Array.from({ length: 60 }, (_, i) => i);
@@ -61,10 +62,6 @@ export function DoseTimeScreen() {
       }
       return [...prev, t];
     });
-  }
-
-  function toggleDay(d: number) {
-    setRepeatDays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
   }
 
   // 시각을 바꾸면 그 시간대 칸의 값만 바뀐다. 시간대 자체는 사용자가 고른 것을 존중한다
@@ -134,7 +131,7 @@ export function DoseTimeScreen() {
                 onPress={() => toggleTod(t)}
                 style={[styles.todChip, on && styles.todChipOn]}
               >
-                <Icon size={18} color={on ? "#fff" : colors.textSecondary} />
+                <Icon size={18} color={on ? colors.white : colors.textSecondary} />
                 <Text style={[styles.todText, on && styles.todTextOn]}>{slotLabel(t)}</Text>
               </Pressable>
             );
@@ -179,24 +176,7 @@ export function DoseTimeScreen() {
 
         {/* 반복 */}
         <Text style={styles.section}>반복</Text>
-        <View style={styles.todRow}>
-          <Pressable
-            onPress={() => setRepeatDays([])}
-            style={[styles.repeatChip, repeatDays.length === 0 && styles.todChipOn]}
-          >
-            <Text style={[styles.todText, repeatDays.length === 0 && styles.todTextOn]}>매일</Text>
-          </Pressable>
-          {DAYS.map((d, i) => (
-            <Pressable
-              key={d}
-              onPress={() => toggleDay(i)}
-              style={[styles.dayChip, repeatDays.includes(i) && styles.todChipOn]}
-            >
-              <Text style={[styles.todText, repeatDays.includes(i) && styles.todTextOn]}>{d}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <Text style={styles.hint}>요일을 하나도 고르지 않으면 매일 드시는 것으로 저장돼요.</Text>
+        <RepeatPicker value={repeatDays} onChange={setRepeatDays} />
 
         {/* 1회 복용량 */}
         <Text style={styles.section}>1회 복용량</Text>
@@ -214,12 +194,14 @@ export function DoseTimeScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: spacing.lg + insets.bottom }]}>
+        {/* 저장 직전에 반복을 한 번 더 문장으로 되읽어 준다 — 일요일만으로 저장되는 실수 방지 */}
+        <Text style={styles.footerSummary}>{repeatSummary(repeatDays)}</Text>
         <Pressable
           onPress={() => { void save(); }}
           disabled={saving}
           style={({ pressed }) => [styles.saveBtn, (pressed || saving) && { opacity: 0.9 }]}
         >
-          <Check size={22} color="#fff" />
+          <Check size={22} color={colors.white} />
           <Text style={styles.saveText}>{saving ? "저장 중…" : "약장에 넣기"}</Text>
         </Pressable>
       </View>
@@ -252,17 +234,7 @@ const styles = StyleSheet.create({
   },
   todChipOn: { backgroundColor: colors.primaryBlue, borderColor: colors.primaryBlue },
   todText: { fontSize: 19, fontWeight: "700", color: colors.text },
-  todTextOn: { color: "#fff" },
-  repeatChip: {
-    minHeight: minTouch, paddingHorizontal: spacing.lg, borderRadius: radii.pill,
-    alignItems: "center", justifyContent: "center",
-    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
-  },
-  dayChip: {
-    width: 56, minHeight: minTouch, borderRadius: radii.pill,
-    alignItems: "center", justifyContent: "center",
-    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
-  },
+  todTextOn: { color: colors.white },
   amountChip: {
     minHeight: minTouch, paddingHorizontal: spacing.lg, borderRadius: radii.pill,
     alignItems: "center", justifyContent: "center",
@@ -282,9 +254,10 @@ const styles = StyleSheet.create({
     padding: spacing.lg, backgroundColor: colors.cardBg,
     borderTopWidth: 1, borderTopColor: colors.border,
   },
+  footerSummary: { fontSize: fontSizes.body, fontWeight: "700", color: colors.primaryNavy, textAlign: "center", marginBottom: spacing.sm },
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
     minHeight: minTouch, borderRadius: radii.button, backgroundColor: colors.primaryBlue,
   },
-  saveText: { fontSize: 21, fontWeight: "800", color: "#fff" },
+  saveText: { fontSize: 21, fontWeight: "800", color: colors.white },
 });

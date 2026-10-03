@@ -4,6 +4,7 @@
 // 화면에서는 약 한 장의 카드로 묶어 "1일 2회 · 아침 08:00, 저녁 20:00"처럼 보여준다.
 
 import { TimeOfDay, TIME_OF_DAYS, slotLabel } from "./timeOfDay";
+import { DAY_FULL } from "./repeatDays";
 
 export type DoseLike = {
   id: string;
@@ -67,15 +68,15 @@ export function describeDoses<T extends DoseLike>(g: MedGroup<T>, maxShown = 2):
   return `1일 ${g.timesPerDay}회 · ${shown}${tail}`;
 }
 
-// 반복 설명. 매일이면 "매일", 아니면 요일 나열.
-const DAY_LABEL = ["일", "월", "화", "수", "목", "금", "토"];
+// 반복 설명. 매일이면 "매일", 아니면 요일을 전체 이름으로 나열("월요일·수요일").
+// 한 글자("월·수")는 "일"이 매일처럼 읽혀 혼동을 낳았다 (QA 2026-10-03).
 
 export function describeRepeat<T extends DoseLike>(g: MedGroup<T>): string {
   if (g.everyDay) return "매일";
   const days = new Set<number>();
   for (const d of g.doses) for (const x of d.repeat_days ?? []) days.add(x);
-  const list = [...days].sort((a, b) => a - b).map((d) => DAY_LABEL[d] ?? "?").join("·");
-  return list ? `${list}요일` : "매일";
+  const list = [...days].sort((a, b) => a - b).map((d) => DAY_FULL[d] ?? "?").join("·");
+  return list || "매일";
 }
 
 // 일정 한 줄짜리 설명 — 약 상세의 "복약 일정" 목록에서 쓴다.
@@ -83,8 +84,8 @@ export function describeRepeat<T extends DoseLike>(g: MedGroup<T>): string {
 export function describeDoseRepeat(d: DoseLike): string {
   const days = d.repeat_days ?? [];
   if (days.length === 0) return "매일"; // 빈 배열 = 매일 (프로젝트 규칙)
-  const list = [...new Set(days)].sort((a, b) => a - b).map((x) => DAY_LABEL[x] ?? "?").join("·");
-  return list ? `${list}요일` : "매일";
+  const list = [...new Set(days)].sort((a, b) => a - b).map((x) => DAY_FULL[x] ?? "?").join("·");
+  return list || "매일";
 }
 
 // "아침 08:00"
