@@ -7,6 +7,7 @@ create temp table _new_subst (code text, name_ko text, aliases text[], src text)
 insert into _new_subst (code, name_ko, aliases, src) values
   ('5-fluorouracil', '플루오로우라실', '{}'::text[], 'auto'),
   ('abacavir', '아바카비르', '{}'::text[], 'manual'),
+  ('abiraterone', '아비라테론', '{}'::text[], 'manual'),
   ('aceclofenac', '아세클로페낙', '{}'::text[], 'auto'),
   ('acetaminophen', '아세트아미노펜', '{}'::text[], 'manual'),
   ('acetazolamide', '아세타졸아미드', '{}'::text[], 'auto'),
@@ -22,7 +23,7 @@ insert into _new_subst (code, name_ko, aliases, src) values
   ('alogliptin', '알로글립틴', '{}'::text[], 'manual'),
   ('alprazolam', '알프라졸람', '{}'::text[], 'auto'),
   ('amantadine', '아만타딘', array['아만타딘황산염']::text[], 'auto'),
-  ('amiloride', '염산아미로라이드', '{}'::text[], 'auto/review'),
+  ('amiloride', '아미로라이드', array['염산아미로라이드']::text[], 'auto+manual'),
   ('amiodarone', '아미오다론', array['아미오다론염산염']::text[], 'auto'),
   ('amisulpride', '아미설프리드', array['아미설피리드']::text[], 'auto'),
   ('amitriptyline', '아미트리프틸린', array['아미트리프틸린염산염']::text[], 'auto'),
@@ -37,6 +38,7 @@ insert into _new_subst (code, name_ko, aliases, src) values
   ('arsenic trioxide', '삼산화비소', array['바이알']::text[], 'auto'),
   ('ascorbic acid', '아스코르브산', '{}'::text[], 'manual'),
   ('aspirin', '아스피린', array['아스피린장용과립']::text[], 'auto'),
+  ('aspirin lysine', '아스피린리신', '{}'::text[], 'manual'),
   ('atazanavir', '아타자나비르', '{}'::text[], 'manual'),
   ('atomoxetine', '아토목세틴', array['아토목세틴염산염']::text[], 'auto'),
   ('atorvastatin', '아토르바스타틴', array['무수아토르바스타틴칼슘','아토르바스타틴칼슘','아토르바스타틴칼슘삼수화물','아토르바스타틴칼슘수화물']::text[], 'auto'),
@@ -91,11 +93,13 @@ insert into _new_subst (code, name_ko, aliases, src) values
   ('clopidogrel resinate', '클로피도그렐레지네이트', '{}'::text[], 'auto/review'),
   ('cobicistat', '코비시스타트', '{}'::text[], 'manual'),
   ('colchicine', '콜키신', '{}'::text[], 'auto'),
+  ('conjugated estrogens 4 29%', '결합형에스트로겐', '{}'::text[], 'manual'),
   ('cyanocobalamin', '시아노코발라민', '{}'::text[], 'manual'),
   ('cyclobenzaprine', '시클로벤자프린', array['시클로벤자프린염산염']::text[], 'auto'),
   ('cyclosporine', '사이클로스포린', '{}'::text[], 'auto'),
   ('cyproheptadine orotate', '시프로헵타딘', '{}'::text[], 'manual'),
   ('d-chlorpheniramine', '클로르페니라민', '{}'::text[], 'manual'),
+  ('d-mannitol', '만니톨', '{}'::text[], 'manual'),
   ('d-penicillamine', '디-페니실라민', '{}'::text[], 'auto'),
   ('dabigatran etexilate', '다비가트란에텍실레이트', array['다비가트란에텍실레이트메실산염']::text[], 'auto'),
   ('dapagliflozin', '다파글리플로진', '{}'::text[], 'manual'),
@@ -109,7 +113,7 @@ insert into _new_subst (code, name_ko, aliases, src) values
   ('deutetrabenazine', '듀테트라베나진', '{}'::text[], 'auto'),
   ('dexbrompheniramine', '덱스브롬페니라민', '{}'::text[], 'manual'),
   ('dexibuprofen', '덱시부프로펜', array['덱시부프로펜 디.씨','덱시부프로펜 디.씨.','덱시부프로펜디.씨','덱시부프로펜디.씨.']::text[], 'auto'),
-  ('dexibuprofen d c', '덱시부프로펜디.씨', '{}'::text[], 'auto/review'),
+  ('dexibuprofen d c', '덱시부프로펜', array['덱시부프로펜디.씨']::text[], 'auto+manual'),
   ('dexketoprofen trometamol', '덱스케토프로펜', array['덱스케토프로펜트로메타몰']::text[], 'auto+manual'),
   ('dexlansoprazole', '덱스란소프라졸', '{}'::text[], 'auto'),
   ('dextromethorphan', '덱스트로메토르판', '{}'::text[], 'manual'),
@@ -154,6 +158,7 @@ insert into _new_subst (code, name_ko, aliases, src) values
   ('epinephrine', '에피네프린', array['에피네프린타르타르산염']::text[], 'auto'),
   ('ergotamine', '에르고타민', '{}'::text[], 'manual'),
   ('escitalopram', '에스시탈로프람', array['에스시탈로프람옥살산염']::text[], 'auto'),
+  ('eslicarbazepine', '에슬리카르바제핀', '{}'::text[], 'manual'),
   ('esomeprazole', '에스오메프라졸', array['에스오메프라졸나트륨','에스오메프라졸마그네슘','에스오메프라졸마그네슘삼수화물','에스오메프라졸마그네슘이수화물']::text[], 'auto'),
   ('esomeprazole strontium tetrahydrate', '에스오메프라졸스트론튬사', array['에스오메프라졸스트론튬사수화물']::text[], 'auto'),
   ('estrogen', '결합형에스트로겐', '{}'::text[], 'auto'),
@@ -185,7 +190,7 @@ insert into _new_subst (code, name_ko, aliases, src) values
   ('flurbiprofen', '플루르비프로펜', '{}'::text[], 'auto'),
   ('fluticasone', '플루티카손', '{}'::text[], 'manual'),
   ('formoterol', '포르모테롤', array['포르모테롤푸마르산염수화물']::text[], 'auto/review'),
-  ('fosaprepitant dimeglumine', '포스아프레피탄트 디메글루민염', '{}'::text[], 'auto/review'),
+  ('fosaprepitant dimeglumine', '포스아프레피탄트', array['포스아프레피탄트 디메글루민염']::text[], 'auto+manual'),
   ('foscarnet trisodium hexahydrate', '포스카네트', array['포스카네트나트륨수화물']::text[], 'auto+manual'),
   ('fosphenytoin', '포스페니토인', array['포스페니토인나트륨']::text[], 'auto'),
   ('frovatriptan', '프로바트립탄', array['프로바트립탄숙신산염일수화물']::text[], 'auto'),
@@ -215,6 +220,7 @@ insert into _new_subst (code, name_ko, aliases, src) values
   ('ibuprofen lysine', '이부프로펜리신', '{}'::text[], 'auto/review'),
   ('ilaprazole', '일라프라졸', '{}'::text[], 'auto/review'),
   ('imipenem', '이미페넴', '{}'::text[], 'manual'),
+  ('imipramine', '이미프라민', '{}'::text[], 'manual'),
   ('indomethacin', '인도메타신', '{}'::text[], 'auto/review'),
   ('iobitridol', '이오비트리돌', '{}'::text[], 'auto'),
   ('iodixanol', '요오딕사놀', '{}'::text[], 'auto'),
@@ -248,7 +254,7 @@ insert into _new_subst (code, name_ko, aliases, src) values
   ('levonorgestrel', '레보노르게스트렐', '{}'::text[], 'manual'),
   ('linagliptin', '리나글립틴', '{}'::text[], 'manual'),
   ('linezolid', '리네졸리드', '{}'::text[], 'auto'),
-  ('lithium', '탄산리튬', '{}'::text[], 'auto/review'),
+  ('lithium', '리튬', array['탄산리튬']::text[], 'auto+manual'),
   ('lobeglitazone', '로베글리타존', '{}'::text[], 'manual'),
   ('lorlatinib', '롤라티닙', '{}'::text[], 'auto'),
   ('losartan', '로사르탄', '{}'::text[], 'manual'),
@@ -298,7 +304,7 @@ insert into _new_subst (code, name_ko, aliases, src) values
   ('nimesulide', '니메술리드', '{}'::text[], 'auto/review'),
   ('nirmatrelvir', '니르마트렐비르', '{}'::text[], 'manual'),
   ('norepinephrine', '노르에피네프린', array['노르에피네프린타르타르산염수화물','주석산수소노르에피네프린']::text[], 'auto'),
-  ('nortriptyline', '염산노르트립틸린', '{}'::text[], 'auto'),
+  ('nortriptyline', '노르트립틸린', array['염산노르트립틸린']::text[], 'auto'),
   ('noscapine', '노스카핀', '{}'::text[], 'manual'),
   ('octreotide', '옥트레오티드', array['옥트레오티드아세테이트','옥트레오티드아세트산염']::text[], 'auto'),
   ('olanzapine', '올란자핀', array['미세올란자핀']::text[], 'auto'),
@@ -318,7 +324,7 @@ insert into _new_subst (code, name_ko, aliases, src) values
   ('paliperidone', '팔리페리돈팔미테이트', '{}'::text[], 'auto'),
   ('palonosetron', '팔로노세트론', '{}'::text[], 'manual'),
   ('pantoprazole', '판토프라졸나트륨세스키히드레이트', '{}'::text[], 'auto'),
-  ('pantoprazole hemimagnesium', '판토프라졸헤미', array['판토프라졸헤미마그네슘수화물']::text[], 'auto/review'),
+  ('pantoprazole hemimagnesium', '판토프라졸', array['판토프라졸헤미마그네슘수화물']::text[], 'auto+manual'),
   ('paricalcitol', '파리칼시톨', '{}'::text[], 'auto'),
   ('paroxetine', '파록세틴', array['무수염산파록세틴','파록세틴염산염반수화물','파록세틴염산염수화물']::text[], 'auto'),
   ('pentamidine isethionate', '펜타미딘', '{}'::text[], 'manual'),
@@ -328,7 +334,7 @@ insert into _new_subst (code, name_ko, aliases, src) values
   ('phendimetrazine', '펜디메트라진', array['펜디메트라진타르타르산염']::text[], 'auto'),
   ('phenobarbital', '페노바르비탈', array['앰플','페노바르비탈나트륨']::text[], 'auto'),
   ('phentermine', '펜터민', array['펜터민염산염']::text[], 'auto'),
-  ('phentermine hcl', '펜터민', array['펜터민염산염']::text[], 'auto/review'),
+  ('phentermine hcl', '펜터민', array['펜터민염산염']::text[], 'auto+manual'),
   ('phenylephrine', '페닐에프린', '{}'::text[], 'manual'),
   ('phenytoin', '페니토인', array['페니토인나트륨']::text[], 'auto/review'),
   ('pibrentasvir', '피브렌타스비르', '{}'::text[], 'manual'),
@@ -401,14 +407,14 @@ insert into _new_subst (code, name_ko, aliases, src) values
   ('telmisartan', '텔미사르탄', '{}'::text[], 'manual'),
   ('teneligliptin', '테네리글립틴', '{}'::text[], 'manual'),
   ('tenofovir alafenamide', '테노포비르알라페나미드', array['테노포비르알라페나미드숙신산염','테노포비르알라페나미드시트르산염']::text[], 'auto'),
-  ('tenofovir alafenamide hemifumarate', '테노포비르알라페나미드헤미', array['테노포비르알라페나미드헤미푸마르산염']::text[], 'auto/review'),
+  ('tenofovir alafenamide hemifumarate', '테노포비르알라페나미드', array['테노포비르알라페나미드헤미푸마르산염']::text[], 'auto+manual'),
   ('tenofovir alafenamide hemimalate', '테노포비르알라페나미드헤미', array['테노포비르알라페나미드헤미말산염']::text[], 'auto'),
-  ('tenofovir alafenamide hemitartrate', '테노포비르알라페나미드헤미', array['테노포비르알라페나미드헤미타르타르산염']::text[], 'auto/review'),
+  ('tenofovir alafenamide hemitartrate', '테노포비르알라페나미드', array['테노포비르알라페나미드헤미타르타르산염']::text[], 'auto+manual'),
   ('tenofovir disoproxil', '테노포비르디소프록실', array['테노포비르디소프록실인산염','테노포비르디소프록실푸마르산염']::text[], 'auto'),
   ('tenofovir disoproxil asparate', '테노포비르디소프록실아스파르트산염', '{}'::text[], 'auto/review'),
   ('tenofovir disoproxil hemiedisylate', '테노포비르디소프록실헤미에디실산염', '{}'::text[], 'auto'),
   ('tenofovir disoproxil orotate', '테노포비르디소프록실오로트산염', '{}'::text[], 'auto/review'),
-  ('tetracycline', '염산테트라싸이클린', '{}'::text[], 'auto/review'),
+  ('tetracycline', '테트라사이클린', array['염산테트라싸이클린']::text[], 'auto+manual'),
   ('thiamine', '티아민', '{}'::text[], 'manual'),
   ('thrombin', '트롬빈', '{}'::text[], 'auto'),
   ('ticagrelor', '티카그렐러', '{}'::text[], 'auto'),
@@ -431,7 +437,7 @@ insert into _new_subst (code, name_ko, aliases, src) values
   ('triprolidine', '트리프롤리딘', '{}'::text[], 'manual'),
   ('tulobuterol', '툴로부테롤', '{}'::text[], 'auto'),
   ('udenafil', '유데나필', '{}'::text[], 'auto'),
-  ('valbenazine', '발베나진이', array['발베나진이토실산염']::text[], 'auto/review'),
+  ('valbenazine', '발베나진', array['발베나진이토실산염']::text[], 'auto+manual'),
   ('valproate', '발프로산', array['발프로산마그네슘']::text[], 'auto'),
   ('valsartan', '발사르탄', '{}'::text[], 'manual'),
   ('vandetanib', '반데타닙', '{}'::text[], 'auto'),
@@ -441,6 +447,7 @@ insert into _new_subst (code, name_ko, aliases, src) values
   ('venetoclax', '베네토클락스', '{}'::text[], 'auto'),
   ('venlafaxine', '벤라팍신', array['벤라팍신염산염']::text[], 'auto'),
   ('verapamil', '베라파밀', array['베라파밀염산염']::text[], 'auto'),
+  ('vericiguat', '베리시구앗', '{}'::text[], 'manual'),
   ('vildagliptin', '빌다글립틴', '{}'::text[], 'manual'),
   ('vincristine', '빈크리스틴', array['빈크리스틴황산염']::text[], 'auto/review'),
   ('voriconazole', '보리코나졸', array['주사용']::text[], 'auto'),
@@ -451,7 +458,7 @@ insert into _new_subst (code, name_ko, aliases, src) values
   ('zanubrutinib', '자누브루티닙', '{}'::text[], 'auto/review'),
   ('zidovudine', '지도부딘', '{}'::text[], 'manual'),
   ('zinc histidine', '히스티딘아연', array['히스티딘아연이수화물']::text[], 'auto/review'),
-  ('ziprasidone', '염산지프라시돈', array['염산지프라시돈일수화물']::text[], 'auto'),
+  ('ziprasidone', '지프라시돈', array['염산지프라시돈일수화물']::text[], 'auto'),
   ('zolmitriptan', '졸미트립탄', '{}'::text[], 'auto/review');
 
 -- §1 미리보기: 추가될 것(이미 있는 code·name_ko 제외)
@@ -461,12 +468,12 @@ where not exists (select 1 from interaction.substance s where s.code = n.code)
 order by n.src, n.code;
 
 -- §2 적용
-insert into interaction.substance (code, kind, name_ko, name_en, aliases)
-select n.code, (select s0.kind from interaction.substance s0 where s0.code = 'aspirin'), n.name_ko, n.code, n.aliases
+insert into interaction.substance (code, kind, name_ko, name_en, aliases, note)
+select n.code, (select s0.kind from interaction.substance s0 where s0.code = 'aspirin'), n.name_ko, n.code, n.aliases, 'DUR 자동 확장 2026-10-03 (' || n.src || ')'
 from _new_subst n
 where not exists (select 1 from interaction.substance s where s.code = n.code)
   and not exists (select 1 from interaction.substance s where s.name_ko = n.name_ko)
-  and n.src not like '%/review';   -- 검수 플래그(근거 제품 1개뿐)는 넣지 않는다 — seed/substance_expand_candidates.csv 참고
+  ;  -- 검수 플래그(/review, 근거 제품 1개)도 넣되 note 에 남긴다 — seed/substance_expand_candidates.csv 로 검수
 
 -- §3 확인
 select count(*) as total_substances from interaction.substance;
