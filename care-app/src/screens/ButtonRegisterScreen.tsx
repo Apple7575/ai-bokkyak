@@ -10,7 +10,7 @@ import { WheelPicker } from "../components/WheelPicker";
 import { RepeatPicker } from "../components/RepeatPicker";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
-import { ensurePermission, scheduleReminders, cancelSchedule } from "../lib/notifications";
+import { ensurePermission, scheduleReminders, cancelSchedule, warnNotificationsOff } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { normalizeRepeatDays } from "../lib/schedule";
 import { presetOf, repeatSummaryFor } from "../lib/repeatDays";
@@ -84,18 +84,26 @@ export function ButtonRegisterScreen() {
     const row = { medicine_name: name.trim(), time_of_day: tod, hour, minute, repeat_days: days, active: true };
     await ensureStrongAlarmReady();
     try {
+      // 권한을 먼저 한 번만 묻는다. 거부돼도 저장은 그대로 진행하고, 끝에 "알림이 꺼져 있어요"로 알린다.
+      // 권한 조회 자체가 실패하면 상태를 모르는 것이라 괜한 경고를 띄우지 않는다.
+      let granted = true;
+      try { granted = await ensurePermission(); } catch {}
       if (editId) {
         // 이력 보존: 시간/요일을 바꾸면 과거 기록의 due-slot 기준이 깨지므로, 기존 행을 직접 고치지 않고
         // "새 활성 일정 등록 + 기존 비활성화"로 처리(과거 intake_records는 기존 행 기준으로 그대로 남김).
         const { data, error } = await supabase.from("schedules").insert({ patient_id: pid, ...row }).select().single();
         if (error || !data) throw error ?? new Error("insert 실패");
         // 알림 예약은 베스트에포트 — 실패해도 일정은 이미 저장됐으므로 재시도(중복 insert)하지 않는다.
-        try { if (await ensurePermission()) await scheduleReminders(data.id, data.medicine_name, hour, minute, days, data.time_of_day); } catch {}
+        if (granted) { try { await scheduleReminders(data.id, data.medicine_name, hour, minute, days, data.time_of_day); } catch {} }
         await cancelSchedule(editId); // 기존 일정 알림 취소
         const { error: deactErr } = await supabase.from("schedules").update({ active: false }).eq("id", editId);
+        // Alert는 한 번에 하나만(Android는 뒤에 뜬 것이 앞을 덮는다). 정리 실패 안내가 가장 중요하고,
+        // 그다음이 알림 꺼짐 — 알림 꺼짐은 홈 배너에서도 다시 보인다.
         if (deactErr) {
           // 새 일정은 등록됐지만 기존 행 비활성화 실패 → 둘 다 활성으로 남을 수 있음. 정직하게 안내.
           Alert.alert("수정은 저장됐어요", "이전 일정 정리에 실패했어요. '내 약장'에서 이전 항목을 삭제해 주세요.");
+        } else if (!granted) {
+          warnNotificationsOff();
         } else {
           Alert.alert("복약 일정을 수정했습니다.");
         }
@@ -103,8 +111,9 @@ export function ButtonRegisterScreen() {
         const { data, error } = await supabase.from("schedules").insert({ patient_id: pid, ...row }).select().single();
         if (error || !data) throw error ?? new Error("insert 실패");
         // 알림 예약은 베스트에포트 — 실패해도 일정은 이미 저장됐으므로 재시도(중복 insert)하지 않는다.
-        try { if (await ensurePermission()) await scheduleReminders(data.id, data.medicine_name, hour, minute, days, data.time_of_day); } catch {}
-        Alert.alert("복약 일정을 등록했습니다.");
+        if (granted) { try { await scheduleReminders(data.id, data.medicine_name, hour, minute, days, data.time_of_day); } catch {} }
+        if (!granted) warnNotificationsOff();
+        else Alert.alert("복약 일정을 등록했습니다.");
       }
       // 저장하면 '내 약장' 탭으로 (C-04 확정 "저장하면 바로 약장 등록").
       // reset으로 스택을 비운다 — navigate만 하면 하단 탭이 사라지고 뒤로가기가

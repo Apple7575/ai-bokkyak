@@ -4,6 +4,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Trash2, Stethoscope, AlertTriangle, ChevronRight, Pencil, Clock } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { BigButton } from "../components/BigButton";
 import { MedicineMark } from "../components/MedicineMark";
 import { supabase, Schedule } from "../lib/supabase";
 import { cancelSchedule } from "../lib/notifications";
@@ -40,13 +41,18 @@ export function MedicineDetailScreen() {
   const [info, setInfo] = useState<string | null>(null);
   const [infoLoading, setInfoLoading] = useState(false);
   const [warnCount, setWarnCount] = useState<number | null>(null);
+  // 일정 조회 실패. 없으면 "불러오는 중..."이 영원히 남는다 — 오류와 다시 시도를 보인다.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let alive = true;
     (async () => {
-      if (!scheduleId) return;
-      const { data } = await supabase.from("schedules").select("*").eq("id", scheduleId).single();
-      if (!alive || !data) return;
+      if (!scheduleId) { setLoadFailed(true); return; }
+      setLoadFailed(false);
+      const { data, error } = await supabase.from("schedules").select("*").eq("id", scheduleId).single();
+      if (!alive) return;
+      if (error || !data) { setLoadFailed(true); return; }
       const s = data as Schedule;
       setSched(s);
       setKindState(resolveKind(s.medicine_name, await getKindMap()));
@@ -57,7 +63,7 @@ export function MedicineDetailScreen() {
       if (alive) { setInfo(text); setInfoLoading(false); }
     })();
     return () => { alive = false; };
-  }, [scheduleId]);
+  }, [scheduleId, attempt]);
 
   // 이 약이 다른 약과 부딪치는지 — 약장 배너와 같은 판정을 이 약 기준으로만 센다.
   useEffect(() => {
@@ -128,7 +134,14 @@ export function MedicineDetailScreen() {
     return (
       <View style={styles.screen}>
         <ScreenHeader title="약 상세" />
-        <Text style={styles.loading}>불러오는 중...</Text>
+        {loadFailed ? (
+          <View style={styles.loadFailed}>
+            <Text style={styles.loading}>불러오지 못했어요.{"\n"}인터넷 연결을 확인해 주세요.</Text>
+            <BigButton label="다시 시도" onPress={() => setAttempt((n) => n + 1)} />
+          </View>
+        ) : (
+          <Text style={styles.loading}>불러오는 중...</Text>
+        )}
       </View>
     );
   }
@@ -152,6 +165,7 @@ export function MedicineDetailScreen() {
           <Pressable
             onPress={() => nav.navigate("Interaction")}
             style={({ pressed }) => [styles.warn, pressed && { opacity: 0.92 }]}
+            accessibilityRole="button"
           >
             <AlertTriangle size={24} color={colors.dangerRed} />
             <Text style={styles.warnText}>이 약과 함께 드실 때 확인이 필요한 조합 {warnCount}건</Text>
@@ -176,7 +190,7 @@ export function MedicineDetailScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`${describeDoseTime(d)} 복약 일정 수정`}
               >
-                <Pencil size={18} color="#fff" />
+                <Pencil size={18} color={colors.white} />
                 <Text style={styles.editText}>수정</Text>
               </Pressable>
             </View>
@@ -191,6 +205,8 @@ export function MedicineDetailScreen() {
               key={k}
               onPress={() => { void chooseKind(k); }}
               style={[styles.kindChip, kind === k && styles.kindChipOn]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: kind === k }}
             >
               <Text style={[styles.kindText, kind === k && styles.kindTextOn]}>{k}</Text>
             </Pressable>
@@ -210,7 +226,7 @@ export function MedicineDetailScreen() {
             <Text style={styles.infoText}>{info}</Text>
           ) : (
             <Text style={styles.infoEmpty}>
-              이 약의 설명은 아직 준비 중이에요.{"\n"}약사나 의사에게 확인해 주세요.
+              이 약의 설명을 찾지 못했어요.{"\n"}약사나 의사에게 확인해 주세요.
             </Text>
           )}
         </View>
@@ -227,6 +243,7 @@ export function MedicineDetailScreen() {
         <Pressable
           onPress={confirmDelete}
           style={({ pressed }) => [styles.deleteBtn, pressed && { opacity: 0.85 }]}
+          accessibilityRole="button"
         >
           <Trash2 size={20} color={colors.dangerRed} />
           <Text style={styles.deleteText}>이 약 삭제</Text>
@@ -239,7 +256,8 @@ export function MedicineDetailScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
   c: { padding: spacing.md },
-  loading: { textAlign: "center", fontSize: fontSizes.body, color: colors.textSecondary, marginTop: spacing.lg },
+  loading: { textAlign: "center", fontSize: fontSizes.body, color: colors.textSecondary, marginTop: spacing.lg, lineHeight: 27 },
+  loadFailed: { padding: spacing.lg, gap: spacing.md },
   hero: {
     minHeight: 150, backgroundColor: colors.coralSoft, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.md, justifyContent: "center", overflow: "hidden",
@@ -265,7 +283,7 @@ const styles = StyleSheet.create({
   },
   kindChipOn: { backgroundColor: colors.primaryBlue, borderColor: colors.primaryBlue },
   kindText: { fontSize: 20, fontWeight: "700", color: colors.text },
-  kindTextOn: { color: "#fff" },
+  kindTextOn: { color: colors.white },
   hint: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: spacing.sm },
   card: {
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
@@ -284,7 +302,7 @@ const styles = StyleSheet.create({
     minHeight: 48, paddingHorizontal: 18, borderRadius: radii.button,
     backgroundColor: colors.primaryBlue,
   },
-  editText: { fontSize: fontSizes.body, fontWeight: "800", color: "#fff" },
+  editText: { fontSize: fontSizes.body, fontWeight: "800", color: colors.white },
   infoText: { fontSize: 19, color: colors.text, lineHeight: 30 },
   infoEmpty: { fontSize: 19, color: colors.textSecondary, lineHeight: 30 },
   infoLoading: { flexDirection: "row", alignItems: "center", gap: spacing.sm },

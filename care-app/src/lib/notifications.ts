@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { Platform, Alert } from "react-native";
 import notifee, {
   AndroidImportance, AndroidVisibility, AndroidCategory, TriggerType,
   AndroidNotificationSetting,
@@ -52,6 +52,35 @@ async function ensureChannel(tod: TOD, silent: boolean): Promise<string> {
 export async function ensurePermission(): Promise<boolean> {
   const settings = await notifee.requestPermission();
   return settings.authorizationStatus >= 1;
+}
+
+// 묻지 않고 현재 알림 권한만 읽는다(홈 배너용). 조회 실패는 true — 괜한 경고를 띄우지 않는다.
+export async function hasNotificationPermission(): Promise<boolean> {
+  try {
+    const settings = await notifee.getNotificationSettings();
+    return settings.authorizationStatus >= 1;
+  } catch {
+    return true;
+  }
+}
+
+// OS의 "이 앱 알림" 설정 화면을 연다. 권한을 한 번 거부하면 requestPermission이 다시 묻지
+// 않으므로, 사용자가 직접 켤 수 있는 곳으로 데려가는 길이 필요하다.
+export async function openNotificationSettings(): Promise<void> {
+  try { await notifee.openNotificationSettings(); } catch {}
+}
+
+// 알림 권한이 꺼진 채 일정을 저장했을 때 — 저장은 됐지만 알람이 울리지 않는다는 사실을 알린다.
+// 등록 화면 4곳(DoseTime·VoiceGuide·OcrRegister·ButtonRegister)이 같은 문구를 쓴다.
+export function warnNotificationsOff(): void {
+  Alert.alert(
+    "알림이 꺼져 있어요",
+    "약 시간에 알람이 울리지 않아요. 휴대폰 설정에서 이 앱의 알림을 허용해 주세요.",
+    [
+      { text: "나중에", style: "cancel" },
+      { text: "설정 열기", onPress: () => { void openNotificationSettings(); } },
+    ],
+  );
 }
 
 export async function ensureIOSCategory(): Promise<void> {

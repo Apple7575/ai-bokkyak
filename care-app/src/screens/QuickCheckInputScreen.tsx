@@ -13,7 +13,7 @@ import { gptOcrPrescription } from "../lib/ocr";
 import {
   SUPPLEMENT_PRESETS, SUPPLEMENT_MORE, MEDICINE_PRESETS, AGES, CONDS,
   NONE_SUPPLEMENT, NONE_MEDICINE, NONE_CONDITION,
-  toggleItem, addItem, checkItems, EMPTY_DRAFT,
+  toggleItem, addItem, checkItems, EMPTY_DRAFT, QuickCheckDraft,
 } from "../lib/quickCheck";
 import { loadDraft, saveDraft } from "../lib/quickCheckDraft";
 import { getPatientId, setPatient, getPatientName, setPatientName } from "../lib/storage";
@@ -121,18 +121,55 @@ export function QuickCheckInputScreen() {
   function onRemove(label: string) { setList(list.filter((x) => x !== label)); }
   function onCondition(label: string) { setConditions(toggleItem(conditions, label, NONE_CONDITION)); }
 
+  // 화면을 떠나기 전에 지금까지 고른 것을 기기 초안에 남긴다 — 뒤로·건너뛰기로 나갔다가
+  // 돌아오면 처음부터 다시 고르게 되던 문제. 원래 초안이 있으면(아직 서버에 못 올린 판정 결과 등)
+  // 입력이 그대로면 초안을 손대지 않고, 입력이 달라졌으면 판정 결과 칸은 비운다 — 바뀐 입력에 예전 결과가
+  // 붙어 홈의 "다시 저장" 이 안 맞는 행을 올리면 안 된다. 고른 게 하나도 없으면 저장하지 않는다
+  // (빈 초안이 "이어서 하기" 배너를 띄운다).
+  // 기기 저장 실패는 떠나는 길을 막을 이유가 못 되므로 조용히 넘긴다.
+  function sameInputs(d: QuickCheckDraft): boolean {
+    const eq = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
+    return eq(d.supplements, supplements) && eq(d.medicines, medicines)
+      && d.profile.age === age && eq(d.profile.conditions, conditions);
+  }
+  async function persistDraft(): Promise<void> {
+    if (supplements.length === 0 && medicines.length === 0 && age === null && conditions.length === 0) return;
+    try {
+      const prev = await loadDraft();
+      const same = !!prev && sameInputs(prev);
+      if (same) return;
+      await saveDraft({ ...EMPTY_DRAFT, committedAt: prev?.committedAt ?? null, supplements, medicines, profile: { age, conditions } });
+    } catch {}
+  }
   // 점검을 떠날 때 — 이미 환자가 있으면(홈에서 다시 점검) 홈으로, 없으면 이름 한 칸으로.
   async function leave() {
+    await persistDraft();
     const pid = await getPatientId();
+    leavingRef.current = true;
     nav.reset({ index: 0, routes: [{ name: pid ? "Tabs" : "NameEntry" }] });
   }
   function goBack() {
     if (stepIndex > 0) { setStep(STEP_ORDER[stepIndex - 1]); setPanel("none"); return; }
-    if (nav.canGoBack()) nav.goBack();
-    else void leave();
+    if (nav.canGoBack()) { void persistDraft().then(() => { leavingRef.current = true; nav.goBack(); }); return; }
+    void leave();
   }
   // 건너뛰기 = 점검 없이.
   function skip() { void leave(); }
+
+  // 하드웨어 뒤로가기·iOS 스와이프도 헤더 뒤로와 같게 — 단계가 남았으면 한 단계 뒤로, 첫 단계면
+  // 고른 것을 초안에 남긴 뒤 떠난다. 코드로 떠날 때(goBack·leave·next)는 leavingRef로 건너뛴다.
+  const leavingRef = useRef(false);
+  useEffect(() => nav.addListener("focus", () => { leavingRef.current = false; }), [nav]);
+  useEffect(() => {
+    return nav.addListener("beforeRemove", (e: any) => {
+      if (leavingRef.current) return;
+      e.preventDefault();
+      if (stepIndex > 0) { setStep(STEP_ORDER[stepIndex - 1]); setPanel("none"); return; }
+      leavingRef.current = true;
+      void persistDraft().finally(() => nav.dispatch(e.data.action));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nav, stepIndex, supplements, medicines, age, conditions]);
 
   async function next() {
     if (!canNext || nextBusy.current) return;
@@ -176,6 +213,7 @@ export function QuickCheckInputScreen() {
       nextBusy.current = false;
       setSaving(false);
     }
+    leavingRef.current = true;
     nav.navigate("QuickCheckAnalyzing");
   }
 
@@ -284,7 +322,7 @@ export function QuickCheckInputScreen() {
                   style={styles.nameInput}
                   value={name}
                   onChangeText={setName}
-                  placeholder="홍길동"
+                  placeholder="이름을 적어 주세요"
                   placeholderTextColor={colors.textSecondary}
                   maxLength={20}
                   returnKeyType="done"

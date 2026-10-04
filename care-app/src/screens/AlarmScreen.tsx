@@ -178,7 +178,8 @@ export function AlarmScreen() {
           {schedule ? `${schedule.medicine_name} 드실 시간이에요` : `${tod} 약 복용 시간입니다`}
         </Text>
         {schedule ? <View style={styles.medicineMark}><MedicineMark name={schedule.medicine_name} size={62} /></View> : null}
-        <Text style={styles.subtitle}>{`${tod} 약 · 드신 후 복용 완료를 눌러주세요.`}</Text>
+        {/* 안내 문구는 아래 버튼 이름과 똑같이 — "복용 완료"라고 쓰면 그런 버튼을 찾게 된다 */}
+        <Text style={styles.subtitle}>{`${tod} 약 · 약을 드셨으면 '지금 약 먹기'를 눌러 주세요.`}</Text>
 
         {ready ? (
           <>

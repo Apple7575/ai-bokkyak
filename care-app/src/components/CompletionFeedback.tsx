@@ -3,7 +3,8 @@ import { Animated, Modal, Pressable, StyleSheet, Text, Vibration, View } from "r
 import { CareCheckIcon } from "./CareIcons";
 import { colors, fontSizes, minTouch, radii, shadows, spacing } from "../theme/tokens";
 
-const DISPLAY_MS = 5000;
+// 어르신이 "잘못 눌렀어요"를 읽고 누를 시간 — 5초는 짧았다.
+const DISPLAY_MS = 8000;
 
 export function CompletionFeedback({
   visible,
@@ -24,7 +25,7 @@ export function CompletionFeedback({
 
   useEffect(() => {
     if (!visible) {
-      // 되돌리기로 일찍 닫힌 경우 5초짜리 JS 애니메이션이 남지 않게 정리
+      // 되돌리기로 일찍 닫힌 경우 DISPLAY_MS짜리 JS 애니메이션이 남지 않게 정리
       progress.stopAnimation();
       return;
     }
@@ -85,7 +86,7 @@ const styles = StyleSheet.create({
   sparkOne: { position: "absolute", width: 18, height: 18, borderRadius: 9, backgroundColor: colors.coral, top: 30, left: 42 },
   sparkTwo: { position: "absolute", width: 12, height: 12, borderRadius: 6, backgroundColor: colors.sunshine, top: 65, right: 48 },
   iconWrap: { width: 112, height: 112, borderRadius: 56, backgroundColor: colors.successSoft, alignItems: "center", justifyContent: "center" },
-  eyebrow: { marginTop: spacing.md, fontSize: 17, fontWeight: "800", color: colors.successGreen },
+  eyebrow: { marginTop: spacing.md, fontSize: fontSizes.body, fontWeight: "800", color: colors.successGreen },
   title: { marginTop: spacing.xs, fontSize: 34, fontWeight: "800", color: colors.primaryNavy },
   description: { marginTop: spacing.sm, fontSize: fontSizes.body, lineHeight: 28, textAlign: "center", color: colors.textSecondary },
   progressTrack: { width: "100%", height: 6, borderRadius: radii.pill, backgroundColor: colors.primarySoft, overflow: "hidden", marginTop: spacing.lg },

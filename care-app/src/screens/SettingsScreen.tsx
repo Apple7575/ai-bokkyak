@@ -19,7 +19,7 @@ type IconType = React.ComponentType<{ size?: number; color?: string }>;
 type MenuItem = { Icon: IconType; label: string; color: string; route: string };
 
 const menuItems: MenuItem[] = [
-  { Icon: Volume2, label: "알림 소리 설정", color: colors.primaryBlue, route: "AlarmSound" },
+  { Icon: Volume2, label: "알람 소리 설정", color: colors.primaryBlue, route: "AlarmSound" },
   // "음성 안내 속도"는 2026-10-03에 뺐다 — 앱이 읽어 주는 곳이 없어져 설정할 대상이 없다.
   // "큰 글씨 모드(준비 중)"는 2026-10-04에 뺐다 — 구현 전까지는 보여 주지 않는다.
   { Icon: Shield, label: "개인정보 설정", color: colors.textSecondary, route: "Privacy" },
@@ -64,7 +64,7 @@ export function SettingsScreen() {
     }
   };
 
-  const onLogout = async () => {
+  const doLogout = async () => {
     await notifee.cancelAllNotifications().catch(() => {});
     // 카카오 로그인은 Supabase Auth 세션을 만들지 않으므로 끊을 세션이 없다.
     // 기기에 남는 건 patientId뿐이고 clearAll()이 지운다. 같은 카카오 계정으로
@@ -73,6 +73,18 @@ export function SettingsScreen() {
     // 1분 점검 초안도 지운다 — 남겨 두면 다음 사람의 환자로 저장(commit)될 수 있다.
     await clearDraft();
     nav.reset({ index: 0, routes: [{ name: "Intro" }] });
+  };
+
+  // 한 번 누르면 기기에 남은 연결이 전부 지워지므로 반드시 확인을 받는다.
+  const onLogout = () => {
+    Alert.alert(
+      "처음 화면으로 돌아갈까요?",
+      "이 휴대폰에서 약과 기록이 보이지 않게 돼요. 카카오를 연결해 두셨다면 다시 불러올 수 있어요.",
+      [
+        { text: "취소", style: "cancel" },
+        { text: "돌아가기", style: "destructive", onPress: () => { void doLogout(); } },
+      ],
+    );
   };
 
   return (
@@ -97,7 +109,7 @@ export function SettingsScreen() {
         <View style={styles.introCard}>
           <View style={styles.introCopy}>
             <Text style={styles.introTitle}>나에게 편하게 맞춰요</Text>
-            <Text style={styles.introBody}>알림 소리와 개인정보를 여기서 설정할 수 있어요.</Text>
+            <Text style={styles.introBody}>알람 소리와 개인정보를 여기서 설정할 수 있어요.</Text>
           </View>
           <Image source={SETTINGS_ART} style={styles.introArt} resizeMode="contain" />
         </View>
@@ -105,6 +117,8 @@ export function SettingsScreen() {
           {menuItems.map(({ Icon, label, color, route }, i) => (
             <Pressable
               key={label}
+              accessibilityRole="button"
+              accessibilityLabel={label}
               onPress={() => nav.navigate(route)}
               style={({ pressed }) => [styles.rowItem, i < menuItems.length - 1 && styles.rowDivider, pressed && { opacity: 0.9 }]}
             >
@@ -119,13 +133,13 @@ export function SettingsScreen() {
           ))}
         </View>
 
-        {/* 로그아웃 / 역할 다시 선택 (실제 동작) */}
+        {/* 처음 화면으로 (기기 연결 해제) — 확인창 후 실행 */}
         <View style={styles.group}>
-          <Pressable onPress={onLogout} style={({ pressed }) => [styles.rowItem, pressed && { opacity: 0.9 }]}>
+          <Pressable accessibilityRole="button" onPress={onLogout} style={({ pressed }) => [styles.rowItem, pressed && { opacity: 0.9 }]}>
             <View style={[styles.iconBox, { backgroundColor: colors.dangerRed + "1A" }]}>
               <LogOut size={20} color={colors.dangerRed} />
             </View>
-            <Text style={[styles.rowLabel, { color: colors.dangerRed, flex: 1 }]}>로그아웃 / 처음으로</Text>
+            <Text style={[styles.rowLabel, { color: colors.dangerRed, flex: 1 }]}>처음 화면으로 돌아가기</Text>
           </Pressable>
         </View>
       </ScrollView>

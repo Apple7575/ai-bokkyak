@@ -4,6 +4,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Plus, AlertTriangle, ChevronRight } from "lucide-react-native";
 import { MedicineMark } from "../components/MedicineMark";
+import { BigButton } from "../components/BigButton";
 import { supabase, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { MedKind } from "../lib/medKind";
@@ -30,8 +31,10 @@ const FILTERS: readonly Filter[] = ["전체", "처방약", "일반약", "건기�
 const LIST_PADDING = spacing.md;
 const TABS_PADDING = 4;
 
+// 카드 배지에 쓰는 구분 라벨 — 홈과 같은 긴 이름. (요약 칸·필터 탭은 5개를 한 줄에 넣어야 해서
+// 내부 값 "건기식" 그대로 쓴다 — cabinetTabs.ts가 3글자 기준으로 폭을 계산한다.)
 const KIND_LABEL: Record<MedKind | "미분류", string> = {
-  처방약: "처방약", 일반약: "일반약", 건기식: "건기식", 미분류: "미분류",
+  처방약: "처방약", 일반약: "일반약", 건기식: "건강기능식품", 미분류: "미분류",
 };
 const KIND_COLOR: Record<MedKind | "미분류", string> = {
   처방약: colors.primaryBlue,
@@ -52,12 +55,16 @@ export function CabinetScreen() {
   const [kinds, setKinds] = useState<Record<string, MedKind>>({});
   const [findings, setFindings] = useState<Finding[] | null>(null); // null = 확인 못 함
   const [filter, setFilter] = useState<Filter>("전체");
+  // 일정 조회 실패(인터넷 끊김 등). 빈 약장("아직 등록한 약이 없어요")으로 보이면 안 된다.
+  const [loadError, setLoadError] = useState(false);
 
   const load = useCallback(async () => {
     const pid = await getPatientId();
     if (!pid) return;
-    const { data } = await supabase.from("schedules").select("*")
+    const { data, error } = await supabase.from("schedules").select("*")
       .eq("patient_id", pid).eq("active", true).order("hour");
+    if (error) { setLoadError(true); return; } // 삼키지 않는다 — 오류 블록 + 다시 시도
+    setLoadError(false);
     const list = (data ?? []) as Schedule[];
     setItems(list);
     setKinds(await getKindMap());
@@ -92,6 +99,8 @@ export function CabinetScreen() {
           onPress={() => nav.navigate("RegisterMethod")}
           style={({ pressed }) => [styles.headerSide, pressed && { opacity: 0.7 }]}
           hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="약 등록"
         >
           <Plus size={30} color={colors.primaryBlue} />
         </Pressable>
@@ -118,6 +127,7 @@ export function CabinetScreen() {
           <Pressable
             onPress={() => nav.navigate("Interaction")}
             style={({ pressed }) => [styles.warn, pressed && { opacity: 0.92 }]}
+            accessibilityRole="button"
           >
             <View style={styles.warnHead}>
               <AlertTriangle size={22} color={colors.warningOrange} />
@@ -138,6 +148,9 @@ export function CabinetScreen() {
               key={f}
               onPress={() => setFilter(f)}
               style={[styles.tab, filter === f && styles.tabOn]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: filter === f }}
+              accessibilityLabel={`${f} ${counts[f]}개`}
             >
               <Text
                 style={[styles.tabText, { fontSize: tabFont }, filter === f && styles.tabTextOn]}
@@ -149,7 +162,15 @@ export function CabinetScreen() {
           ))}
         </View>
 
-        {groups.length === 0 ? (
+        {loadError ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyTitle}>불러오지 못했어요</Text>
+            <Text style={styles.empty}>인터넷 연결을 확인해 주세요.</Text>
+            <View style={styles.retryWrap}>
+              <BigButton label="다시 시도" onPress={() => { void load(); }} />
+            </View>
+          </View>
+        ) : groups.length === 0 ? (
           <View style={styles.emptyCard}>
             <Image source={CABINET_ART} style={styles.emptyArt} resizeMode="contain" />
             <Text style={styles.emptyTitle}>아직 등록한 약이 없어요</Text>
@@ -165,7 +186,7 @@ export function CabinetScreen() {
           <Text style={styles.listHint}>약을 누르면 자세히 보고 수정할 수 있어요.</Text>
         )}
 
-        {shown.map((g) => {
+        {loadError ? null : shown.map((g) => {
           const k = kindOf(g.name);
           const color = KIND_COLOR[k];
           return (
@@ -173,6 +194,8 @@ export function CabinetScreen() {
                 key={g.name}
                 onPress={() => nav.navigate("MedicineDetail", { scheduleId: g.doses[0].id })}
                 style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
+                accessibilityRole="button"
+                accessibilityLabel={`${g.name}, ${describeDoses(g)}, 자세히 보기`}
               >
                 <MedicineMark name={g.name} size={52} />
                 <View style={styles.info}>
@@ -248,7 +271,8 @@ const styles = StyleSheet.create({
   kindBadge: { borderRadius: radii.pill, paddingHorizontal: 9, paddingVertical: 3 },
   kindText: { fontSize: 14, fontWeight: "700" },
   meta: { flex: 1, fontSize: fontSizes.body, color: colors.textSecondary },
-  sub: { fontSize: 16, color: colors.textSecondary, marginTop: 3 },
+  sub: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 3 },
+  retryWrap: { alignSelf: "stretch", marginTop: spacing.md },
   empty: {
     fontSize: 20, color: colors.textSecondary, textAlign: "center",
     marginTop: spacing.lg, lineHeight: 30,

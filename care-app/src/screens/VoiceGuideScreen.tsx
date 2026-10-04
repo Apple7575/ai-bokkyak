@@ -7,7 +7,7 @@ import { BigButton } from "../components/BigButton";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { isKakaoLinked, linkKakao } from "../lib/kakaoAccount";
-import { ensurePermission, scheduleReminders } from "../lib/notifications";
+import { ensurePermission, scheduleReminders, warnNotificationsOff } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { CUES, CueId, DISCLAIMER } from "../lib/voiceScript";
 import { DoseTime, Slot, SLOTS, afterMealTimes } from "../lib/voiceParse";
@@ -58,6 +58,8 @@ export function VoiceGuideScreen() {
   // 지금 단계의 안내 문구. 들어서는 즉시 전문을 그대로 보여 준다.
   const [caption, setCaption] = useState<string>(captionFor(cuesForStep("count")));
   const [saving, setSaving] = useState(false);
+  // 더블탭 동기 가드 — state만으로는 첫 await 사이의 두 번째 탭을 못 막아 알람 행이 두 벌 생긴다.
+  const savingRef = useRef(false);
   // 지금 시각을 조정 중인 시간 카드. 시안대로 고른 카드에만 −/+ 를 띄운다.
   const [editing, setEditing] = useState<number | null>(null);
   // 완료 단계의 카카오 "연결" 카드 — 회의 2026-09-10: 카카오는 기기 이전용 연결. 미연결(false)일 때만 띄운다.
@@ -178,10 +180,11 @@ export function VoiceGuideScreen() {
   // 완료 → 알람 저장. 약 이름은 아직 없으므로 시간대 이름으로 임시 등록한다
   // (문서 §1: 온보딩에서 약 이름을 받지 않는다).
   async function saveAlarms(): Promise<void> {
-    if (saving) return;
+    if (savingRef.current) return;
+    savingRef.current = true; // 첫 await 전에 동기적으로 잠근다
     setSaving(true);
     const pid = await getPatientId();
-    if (!pid) { setSaving(false); return; }
+    if (!pid) { savingRef.current = false; setSaving(false); return; }
     try {
       await ensureStrongAlarmReady();
       const granted = await ensurePermission();
@@ -200,10 +203,13 @@ export function VoiceGuideScreen() {
         }
       }
       void logGuideEvent({ step: "done", ...stats.current });
+      // 저장은 됐지만 알림 권한이 없으면 알람이 조용히 안 울린다 — 그 사실을 알린다.
+      if (!granted) warnNotificationsOff();
       // 회의 2026-09-03: 알람 설정을 마치면 바로 홈. 약 등록·위험 분석을 이어 붙이지 않는다.
       nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
     } catch {
       Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -252,7 +258,8 @@ export function VoiceGuideScreen() {
           ) : <View style={styles.progressWrap} />}
 
           {state.step !== "done" && state.step !== "skipped" ? (
-            <Pressable onPress={skip} hitSlop={10} style={styles.skipBtn}>
+            <Pressable onPress={skip} hitSlop={10} style={styles.skipBtn}
+              accessibilityRole="button" accessibilityLabel="나중에 설정하기">
               <Text style={styles.skipText}>나중에</Text>
             </Pressable>
           ) : <View style={styles.skipBtn} />}
@@ -308,14 +315,14 @@ export function VoiceGuideScreen() {
                   <Text style={styles.timeSlot}>{slotLabel(t.slot)}</Text>
                   {open ? (
                     <Pressable onPress={() => bumpTime(i, -30)} style={styles.bump} hitSlop={8}
-                      accessibilityLabel="30분 앞으로">
+                      accessibilityRole="button" accessibilityLabel="30분 앞으로">
                       <Text style={styles.bumpText}>−30분</Text>
                     </Pressable>
                   ) : null}
                   <Text style={styles.timeValue}>{ampm(t.hour, t.minute)}</Text>
                   {open ? (
                     <Pressable onPress={() => bumpTime(i, 30)} style={styles.bump} hitSlop={8}
-                      accessibilityLabel="30분 뒤로">
+                      accessibilityRole="button" accessibilityLabel="30분 뒤로">
                       <Text style={styles.bumpText}>+30분</Text>
                     </Pressable>
                   ) : null}
@@ -388,7 +395,8 @@ export function VoiceGuideScreen() {
               </View>
             ) : null}
 
-            <BigButton label={saving ? "저장 중…" : "홈으로 가기"} onPress={() => { void saveAlarms(); }} disabled={saving} />
+            {/* 이 버튼이 실제로 알람을 저장한다 — "홈으로 가기"라고만 쓰면 저장되는 줄 모른다 */}
+            <BigButton label={saving ? "저장 중…" : "알람 저장하고 홈으로"} onPress={() => { void saveAlarms(); }} disabled={saving} />
             <Text style={styles.disclaimer}>{DISCLAIMER}</Text>
           </>
         ) : null}
@@ -413,7 +421,7 @@ const styles = StyleSheet.create({
   seg: { width: 26, height: 5, borderRadius: 3, backgroundColor: colors.border },
   segOn: { backgroundColor: colors.primaryBlue },
   progressText: {
-    marginTop: 6, fontSize: 13, fontWeight: "700", color: colors.textSecondary,
+    marginTop: 6, fontSize: 16, fontWeight: "700", color: colors.textSecondary,
   },
   skipText: { fontSize: fontSizes.body, color: colors.textSecondary, fontWeight: "600" },
   caption: {
@@ -447,10 +455,11 @@ const styles = StyleSheet.create({
   timeSlot: { fontSize: 19, fontWeight: "800", color: colors.text, width: 52 },
   timeValue: { flex: 1, fontSize: 21, fontWeight: "800", color: colors.primaryBlue, textAlign: "center" },
   bump: {
+    minHeight: 44, justifyContent: "center",
     paddingHorizontal: 10, paddingVertical: 8, borderRadius: radii.button,
     backgroundColor: colors.lightBlueBg,
   },
-  bumpText: { fontSize: 15, fontWeight: "700", color: colors.primaryBlue },
+  bumpText: { fontSize: fontSizes.body, fontWeight: "700", color: colors.primaryBlue },
   wideBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
     minHeight: minTouch, borderRadius: radii.button, backgroundColor: colors.primaryBlue,
@@ -480,5 +489,5 @@ const styles = StyleSheet.create({
   },
   linkTitle: { fontSize: fontSizes.emphasis, fontWeight: "800", color: colors.primaryNavy },
   linkBody: { fontSize: fontSizes.body, lineHeight: 27, color: colors.textSecondary, marginBottom: spacing.xs },
-  disclaimer: { fontSize: 14, color: colors.textSecondary, textAlign: "center", lineHeight: 21 },
+  disclaimer: { fontSize: 16, color: colors.textSecondary, textAlign: "center", lineHeight: 24 },
 });

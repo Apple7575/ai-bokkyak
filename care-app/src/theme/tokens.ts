@@ -26,6 +26,8 @@ export const colors = {
   sunshine: "#F5A623",
   sunshineSoft: "#FFF4DF",
   white: "#FFFFFF",
+  // 파란 카드 위에 얹는 반투명 흰 칸(아이콘 배경 등).
+  whiteOverlay: "rgba(255,255,255,0.2)",
   overlay: "rgba(16,42,94,0.12)",
   overlayStrong: "rgba(16,42,94,0.28)",
   dangerSoft: "#FCEBE7",
@@ -52,7 +54,7 @@ export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 40 } as cons
 export const radii = { small: 12, card: 24, button: 18, hero: 32, pill: 999 } as const;
 export const minTouch = 56;
 // 탭바가 position:absolute 라 탭 화면 스크롤 하단에 이만큼 여백을 둬야 마지막 카드가 가려지지 않는다.
-export const tabBarClearance = 112;
+export const tabBarClearance = 116;
 
 export const shadows = {
   card: {
