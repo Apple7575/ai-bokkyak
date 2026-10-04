@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View, Text, ScrollView, StyleSheet, Pressable, TextInput, Alert, ActivityIndicator,
-  KeyboardAvoidingView, Keyboard,
+  KeyboardAvoidingView, Keyboard, BackHandler,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { ChevronLeft, ChevronDown, Search, Pencil, Camera, Image as ImageIcon, Check, Plus, X } from "lucide-react-native";
@@ -48,6 +48,7 @@ const LIST_META: Record<"supplements" | "medicines", {
 
 export function QuickCheckInputScreen() {
   const nav = useNavigation<any>();
+  const fromIntro = useRoute<any>().params?.from === "intro";
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState<Step>("supplements");
   const [supplements, setSupplements] = useState<string[]>([]);
@@ -126,13 +127,21 @@ export function QuickCheckInputScreen() {
     const pid = await getPatientId();
     nav.reset({ index: 0, routes: [{ name: pid ? "Tabs" : "NameEntry" }] });
   }
+  // 1/3의 「뒤로」 — 인트로에서 왔으면 인트로 시작 화면으로(회의 2026-09-20). 점검을 건너뛰는 길은
+  // 인트로의 「지금은 건너뛰기」 하나뿐이다 — 이 화면 상단의 「건너뛰기」는 같은 회의에서 지웠다.
   function goBack() {
     if (stepIndex > 0) { setStep(STEP_ORDER[stepIndex - 1]); setPanel("none"); return; }
     if (nav.canGoBack()) nav.goBack();
+    else if (fromIntro) nav.reset({ index: 0, routes: [{ name: "Intro", params: { slide: "cta" } }] });
     else void leave();
   }
-  // 건너뛰기 = 점검 없이.
-  function skip() { void leave(); }
+  // 안드로이드 뒤로 버튼도 화면의 「뒤로」와 같게 — 단계를 하나씩 되돌리고 1/3에서는 위 규칙대로.
+  const goBackRef = useRef(goBack);
+  goBackRef.current = goBack;
+  useFocusEffect(useCallback(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => { goBackRef.current(); return true; });
+    return () => sub.remove();
+  }, []));
 
   async function next() {
     if (!canNext || nextBusy.current) return;
@@ -186,7 +195,7 @@ export function QuickCheckInputScreen() {
       style={[styles.screen, { paddingTop: insets.top }]}
       behavior="padding"
     >
-      {/* 상단 바 — 뒤로 · 진행(3칸) · 건너뛰기 (시안 V8 segs) */}
+      {/* 상단 바 — 뒤로 · 진행(3칸) (시안 V8 segs). 오른쪽은 진행 표시를 가운데에 두기 위한 빈 칸 */}
       <View style={styles.header}>
         <Pressable onPress={goBack} hitSlop={12} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="뒤로">
           <ChevronLeft size={26} color={colors.textSecondary} />
@@ -197,9 +206,7 @@ export function QuickCheckInputScreen() {
           </View>
           <Text style={styles.progressText}>{STEP_LABEL[step]}</Text>
         </View>
-        <Pressable onPress={skip} hitSlop={10} style={styles.skipBtn} accessibilityRole="button" accessibilityLabel="건너뛰기">
-          <Text style={styles.skipText}>건너뛰기</Text>
-        </Pressable>
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView
@@ -524,8 +531,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
   },
   backBtn: { width: 72, height: 44, justifyContent: "center" },
-  skipBtn: { minWidth: 72, minHeight: minTouch, alignItems: "flex-end", justifyContent: "center" },
-  skipText: { fontSize: fontSizes.body, color: colors.textSecondary, fontWeight: "600" },
+  headerSpacer: { width: 72 },
   progressWrap: { flex: 1, alignItems: "center" },
   segRow: { flexDirection: "row", gap: 6 },
   seg: { width: 34, height: 5, borderRadius: 3, backgroundColor: colors.border },

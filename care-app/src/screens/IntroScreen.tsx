@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   AccessibilityInfo, Animated, BackHandler, Easing, Pressable, ScrollView, StyleSheet, Text, View, Alert } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Check, Leaf, Link2, Package, Pill } from "lucide-react-native";
+import { Check, Leaf, Package, Pill } from "lucide-react-native";
 import { Logo } from "../components/Logo";
 import { INTRO_SLIDES, SKIP_TARGET_INDEX, dotState, nextIndex, prevIndex } from "../lib/introSlides";
 import { setOnboarded } from "../lib/storage";
@@ -67,8 +67,10 @@ function Reveal({ delay = 0, duration = 500, kind = "up", style, children }: {
 export function IntroScreen() {
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const [index, setIndex] = useState(0);
-  const indexRef = useRef(0);
+  // 점검 1/3에서 「뒤로」로 돌아오면 시작 화면(마지막 장)부터 — 브랜드부터 다시 넘기게 하지 않는다.
+  const initialIndex = useRoute<any>().params?.slide === "cta" ? SKIP_TARGET_INDEX : 0;
+  const [index, setIndex] = useState(initialIndex);
+  const indexRef = useRef(initialIndex);
   const opacity = useRef(new Animated.Value(1)).current;
   const reduceMotion = useRef(false);
   const autoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -126,7 +128,7 @@ export function IntroScreen() {
   const skip = () => goTo(SKIP_TARGET_INDEX);
 
   // 두 번 눌러 reset이 두 번 나가지 않게 (입력을 잠그는 게 아니라 재진입만 막는다).
-  async function leave(routes: { name: string }[]) {
+  async function leave(routes: { name: string; params?: object }[]) {
     if (leaving.current) return;
     leaving.current = true;
     clearAuto();
@@ -144,7 +146,8 @@ export function IntroScreen() {
   }
   // 회의 2026-09-10(B안): 가입 화면이 없다. 점검은 3/3에서 이름을 받아 환자를 만들고
   // 결과 → 복용 알람 설정으로 잇는다. 건너뛰면 이름 한 칸(NameEntry) → 바로 홈.
-  const startQuickCheck = () => void leave([{ name: "QuickCheckInput" }]);
+  // from: "intro" — 점검 1/3의 「뒤로」가 인트로로 돌아오게 한다(회의 2026-09-20).
+  const startQuickCheck = () => void leave([{ name: "QuickCheckInput", params: { from: "intro" } }]);
   const skipSetup = () => void leave([{ name: "NameEntry" }]);
   // 휴대폰을 바꾼 사용자 — 카카오와 연결해 둔 예전 정보를 불러온다. 눌린 링크만 busy.
   const [restoring, setRestoring] = useState(false);
@@ -281,24 +284,8 @@ function Onboarding1({ onNext }: { onNext: () => void }) {
             </Reveal>
           ))}
         </View>
-        <Reveal delay={1000} duration={450} kind="fade" style={styles.joinLines}>
-          <View style={styles.joinLine} /><View style={styles.joinLine} /><View style={styles.joinLine} />
-        </Reveal>
-        <View style={styles.pillRow}>
-          <Reveal delay={1300} duration={450} kind="pop">
-            <View style={styles.pill}>
-              <Link2 size={18} color={colors.primaryBlue} />
-              <Text style={styles.pillText}>내 몸속 하나의 복용 조합</Text>
-            </View>
-          </Reveal>
-        </View>
-        <Reveal delay={1900} duration={550}>
-          <Text style={styles.onb1Body}>
-            효과 있는 복용은 결국{"\n"}
-            <Text style={styles.onb1BodyAccent}>나에게 필요한 것만 올바르게</Text>{"\n"}
-            먹는 것에서 시작됩니다.
-          </Text>
-        </Reveal>
+        {/* 회의 2026-09-06: 칩 「내 몸속 하나의 복용 조합」·본문 3줄은 헤드라인의 반복이라 지웠다.
+            헤드라인 + 아이콘 3개로 전달이 끝난다(칩을 잇던 연결선도 함께). */}
       </ScrollView>
       <NextButton onPress={onNext} />
     </View>
@@ -442,13 +429,6 @@ const styles = StyleSheet.create({
   tile: { flex: 1, alignItems: "center", gap: 6 },
   tileIcon: { width: 56, height: 56, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   tileLabel: { fontSize: 18, fontWeight: "700", color: colors.textSecondary },
-  joinLines: { flexDirection: "row", justifyContent: "space-evenly", height: 34, paddingHorizontal: spacing.xl },
-  joinLine: { width: 1.5, height: "100%", backgroundColor: colors.border },
-  pillRow: { alignItems: "center" },
-  pill: { height: 44, paddingHorizontal: 17, borderRadius: 22, backgroundColor: colors.primarySoft, borderWidth: 1.5, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: 8 },
-  pillText: { fontSize: 18, fontWeight: "800", color: colors.primaryBlue, letterSpacing: -0.3 },
-  onb1Body: { marginTop: 28, textAlign: "center", fontSize: fontSizes.emphasis, lineHeight: 33, fontWeight: "700", color: colors.text, letterSpacing: -0.5 },
-  onb1BodyAccent: { color: colors.primaryBlue, fontWeight: "800" },
 
   // 3 — 낭비와 위험
   onb2Lead: { fontSize: fontSizes.emphasis, fontWeight: "600", color: colors.textSecondary, letterSpacing: -0.5 },

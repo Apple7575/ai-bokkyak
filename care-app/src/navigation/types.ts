@@ -1,5 +1,6 @@
 export type RootStackParamList = {
-  Intro: undefined;
+  // slide: 점검 1/3에서 「뒤로」로 돌아올 때 시작 화면(마지막 장)을 바로 보인다.
+  Intro: { slide?: "cta" } | undefined;
   NameEntry: undefined;
   AlarmPrompt: undefined;
   Tabs: undefined;
@@ -17,7 +18,8 @@ export type RootStackParamList = {
   Privacy: undefined;
   MedicineDetail: { scheduleId: string };
   Interaction: undefined;
-  QuickCheckInput: undefined;
+  // from: 인트로에서 들어왔으면 1/3의 「뒤로」가 인트로로 돌아간다(회의 2026-09-20).
+  QuickCheckInput: { from?: "intro" } | undefined;
   QuickCheckAnalyzing: undefined;
   // findings: 초안이 서버로 옮겨져(지워져) 기기에 없을 수 있어 앞 화면이 넘겨준다.
   // names: 대조한 이름 전부(부제·대조 수 계산용). 대조 수 = names.length - unmatched.length.
