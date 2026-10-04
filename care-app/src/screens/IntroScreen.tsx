@@ -294,9 +294,9 @@ function Onboarding1({ onNext }: { onNext: () => void }) {
         </View>
         <Reveal delay={1900} duration={550}>
           <Text style={styles.onb1Body}>
-            효과 있는 복용은 결국{"\n"}
-            <Text style={styles.onb1BodyAccent}>나에게 필요한 것만 올바르게</Text>{"\n"}
-            먹는 것에서 시작됩니다.
+            꼭 필요한 약과 영양제만{"\n"}
+            <Text style={styles.onb1BodyAccent}>올바르게 챙기는 것이</Text>{"\n"}
+            건강의 시작입니다.
           </Text>
         </Reveal>
       </ScrollView>

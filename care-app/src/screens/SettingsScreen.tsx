@@ -2,7 +2,7 @@ import React, { useCallback, useState } from "react";
 import { Image, View, Text, Pressable, ScrollView, StyleSheet, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { Volume2, Type, Shield, LogOut, ChevronRight } from "lucide-react-native";
+import { Volume2, Shield, LogOut, ChevronRight } from "lucide-react-native";
 import notifee from "@notifee/react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { BigButton } from "../components/BigButton";
@@ -14,15 +14,14 @@ import { colors, fontSizes, radii, spacing, shadows, tabBarClearance } from "../
 const SETTINGS_ART = require("../../assets/illustrations/settings-dial-accent.png");
 
 type IconType = React.ComponentType<{ size?: number; color?: string }>;
-// route가 있는 항목만 실제 화면으로 이동한다. 나머지는 아직 시각용 자리표시자.
-type MenuItem = { Icon: IconType; label: string; color: string; sub?: string; route?: string };
+// 모든 항목이 실제 화면으로 이동한다. 만들지 않은 기능은 여기에 두지 않는다
+// (스토어 심사 2026-10-04: "준비 중" 자리표시자 메뉴는 미완성 기능으로 반려 사유가 된다).
+type MenuItem = { Icon: IconType; label: string; color: string; route: string };
 
 const menuItems: MenuItem[] = [
   { Icon: Volume2, label: "알림 소리 설정", color: colors.primaryBlue, route: "AlarmSound" },
   // "음성 안내 속도"는 2026-10-03에 뺐다 — 앱이 읽어 주는 곳이 없어져 설정할 대상이 없다.
-  // 아직 만들지 않은 기능은 눌러도 아무 일이 없는 대신 "준비 중"이라고 밝힌다
-  // (QA에서 "버튼이 안 눌림"으로 보고됨).
-  { Icon: Type, label: "큰 글씨 모드", color: colors.textSecondary, sub: "준비 중이에요" },
+  // "큰 글씨 모드(준비 중)"는 2026-10-04에 뺐다 — 구현 전까지는 보여 주지 않는다.
   { Icon: Shield, label: "개인정보 설정", color: colors.textSecondary, route: "Privacy" },
 ];
 
@@ -98,38 +97,26 @@ export function SettingsScreen() {
         <View style={styles.introCard}>
           <View style={styles.introCopy}>
             <Text style={styles.introTitle}>나에게 편하게 맞춰요</Text>
-            <Text style={styles.introBody}>소리와 글씨를 보기 편하게 설정할 수 있어요.</Text>
+            <Text style={styles.introBody}>알림 소리와 개인정보를 여기서 설정할 수 있어요.</Text>
           </View>
           <Image source={SETTINGS_ART} style={styles.introArt} resizeMode="contain" />
         </View>
         <View style={styles.group}>
-          {menuItems.map(({ Icon, label, color, sub, route }, i) => {
-            const rowStyle = [styles.rowItem, i < menuItems.length - 1 && styles.rowDivider];
-            const inner = (
-              <>
-                <View style={[styles.iconBox, { backgroundColor: color + "1A" }]}>
-                  <Icon size={20} color={color} />
-                </View>
-                <View style={styles.rowTextWrap}>
-                  <Text style={styles.rowLabel}>{label}</Text>
-                  {sub ? <Text style={styles.rowSub}>{sub}</Text> : null}
-                </View>
-                {route ? <ChevronRight size={18} color={colors.textSecondary} /> : null}
-              </>
-            );
-            // route가 없으면 준비 중인 항목 — 화살표를 빼서 누를 수 없음을 드러낸다.
-            return route ? (
-              <Pressable
-                key={label}
-                onPress={() => nav.navigate(route)}
-                style={({ pressed }) => [...rowStyle, pressed && { opacity: 0.9 }]}
-              >
-                {inner}
-              </Pressable>
-            ) : (
-              <View key={label} style={rowStyle}>{inner}</View>
-            );
-          })}
+          {menuItems.map(({ Icon, label, color, route }, i) => (
+            <Pressable
+              key={label}
+              onPress={() => nav.navigate(route)}
+              style={({ pressed }) => [styles.rowItem, i < menuItems.length - 1 && styles.rowDivider, pressed && { opacity: 0.9 }]}
+            >
+              <View style={[styles.iconBox, { backgroundColor: color + "1A" }]}>
+                <Icon size={20} color={color} />
+              </View>
+              <View style={styles.rowTextWrap}>
+                <Text style={styles.rowLabel}>{label}</Text>
+              </View>
+              <ChevronRight size={18} color={colors.textSecondary} />
+            </Pressable>
+          ))}
         </View>
 
         {/* 로그아웃 / 역할 다시 선택 (실제 동작) */}
@@ -173,5 +160,4 @@ const styles = StyleSheet.create({
   iconBox: { width: 48, height: 48, borderRadius: 17, alignItems: "center", justifyContent: "center" },
   rowTextWrap: { flex: 1 },
   rowLabel: { fontSize: 19, fontWeight: "700", color: colors.text },
-  rowSub: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 2 },
 });
