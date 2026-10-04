@@ -140,8 +140,10 @@ export function QuickCheckResultScreen() {
     return () => { alive = false; };
   }, [route.params]);
 
+  // 점검한 이름을 그대로 넘겨 약마다 시간대를 고르게 한다(회의 2026-09-06·09-12).
   function toAlarm() {
-    nav.reset({ index: 1, routes: [{ name: "Tabs" }, { name: "VoiceGuide" }] });
+    const medicines = state.phase === "ok" ? state.names : [];
+    nav.reset({ index: 1, routes: [{ name: "Tabs" }, { name: "VoiceGuide", params: { medicines } }] });
   }
   function toHome() {
     nav.reset({ index: 0, routes: [{ name: "Tabs" }] });

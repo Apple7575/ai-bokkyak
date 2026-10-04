@@ -4,7 +4,9 @@ export type RootStackParamList = {
   NameEntry: undefined;
   AlarmPrompt: undefined;
   Tabs: undefined;
-  VoiceGuide: undefined;
+  // medicines: 1분 점검에서 방금 대조한 이름(Case A) — 이 이름 그대로 알람을 맞춘다.
+  // 없으면(알람 물음에서 온 Case C) 하루 횟수만 묻는다. 회의 2026-09-06·09-12.
+  VoiceGuide: { medicines?: string[] } | undefined;
   RegisterMethod: undefined;
   ButtonRegister: { editId?: string } | undefined;
   OcrRegister: undefined;
