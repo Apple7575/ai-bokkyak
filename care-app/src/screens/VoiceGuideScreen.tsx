@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert, Modal } from "react-native";
+import { View, Text, ScrollView, StyleSheet, Pressable, Alert, Modal, useWindowDimensions } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Bell, Check, ChevronLeft } from "lucide-react-native";
@@ -14,7 +14,7 @@ import { Slot, SLOTS } from "../lib/voiceParse";
 import { slotLabel } from "../lib/timeOfDay";
 import {
   AlarmSetup, initialSetup, medSlotsOf, toggleMedSlot, pickCount, chosenTimes, canFinish, showsUnslottedNote,
-  medicinesAt, bumpSlotTime, bannerText, scheduleRows, rowKey, ampm,
+  medicinesAt, bumpSlotTime, bannerText, scheduleRows, ampm,
 } from "../lib/voiceGuideFlow";
 import { logGuideEvent } from "../lib/analytics";
 import { colors, fontSizes, spacing, radii, shadows } from "../theme/tokens";
@@ -35,6 +35,7 @@ export function VoiceGuideScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   // 들어올 때 받은 약 이름으로 모드를 한 번 정한다(정리·중복 제거는 initialSetup이).
   const [setup, setSetup] = useState<AlarmSetup>(() => initialSetup(route.params?.medicines));
   const [step, setStep] = useState<Step>("setup");
@@ -47,8 +48,6 @@ export function VoiceGuideScreen() {
 
   // 두 번 눌러 저장이 겹치지 않게 하는 동기 가드(state는 버튼 문구·비활성용).
   const savingRef = useRef(false);
-  // 이미 저장한 (약, 시간대). 중간에 실패해 다시 누르면 건너뛴다 — 같은 알람이 두 번 생기지 않게.
-  const savedKeys = useRef(new Set<string>());
   // 저장 중에 화면을 떠났으면, 늦게 끝난 저장이 다른 화면 위에 Alert를 띄우지 않게.
   const mounted = useRef(true);
   useEffect(() => {
@@ -120,16 +119,15 @@ export function VoiceGuideScreen() {
       }
       await ensureStrongAlarmReady();
       const granted = await ensurePermission();
-      for (const row of rows) {
-        const key = rowKey(row);
-        if (savedKeys.current.has(key)) continue;
-        const { data, error } = await supabase.from("schedules").insert({ patient_id: pid, ...row }).select().single();
-        if (error || !data) throw error ?? new Error("insert 실패");
-        savedKeys.current.add(key);
-        if (granted) {
+      // 한 번에 넣는다 — 여러 행 insert는 한 문장이라 전부 들어가거나 하나도 안 들어간다.
+      // 행마다 넣으면 중간에 실패한 뒤 시각을 고치거나 칸을 끄고 다시 눌러도 먼저 들어간 행이 그대로 남는다.
+      const { data, error } = await supabase.from("schedules").insert(rows.map((r) => ({ patient_id: pid, ...r }))).select();
+      if (error || !data) throw error ?? new Error("insert 실패");
+      if (granted) {
+        for (const d of data) {
           // 예약이 실패해도 행은 저장됐다 — 앱을 다시 열 때 resyncAllAlarms가 다시 예약한다.
           try {
-            await scheduleReminders(data.id, data.medicine_name, row.hour, row.minute, row.repeat_days, row.time_of_day);
+            await scheduleReminders(d.id, d.medicine_name, d.hour, d.minute, d.repeat_days ?? [], d.time_of_day);
           } catch {}
         }
       }
@@ -295,24 +293,30 @@ export function VoiceGuideScreen() {
         <View style={[styles.sheet, { paddingBottom: spacing.lg + insets.bottom }]}>
           <View style={styles.grab} />
           <Text style={styles.sheetTitle}>알림 시간 바꾸기</Text>
-          {times.map((t) => (
-            <View key={t.slot} style={styles.sheetRow}>
-              <Text style={styles.sheetSlot}>{slotLabel(t.slot)}</Text>
-              <Pressable onPress={() => bump(t.slot, -30)} hitSlop={6}
-                accessibilityRole="button" accessibilityLabel={`${slotLabel(t.slot)} 30분 일찍`}
-                style={({ pressed }) => [styles.bump, pressed && styles.pressed]}>
-                <Text style={styles.bumpText}>−30분</Text>
-              </Pressable>
-              <Text style={styles.sheetTime} numberOfLines={1} adjustsFontSizeToFit accessibilityLiveRegion="polite">
-                {ampm(t.hour, t.minute)}
-              </Text>
-              <Pressable onPress={() => bump(t.slot, 30)} hitSlop={6}
-                accessibilityRole="button" accessibilityLabel={`${slotLabel(t.slot)} 30분 늦게`}
-                style={({ pressed }) => [styles.bump, pressed && styles.pressed]}>
-                <Text style={styles.bumpText}>+30분</Text>
-              </Pressable>
-            </View>
-          ))}
+          {/* 시간대 이름은 윗줄에 — 한 줄에 넣으면 큰 글씨 설정에서 가운데 시각이 먼저 줄어든다.
+              시간대가 넷이고 글씨가 크면 길어지므로 목록만 스크롤하고 「완료」는 늘 보이게 둔다. */}
+          <ScrollView style={{ maxHeight: windowHeight * 0.55 }} bounces={false}>
+            {times.map((t) => (
+              <View key={t.slot} style={styles.sheetRow}>
+                <Text style={styles.sheetSlot}>{slotLabel(t.slot)}</Text>
+                <View style={styles.sheetCtrl}>
+                  <Pressable onPress={() => bump(t.slot, -30)} hitSlop={6}
+                    accessibilityRole="button" accessibilityLabel={`${slotLabel(t.slot)} 30분 일찍`}
+                    style={({ pressed }) => [styles.bump, pressed && styles.pressed]}>
+                    <Text style={styles.bumpText} numberOfLines={1}>−30분</Text>
+                  </Pressable>
+                  <Text style={styles.sheetTime} numberOfLines={1} adjustsFontSizeToFit accessibilityLiveRegion="polite">
+                    {ampm(t.hour, t.minute)}
+                  </Text>
+                  <Pressable onPress={() => bump(t.slot, 30)} hitSlop={6}
+                    accessibilityRole="button" accessibilityLabel={`${slotLabel(t.slot)} 30분 늦게`}
+                    style={({ pressed }) => [styles.bump, pressed && styles.pressed]}>
+                    <Text style={styles.bumpText} numberOfLines={1}>+30분</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
           <View style={styles.sheetDone}>
             <BigButton label="완료" onPress={() => setSheetOpen(false)} />
           </View>
@@ -401,14 +405,13 @@ const styles = StyleSheet.create({
   },
   grab: { alignSelf: "center", width: 44, height: 5, borderRadius: 3, backgroundColor: colors.border, marginBottom: 14 },
   sheetTitle: { fontSize: 22, lineHeight: 32, fontWeight: "800", color: colors.primaryNavy, marginBottom: spacing.xs },
-  sheetRow: {
-    flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: colors.canvasMuted,
-  },
-  sheetSlot: { width: 64, fontSize: 19, fontWeight: "800", color: colors.text },
-  sheetTime: { flex: 1, textAlign: "center", fontSize: 20, fontWeight: "800", color: colors.primaryNavy },
+  sheetRow: { paddingVertical: 12, gap: spacing.xs, borderBottomWidth: 1, borderBottomColor: colors.canvasMuted },
+  sheetSlot: { fontSize: fontSizes.body, fontWeight: "800", color: colors.text },
+  // 세 칸을 고르게 나눈다(시각 칸이 조금 넓게) — 글씨가 커져도 버튼이 시각 자리를 빼앗지 않게
+  sheetCtrl: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  sheetTime: { flex: 1.3, textAlign: "center", fontSize: 20, fontWeight: "800", color: colors.primaryNavy },
   bump: {
-    minWidth: 72, minHeight: 48, paddingHorizontal: 10, borderRadius: radii.pill,
+    flex: 1, minHeight: 48, paddingHorizontal: 6, borderRadius: radii.pill,
     alignItems: "center", justifyContent: "center",
     backgroundColor: colors.lightBlueBg, borderWidth: 1.5, borderColor: colors.border,
   },

@@ -122,17 +122,21 @@ export function QuickCheckInputScreen() {
   function onRemove(label: string) { setList(list.filter((x) => x !== label)); }
   function onCondition(label: string) { setConditions(toggleItem(conditions, label, NONE_CONDITION)); }
 
-  // 점검을 떠날 때 — 이미 환자가 있으면(홈에서 다시 점검) 홈으로, 없으면 이름 한 칸으로.
+  // 점검을 떠날 때 — 이미 환자가 있으면 홈으로(홈에서 다시 점검했거나, 3/3에서 환자를 만든 뒤 결과에서
+  // 뒤로 되돌아온 경우 — 인트로로 보내면 「지금은 건너뛰기」가 환자를 하나 더 만든다).
+  // 없으면 인트로에서 왔을 때는 인트로 시작 화면으로(회의 2026-09-20), 아니면 이름 한 칸으로.
+  // 점검을 건너뛰는 길은 인트로의 「지금은 건너뛰기」 하나뿐이다 — 이 화면 상단의 「건너뛰기」는 같은 회의에서 지웠다.
   async function leave() {
     const pid = await getPatientId();
-    nav.reset({ index: 0, routes: [{ name: pid ? "Tabs" : "NameEntry" }] });
+    if (pid) nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
+    else if (fromIntro) nav.reset({ index: 0, routes: [{ name: "Intro", params: { slide: "cta" } }] });
+    else nav.reset({ index: 0, routes: [{ name: "NameEntry" }] });
   }
-  // 1/3의 「뒤로」 — 인트로에서 왔으면 인트로 시작 화면으로(회의 2026-09-20). 점검을 건너뛰는 길은
-  // 인트로의 「지금은 건너뛰기」 하나뿐이다 — 이 화면 상단의 「건너뛰기」는 같은 회의에서 지웠다.
   function goBack() {
+    // 3/3 저장 중에는 되돌리지 않는다 — 저장이 끝나면 분석 화면으로 넘어가므로 단계만 어긋난다.
+    if (nextBusy.current) return;
     if (stepIndex > 0) { setStep(STEP_ORDER[stepIndex - 1]); setPanel("none"); return; }
     if (nav.canGoBack()) nav.goBack();
-    else if (fromIntro) nav.reset({ index: 0, routes: [{ name: "Intro", params: { slide: "cta" } }] });
     else void leave();
   }
   // 안드로이드 뒤로 버튼도 화면의 「뒤로」와 같게 — 단계를 하나씩 되돌리고 1/3에서는 위 규칙대로.

@@ -50,6 +50,9 @@ const EVIDENCE_LABEL: Record<string, string> = {
   conflicting: "근거 충돌",
 };
 
+// 카카오 연결 여부 조회를 기다리는 최대 시간 — 넘으면 조회 실패(null)로 보고 결과를 연다.
+const LINK_LOOKUP_TIMEOUT_MS = 5000;
+
 function FindingCard({ f }: { f: QuickFinding }) {
   const c = KIND_COLOR[f.kind];
   const evidence = f.evidenceLevel ? EVIDENCE_LABEL[f.evidenceLevel] : undefined;
@@ -87,21 +90,29 @@ export function QuickCheckResultScreen() {
   // ref는 동기 가드, state는 버튼 문구·비활성용.
   const linkBusy = useRef(false);
   const [linking, setLinking] = useState(false);
+  // 연결 중에 화면을 떠났으면 늦게 끝난 실패 안내가 다른 화면 위에 뜨지 않게.
+  const mounted = useRef(true);
+  useEffect(() => () => { mounted.current = false; }, []);
 
   useEffect(() => {
     let alive = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     (async () => {
       let v: boolean | null;
       try {
         const pid = await getPatientId();
-        v = pid ? await isKakaoLinked(pid) : null;
+        // 응답 없이 멈춘 요청(타임아웃이 없다)도 실패로 친다 — 결과가 영영 잠겨 있지 않게.
+        const timeout = new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), LINK_LOOKUP_TIMEOUT_MS); });
+        v = pid ? await Promise.race([isKakaoLinked(pid), timeout]) : null;
       } catch {
         v = null; // 조회 실패 — 영영 잠겨 있지 않게 연다(안전 정보를 가리지 않는다)
+      } finally {
+        if (timer) clearTimeout(timer);
       }
       // 연결에 성공한(true) 뒤에 늦게 도착한 조회 결과가 다시 잠그지 않게.
       if (alive) setLinked((cur) => (cur === true ? true : v));
     })();
-    return () => { alive = false; };
+    return () => { alive = false; if (timer) clearTimeout(timer); };
   }, []);
 
   useEffect(() => {
@@ -160,7 +171,7 @@ export function QuickCheckResultScreen() {
     try {
       const pid = await getPatientId();
       if (!pid) {
-        Alert.alert("카카오 연결", "내 정보를 찾지 못했어요. 앱을 다시 시작해 주세요.");
+        if (mounted.current) Alert.alert("카카오 연결", "내 정보를 찾지 못했어요. 앱을 다시 시작해 주세요.");
         return;
       }
       const r = await linkKakao(pid);
@@ -168,9 +179,9 @@ export function QuickCheckResultScreen() {
       if (r.canceled) return;
       // 앞선 조회가 실패해 몰랐을 뿐 이미 연결돼 있을 수 있다 — 한 번 더 확인해 맞으면 연다.
       if ((await isKakaoLinked(pid)) === true) { setLinked(true); return; }
-      Alert.alert("카카오 연결", r.message);
+      if (mounted.current) Alert.alert("카카오 연결", r.message);
     } catch {
-      Alert.alert("카카오 연결", "인터넷 연결을 확인하고 다시 시도해 주세요.");
+      if (mounted.current) Alert.alert("카카오 연결", "인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally {
       linkBusy.current = false;
       setLinking(false);

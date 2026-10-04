@@ -167,8 +167,3 @@ export function scheduleRows(s: AlarmSetup): ScheduleRow[] {
   }
   return out;
 }
-
-// 다시 시도할 때 이미 넣은 행을 알아보는 키 — (약 이름, 시간대). 한 번의 설정 안에서 겹치지 않는다.
-export function rowKey(r: Pick<ScheduleRow, "medicine_name" | "time_of_day">): string {
-  return JSON.stringify([r.medicine_name, r.time_of_day]);
-}

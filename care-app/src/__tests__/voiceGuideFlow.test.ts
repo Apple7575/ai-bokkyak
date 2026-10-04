@@ -1,7 +1,7 @@
 import {
   AlarmSetup, sanitizeMedicines, initialSetup, initialTimes, toggleMedSlot, pickCount,
   chosenSlots, chosenTimes, canFinish, unslottedMedicines, showsUnslottedNote, medicinesAt,
-  bumpTime, bumpSlotTime, clock12, ampm, bannerText, scheduleRows, rowKey,
+  bumpTime, bumpSlotTime, clock12, ampm, bannerText, scheduleRows,
 } from "../lib/voiceGuideFlow";
 
 // 회의 2026-09-03·09-06·09-12: 알람 설정 4단계 → 1단계.
@@ -230,16 +230,10 @@ describe("scheduleRows — 저장할 행", () => {
   });
 });
 
-describe("rowKey — 다시 시도할 때 중복 방지 키", () => {
-  it("(약 이름, 시간대)가 같으면 같은 키, 시각은 보지 않는다", () => {
-    expect(rowKey({ medicine_name: "혈압약", time_of_day: "아침" }))
-      .toBe(rowKey({ medicine_name: "혈압약", time_of_day: "아침" }));
-    expect(rowKey({ medicine_name: "혈압약", time_of_day: "아침" }))
-      .not.toBe(rowKey({ medicine_name: "혈압약", time_of_day: "저녁" }));
-  });
-  it("한 번의 설정 안에서 키가 겹치지 않는다", () => {
+describe("scheduleRows — 한 번에 넣는 행 묶음", () => {
+  it("한 설정 안에서 (약 이름, 시간대)가 겹치지 않는다 — 한 번의 insert로 넣어도 중복 알람이 없다", () => {
     const s = pick(initialSetup(MEDS), [["오메가3", "저녁"], ["오메가3", "아침"], ["혈압약", "아침"]]);
-    const keys = scheduleRows(s).map(rowKey);
+    const keys = scheduleRows(s).map((r) => `${r.medicine_name}|${r.time_of_day}`);
     expect(new Set(keys).size).toBe(keys.length);
   });
 });
