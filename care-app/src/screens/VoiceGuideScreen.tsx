@@ -7,7 +7,7 @@ import { BigButton } from "../components/BigButton";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { isKakaoLinked, linkKakao } from "../lib/kakaoAccount";
-import { ensurePermission, scheduleReminders } from "../lib/notifications";
+import { ensurePermission, scheduleReminders, warnNotificationsOff } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { DISCLAIMER } from "../lib/voiceScript";
 import { Slot, SLOTS } from "../lib/voiceParse";
@@ -135,6 +135,8 @@ export function VoiceGuideScreen() {
       void logGuideEvent({ step: "done", ...stats.current });
       setSheetOpen(false);
       setStep("done");
+      // 저장은 됐지만 알림 권한이 없으면 알람이 조용히 안 울린다 — 그 사실을 알린다.
+      if (!granted) warnNotificationsOff();
     } catch {
       if (mounted.current) Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally {
@@ -174,7 +176,8 @@ export function VoiceGuideScreen() {
             accessibilityRole="button" accessibilityLabel="뒤로">
             <ChevronLeft size={26} color={colors.textSecondary} />
           </Pressable>
-          <Pressable onPress={skip} hitSlop={10} style={styles.skipBtn} accessibilityRole="button">
+          <Pressable onPress={skip} hitSlop={10} style={styles.skipBtn}
+            accessibilityRole="button" accessibilityLabel="나중에 설정하기">
             <Text style={styles.skipText}>나중에</Text>
           </Pressable>
         </View>
@@ -396,7 +399,7 @@ const styles = StyleSheet.create({
   },
   linkTitle: { fontSize: fontSizes.emphasis, fontWeight: "800", color: colors.primaryNavy },
   linkBody: { fontSize: fontSizes.body, lineHeight: 27, color: colors.textSecondary, marginBottom: spacing.xs },
-  disclaimer: { fontSize: 14, color: colors.textSecondary, textAlign: "center", lineHeight: 21 },
+  disclaimer: { fontSize: 16, color: colors.textSecondary, textAlign: "center", lineHeight: 24 },
 
   backdrop: { flex: 1, backgroundColor: colors.overlayStrong },
   sheet: {

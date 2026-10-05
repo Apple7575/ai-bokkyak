@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from "react-nat
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlertTriangle, Stethoscope, ShieldCheck } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { BigButton } from "../components/BigButton";
 import { IllustrationBanner } from "../components/IllustrationBanner";
 import { supabase, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
@@ -26,9 +27,12 @@ type State =
 export function InteractionScreen() {
   const insets = useSafeAreaInsets();
   const [state, setState] = useState<State>({ phase: "loading" });
+  // "다시 시도"가 올리는 값 — 조회 effect를 다시 돈다.
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let alive = true;
+    setState({ phase: "loading" });
     (async () => {
       const pid = await getPatientId();
       if (!pid) { if (alive) setState({ phase: "ok", findings: [] }); return; }
@@ -55,7 +59,7 @@ export function InteractionScreen() {
       setState({ phase: "ok", findings: matchFindings(meds, rules.data) });
     })();
     return () => { alive = false; };
-  }, []);
+  }, [attempt]);
 
   return (
     <View style={styles.screen}>
@@ -74,6 +78,9 @@ export function InteractionScreen() {
             <Text style={styles.centerText}>
               주의 정보를 아직 확인할 수 없어요.{"\n"}인터넷 연결을 확인해 주세요.
             </Text>
+            <View style={styles.retry}>
+              <BigButton label="다시 시도" onPress={() => setAttempt((n) => n + 1)} />
+            </View>
           </View>
         ) : null}
 
@@ -132,6 +139,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
   c: { padding: spacing.md, gap: spacing.md },
   center: { alignItems: "center", gap: spacing.md, marginTop: spacing.xl },
+  retry: { alignSelf: "stretch" },
   centerText: { fontSize: 20, color: colors.textSecondary, textAlign: "center", lineHeight: 30 },
   safe: {
     alignItems: "center", gap: spacing.sm,

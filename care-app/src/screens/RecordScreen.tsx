@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { BigButton } from "../components/BigButton";
 import { StatusBadge } from "../components/StatusBadge";
 import { MedicineMark } from "../components/MedicineMark";
 import { supabase, IntakeRecord, Schedule } from "../lib/supabase";
@@ -54,31 +55,33 @@ export function RecordScreen() {
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const progress = useRef(new Animated.Value(0)).current;
+  // 조회 실패(인터넷 끊김 등). 0%·빈 달력으로 보이면 "기록이 다 사라졌다"고 오해한다.
+  const [loadError, setLoadError] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      (async () => {
-        const pid = await getPatientId();
-        if (!pid) return;
-        const monthStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1, 0, 0, 0, 0);
-        const monthEnd = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1, 0, 0, 0, 0);
-        // active 필터 제거: 중단된 약도 과거 기록 이름 해석/집계·달력 마킹에 필요.
-        // (active는 미래 알림 예약용 개념이고 과거 기록/달력에는 전체 일정 사용)
-        const { data: schs } = await supabase
-          .from("schedules")
-          .select("*")
-          .eq("patient_id", pid);
-        const { data: recs } = await supabase
-          .from("intake_records")
-          .select("*")
-          .eq("patient_id", pid)
-          .gte("scheduled_for", monthStart.toISOString())
-          .lt("scheduled_for", monthEnd.toISOString());
-        setSchedules((schs ?? []) as Schedule[]);
-        setRecords((recs ?? []) as IntakeRecord[]);
-      })();
-    }, [visibleMonth])
-  );
+  const load = useCallback(async () => {
+    const pid = await getPatientId();
+    if (!pid) return;
+    const monthStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1, 0, 0, 0, 0);
+    const monthEnd = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1, 0, 0, 0, 0);
+    // active 필터 제거: 중단된 약도 과거 기록 이름 해석/집계·달력 마킹에 필요.
+    // (active는 미래 알림 예약용 개념이고 과거 기록/달력에는 전체 일정 사용)
+    const { data: schs, error: sErr } = await supabase
+      .from("schedules")
+      .select("*")
+      .eq("patient_id", pid);
+    const { data: recs, error: rErr } = await supabase
+      .from("intake_records")
+      .select("*")
+      .eq("patient_id", pid)
+      .gte("scheduled_for", monthStart.toISOString())
+      .lt("scheduled_for", monthEnd.toISOString());
+    if (sErr || rErr) { setLoadError(true); return; } // 삼키지 않는다 — 오류 블록 + 다시 시도
+    setLoadError(false);
+    setSchedules((schs ?? []) as Schedule[]);
+    setRecords((recs ?? []) as IntakeRecord[]);
+  }, [visibleMonth]);
+
+  useFocusEffect(useCallback(() => { void load(); }, [load]));
 
   // 이번 달 날짜별 집계 → 달력 마킹 + 월 이행률.
   const { markedDates, monthPct } = useMemo(() => {
@@ -173,10 +176,19 @@ export function RecordScreen() {
     <View style={styles.screen}>
       <ScreenHeader title="복약 기록" />
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance + insets.bottom }]}>
+        {loadError ? (
+          <View style={styles.errorCard}>
+            <Text style={styles.errorTitle}>불러오지 못했어요</Text>
+            <Text style={styles.empty}>인터넷 연결을 확인해 주세요.</Text>
+            <BigButton label="다시 시도" onPress={() => { void load(); }} />
+          </View>
+        ) : (
+        <>
         <View style={styles.adherenceCard}>
           <View style={styles.adherenceCopy}>
             <Text style={styles.adherenceEyebrow}>이번 달 건강 습관</Text>
-            <Text style={styles.adherenceLabel}>복약 이행률</Text>
+            {/* "이행률"은 어르신에게 낯선 말이다 */}
+            <Text style={styles.adherenceLabel}>약 챙겨 드신 비율</Text>
             <Text style={styles.adherencePct}>{monthPct}%</Text>
             <View style={styles.progressTrack}>
               <Animated.View
@@ -213,8 +225,8 @@ export function RecordScreen() {
 
         <View style={styles.legend}>
           <LegendDot color={colors.successGreen} label="완료" />
-          <LegendDot color={colors.warningOrange} label="1회 누락" />
-          <LegendDot color={colors.dangerRed} label="2회+ 누락" />
+          <LegendDot color={colors.warningOrange} label="1번 안 드심" />
+          <LegendDot color={colors.dangerRed} label="2번 이상 안 드심" />
           <LegendDot color={colors.border} label="일정 없음" />
         </View>
 
@@ -231,13 +243,16 @@ export function RecordScreen() {
                   <MedicineMark name={item.medicine_name} size={46} />
                   <View style={styles.rowLeft}>
                     <Text style={styles.name}>{item.medicine_name}</Text>
-                    <Text style={styles.meta}>{statusLabel(item.status)}</Text>
+                    {/* 상태는 한 번만 — 배지가 있으면 배지로, 미확인(배지 없음)은 글자로 */}
+                    {item.status === "missed" ? <Text style={styles.meta}>{statusLabel(item.status)}</Text> : null}
                   </View>
                   {item.status === "missed" ? null : <StatusBadge status={item.status} />}
                 </View>
               ))
             )}
           </>
+        )}
+        </>
         )}
       </ScrollView>
     </View>
@@ -279,7 +294,12 @@ const styles = StyleSheet.create({
   legend: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md, justifyContent: "center" },
   legendItem: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   legendDot: { width: 14, height: 14, borderRadius: 7 },
-  legendText: { fontSize: 14, color: colors.textSecondary },
+  legendText: { fontSize: 16, color: colors.textSecondary },
+  errorCard: {
+    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
+    borderRadius: radii.card, padding: spacing.lg, gap: spacing.xs,
+  },
+  errorTitle: { fontSize: 23, fontWeight: "800", color: colors.primaryNavy, textAlign: "center" },
   sectionTitle: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text, marginTop: spacing.sm },
   empty: { fontSize: fontSizes.body, color: colors.textSecondary, textAlign: "center", marginTop: spacing.md },
   row: {

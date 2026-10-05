@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -8,7 +8,7 @@ import { WheelPicker } from "../components/WheelPicker";
 import { RepeatPicker } from "../components/RepeatPicker";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
-import { ensurePermission, scheduleReminders } from "../lib/notifications";
+import { ensurePermission, scheduleReminders, warnNotificationsOff } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
 import { normalizeRepeatDays } from "../lib/schedule";
 import { repeatSummaryFor } from "../lib/repeatDays";
@@ -54,6 +54,9 @@ export function DoseTimeScreen() {
   const [repeatCustom, setRepeatCustom] = useState(false);
   const [amount, setAmount] = useState<string>("1정");
   const [saving, setSaving] = useState(false);
+  // 더블탭 동기 가드 — state는 렌더 뒤에야 바뀌어 첫 await 사이에 두 번째 탭이 들어오면
+  // schedule 행이 두 벌 생긴다(schedules엔 중복 제약이 없다). ButtonRegister·OcrRegister와 같은 방식.
+  const savingRef = useRef(false);
 
   function toggleTod(t: TimeOfDay) {
     setSelected((prev) => {
@@ -73,12 +76,13 @@ export function DoseTimeScreen() {
   }
 
   async function save(): Promise<void> {
-    if (saving) return;
+    if (savingRef.current) return;
     if (!medicineName.trim()) { Alert.alert("약 이름이 없어요"); return; }
     if (repeatCustom && repeatDays.length === 0) { Alert.alert("요일을 골라 주세요", "직접 고르기를 눌렀으면 요일을 하나 이상 골라 주세요."); return; }
+    savingRef.current = true; // 첫 await 전에 동기적으로 잠근다
     setSaving(true);
     const pid = await getPatientId();
-    if (!pid) { setSaving(false); return; }
+    if (!pid) { savingRef.current = false; setSaving(false); return; }
     const days = normalizeRepeatDays(repeatDays);
     const rows = buildDoseRows(selected, timeBy);
     try {
@@ -101,9 +105,12 @@ export function DoseTimeScreen() {
           } catch {}
         }
       }
+      // 저장은 됐지만 알림 권한이 없으면 알람이 조용히 안 울린다 — 그 사실을 알린다.
+      if (!granted) warnNotificationsOff();
       nav.reset({ index: 0, routes: [{ name: "Tabs", params: { screen: "Cabinet" } }] });
     } catch {
       Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -116,7 +123,8 @@ export function DoseTimeScreen() {
         <View style={styles.medCard}>
           <View style={styles.medIcon}><Pill size={22} color={colors.primaryBlue} /></View>
           <Text style={styles.medName} numberOfLines={2}>{medicineName || "약을 고르지 않았어요"}</Text>
-          <Pressable onPress={() => nav.goBack()} style={styles.changeBtn} hitSlop={8}>
+          <Pressable onPress={() => nav.goBack()} style={styles.changeBtn} hitSlop={8}
+            accessibilityRole="button" accessibilityLabel="약 바꾸기">
             <Text style={styles.changeText}>바꾸기</Text>
           </Pressable>
         </View>
@@ -133,6 +141,8 @@ export function DoseTimeScreen() {
                 key={t}
                 onPress={() => toggleTod(t)}
                 style={[styles.todChip, on && styles.todChipOn]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
               >
                 <Icon size={18} color={on ? colors.white : colors.textSecondary} />
                 <Text style={[styles.todText, on && styles.todTextOn]}>{slotLabel(t)}</Text>
@@ -193,6 +203,8 @@ export function DoseTimeScreen() {
               key={a}
               onPress={() => setAmount(a)}
               style={[styles.amountChip, amount === a && styles.todChipOn]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: amount === a }}
             >
               <Text style={[styles.todText, amount === a && styles.todTextOn]}>{a}</Text>
             </Pressable>
@@ -207,6 +219,7 @@ export function DoseTimeScreen() {
           onPress={() => { void save(); }}
           disabled={saving}
           style={({ pressed }) => [styles.saveBtn, (pressed || saving) && { opacity: 0.9 }]}
+          accessibilityRole="button"
         >
           <Check size={22} color={colors.white} />
           <Text style={styles.saveText}>{saving ? "저장 중…" : "약장에 넣기"}</Text>
@@ -229,7 +242,7 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   medName: { flex: 1, fontSize: 19, fontWeight: "700", color: colors.text },
-  changeBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.pill, backgroundColor: colors.lightBlueBg },
+  changeBtn: { minHeight: 44, justifyContent: "center", paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.pill, backgroundColor: colors.lightBlueBg },
   changeText: { fontSize: fontSizes.body, fontWeight: "700", color: colors.primaryBlue },
   section: { fontSize: 24, fontWeight: "800", color: colors.primaryNavy, marginTop: spacing.lg, marginBottom: spacing.xs },
   hint: { fontSize: fontSizes.body, color: colors.textSecondary, marginBottom: spacing.sm },
@@ -256,7 +269,7 @@ const styles = StyleSheet.create({
   timeLabel: { fontSize: 19, fontWeight: "700", color: colors.text, flex: 1 },
   timeValue: { fontSize: 20, fontWeight: "800", color: colors.primaryBlue },
   wheelRow: { flexDirection: "row", gap: spacing.md, marginTop: spacing.sm },
-  mismatch: { fontSize: 16, color: colors.warningOrange, marginTop: 6, lineHeight: 23 },
+  mismatch: { fontSize: fontSizes.body, color: colors.warningOrange, marginTop: 6, lineHeight: 26 },
   footer: {
     padding: spacing.lg, backgroundColor: colors.cardBg,
     borderTopWidth: 1, borderTopColor: colors.border,

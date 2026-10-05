@@ -61,7 +61,7 @@ export function SnoozePickerScreen() {
         await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "snoozed", method: "버튼" });
       }
     } catch {
-      Alert.alert("기록 저장 실패", "미루기 알림은 설정됐지만 복약 기록 저장에 실패했어요. (알림은 정상 동작)");
+      Alert.alert("기록 저장 실패", "다시 알림은 설정됐지만 복약 기록 저장에 실패했어요.");
     }
     nav.reset({ index: 0, routes: [{ name: "SnoozeCountdown", params: { scheduleId, fireAt, hour: sch.hour, minute: sch.minute } }] });
   }
@@ -71,7 +71,7 @@ export function SnoozePickerScreen() {
   return (
     <View style={styles.root}>
       {/* 어두운 배경 — 탭하면 닫힘 */}
-      <Pressable style={styles.backdrop} onPress={() => nav.goBack()} />
+      <Pressable style={styles.backdrop} onPress={() => nav.goBack()} accessibilityRole="button" accessibilityLabel="닫기" />
       <View style={[styles.sheet, { paddingBottom: spacing.lg + insets.bottom }]}>
         <View style={styles.grabber} />
         {/* 작은 폰·큰 글씨에서 시트가 화면보다 커지면 위가 잘리므로 높이를 제한하고 스크롤 */}
@@ -81,11 +81,14 @@ export function SnoozePickerScreen() {
         <IllustrationBanner source={SNOOZE_ART} tone="coral" height={108} imageScale={0.94} />
 
         <View style={styles.tabs}>
-          <Pressable style={[styles.tab, tab === "duration" && styles.tabOn]} onPress={() => setTab("duration")}>
-            <Text style={[styles.tabTxt, tab === "duration" && styles.tabTxtOn]}>기간</Text>
+          {/* "기간/정확한 시간"은 무엇을 고르는 건지 바로 안 읽혔다 — 아래 바퀴가 보여 주는 것을 그대로 쓴다 */}
+          <Pressable style={[styles.tab, tab === "duration" && styles.tabOn]} onPress={() => setTab("duration")}
+            accessibilityRole="button" accessibilityState={{ selected: tab === "duration" }}>
+            <Text style={[styles.tabTxt, tab === "duration" && styles.tabTxtOn]}>몇 분 후</Text>
           </Pressable>
-          <Pressable style={[styles.tab, tab === "exact" && styles.tabOn]} onPress={() => setTab("exact")}>
-            <Text style={[styles.tabTxt, tab === "exact" && styles.tabTxtOn]}>정확한 시간</Text>
+          <Pressable style={[styles.tab, tab === "exact" && styles.tabOn]} onPress={() => setTab("exact")}
+            accessibilityRole="button" accessibilityState={{ selected: tab === "exact" }}>
+            <Text style={[styles.tabTxt, tab === "exact" && styles.tabTxtOn]}>시각 지정</Text>
           </Pressable>
         </View>
 
@@ -106,7 +109,8 @@ export function SnoozePickerScreen() {
         />
         <View style={styles.presets}>
           {[10, 30, 60].map((m) => (
-            <Pressable key={m} style={styles.preset} onPress={() => apply({ mode: "duration", minutes: m })}>
+            <Pressable key={m} style={styles.preset} onPress={() => apply({ mode: "duration", minutes: m })}
+              accessibilityRole="button" accessibilityLabel={`${m === 60 ? "1시간" : `${m}분`} 후에 다시 알림`}>
               <Text style={styles.presetTxt}>{m === 60 ? "1시간" : `${m}분`}</Text>
             </Pressable>
           ))}

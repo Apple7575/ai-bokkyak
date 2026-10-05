@@ -49,7 +49,7 @@ function PatientTabs() {
         tabBarActiveTintColor: colors.primaryBlue,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarHideOnKeyboard: true,
-        tabBarStyle: [styles.tabBar, { height: 72 + insets.bottom, paddingBottom: 10 + insets.bottom }],
+        tabBarStyle: [styles.tabBar, { height: 76 + insets.bottom, paddingBottom: 10 + insets.bottom }],
         tabBarItemStyle: styles.tabItem,
         tabBarIconStyle: styles.tabIcon,
         tabBarLabelStyle: styles.tabLabel,
@@ -144,5 +144,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   tabIconBackgroundActive: { backgroundColor: colors.primarySoft },
-  tabLabel: { fontSize: 14, fontWeight: "800", letterSpacing: -0.2 },
+  // 탭 이름도 본문처럼 읽혀야 한다(고령층). 높이는 위 tabBarStyle(76)·tokens.tabBarClearance와 함께 맞췄다.
+  tabLabel: { fontSize: 16, fontWeight: "800", letterSpacing: -0.2 },
 });

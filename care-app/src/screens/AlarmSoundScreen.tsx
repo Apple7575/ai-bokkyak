@@ -62,7 +62,7 @@ export function AlarmSoundScreen() {
   if (silent === null) {
     return (
       <View style={styles.screen}>
-        <ScreenHeader title="알림 소리 설정" />
+        <ScreenHeader title="알람 소리 설정" />
         <Text style={styles.loading}>불러오는 중...</Text>
       </View>
     );
@@ -70,7 +70,8 @@ export function AlarmSoundScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader title="알림 소리 설정" />
+      {/* 앱 안에서는 "알람 소리"로 통일한다. "알림"은 OS 권한(알림 허용) 이야기에만 쓴다. */}
+      <ScreenHeader title="알람 소리 설정" />
       <ScrollView contentContainerStyle={styles.content}>
         <IllustrationBanner source={SOUND_ART} tone="coral" height={184} imageScale={0.9} />
         <Text style={styles.sectionTitle}>알람 소리</Text>
@@ -78,13 +79,16 @@ export function AlarmSoundScreen() {
         <Pressable
           onPress={() => { void choose(false); }}
           style={({ pressed }) => [styles.optionCard, !silent && styles.optionOn, pressed && { opacity: 0.9 }]}
+          accessibilityRole="button"
+          accessibilityState={{ selected: !silent }}
         >
           <View style={[styles.iconBox, { backgroundColor: colors.primaryBlue + "1A" }]}>
             <Volume2 size={24} color={colors.primaryBlue} />
           </View>
           <View style={styles.optionTextWrap}>
             <Text style={styles.optionLabel}>켜짐</Text>
-            <Text style={styles.optionSub}>알람 시간에 안내 음성이 나와요.</Text>
+            {/* 앱은 문장을 읽어 주지 않는다(TTS 없음) — 나는 소리는 알람 소리 하나다 */}
+            <Text style={styles.optionSub}>알람 시간에 알람 소리가 나와요.</Text>
           </View>
           {!silent ? <Check size={24} color={colors.primaryBlue} /> : null}
         </Pressable>
@@ -92,6 +96,8 @@ export function AlarmSoundScreen() {
         <Pressable
           onPress={() => { void choose(true); }}
           style={({ pressed }) => [styles.optionCard, silent && styles.optionOn, pressed && { opacity: 0.9 }]}
+          accessibilityRole="button"
+          accessibilityState={{ selected: !!silent }}
         >
           <View style={[styles.iconBox, { backgroundColor: colors.textSecondary + "1A" }]}>
             <VolumeX size={24} color={colors.textSecondary} />
@@ -108,23 +114,23 @@ export function AlarmSoundScreen() {
         </Text>
         {applying ? <Text style={styles.applying}>알람에 적용하는 중이에요…</Text> : null}
 
-        {/* 아이폰에서 "알람이 울렸는데 안내 음성이 안 나온다"는 QA 보고.
+        {/* 아이폰에서 "알람이 울렸는데 소리가 안 나온다"는 QA 보고.
             iOS는 무음 모드(옆면 스위치/제어센터 벨 끄기)면 알림 소리를 재생하지 않는다.
             앱이 어찌할 수 없는 OS 동작이라, 대신 어디를 확인하면 되는지 알려준다.
-            알림을 누르면 뜨는 알람 화면의 안내 음성은 무음 모드에서도 나온다
+            알림을 누르면 뜨는 알람 화면의 알람 소리는 무음 모드에서도 나온다
             (alarmRinger가 playsInSilentModeIOS로 재생). */}
         {Platform.OS === "ios" && !silent ? (
           <View style={styles.iosNote}>
             <Text style={styles.iosNoteTitle}>아이폰에서 소리가 안 나온다면</Text>
             <Text style={styles.iosNoteText}>
-              휴대폰이 <Text style={styles.iosNoteStrong}>무음 모드</Text>면 알림 소리가 나오지 않아요.
+              휴대폰이 <Text style={styles.iosNoteStrong}>무음 모드</Text>면 알람 소리가 나오지 않아요.
               화면 오른쪽 위에서 아래로 쓸어내려 <Text style={styles.iosNoteStrong}>종 모양</Text>을 꺼 주세요.
-              {"\n"}무음 모드여도 알림을 누르면 알람 화면에서 안내 음성이 나옵니다.
+              {"\n"}무음 모드여도 알림을 누르면 알람 화면에서 알람 소리가 나옵니다.
             </Text>
           </View>
         ) : null}
 
-        <Text style={[styles.sectionTitle, { marginTop: spacing.lg }]}>안내 음성 미리 듣기</Text>
+        <Text style={[styles.sectionTitle, { marginTop: spacing.lg }]}>알람 소리 미리 듣기</Text>
         <View style={styles.group}>
           {SLOTS.map(({ tod, desc }, i) => (
             <View key={tod} style={[styles.rowItem, i < SLOTS.length - 1 && styles.rowDivider]}>
@@ -136,8 +142,10 @@ export function AlarmSoundScreen() {
                 onPress={() => { void playPreview(tod); }}
                 style={({ pressed }) => [styles.playBtn, pressed && { opacity: 0.9 }]}
                 hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={`${tod} 알람 소리 미리 듣기`}
               >
-                <Play size={18} color="#fff" />
+                <Play size={18} color={colors.white} />
                 <Text style={styles.playBtnText}>미리 듣기</Text>
               </Pressable>
             </View>
@@ -193,5 +201,5 @@ const styles = StyleSheet.create({
     minHeight: 48, paddingHorizontal: 16, borderRadius: radii.button,
     backgroundColor: colors.primaryBlue,
   },
-  playBtnText: { fontSize: fontSizes.body, fontWeight: "700", color: "#fff" },
+  playBtnText: { fontSize: fontSizes.body, fontWeight: "700", color: colors.white },
 });

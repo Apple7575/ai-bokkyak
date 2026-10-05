@@ -31,21 +31,25 @@ export function RegisterMethodScreen() {
         <Pressable
           onPress={() => nav.navigate("MedicineSearch")}
           style={({ pressed }) => [styles.card, styles.cardPrimary, pressed && { opacity: 0.92 }]}
+          accessibilityRole="button"
+          accessibilityLabel="약 이름으로 찾기. 이름을 입력하면 목록에서 골라요"
         >
           <View style={[styles.iconBox, styles.iconBoxPrimary]}>
-            <Search size={28} color="#fff" />
+            <Search size={28} color={colors.white} />
           </View>
           <View style={styles.cardText}>
-            <Text style={[styles.cardTitle, { color: "#fff" }]}>약 이름으로 찾기</Text>
-            <Text style={[styles.cardDesc, { color: "rgba(255,255,255,0.85)" }]}>이름을 입력하면 목록에서 골라요</Text>
+            <Text style={[styles.cardTitle, { color: colors.white }]}>약 이름으로 찾기</Text>
+            <Text style={[styles.cardDesc, styles.cardDescOnPrimary]}>이름을 입력하면 목록에서 골라요</Text>
           </View>
-          <ChevronRight size={20} color="#fff" />
+          <ChevronRight size={20} color={colors.white} />
         </Pressable>
 
         {/* 버튼 - secondary */}
         <Pressable
           onPress={() => nav.navigate("ButtonRegister")}
           style={({ pressed }) => [styles.card, styles.cardSecondary, pressed && { opacity: 0.92 }]}
+          accessibilityRole="button"
+          accessibilityLabel="버튼으로 직접 등록. 항목을 하나씩 눌러 등록할 수 있어요"
         >
           <View style={[styles.iconBox, { backgroundColor: colors.lightBlueBg }]}>
             <ListChecks size={28} color={colors.primaryBlue} />
@@ -61,6 +65,8 @@ export function RegisterMethodScreen() {
         <Pressable
           onPress={() => nav.navigate("OcrRegister")}
           style={({ pressed }) => [styles.card, styles.cardSecondary, pressed && { opacity: 0.92 }]}
+          accessibilityRole="button"
+          accessibilityLabel="사진으로 등록. 약 봉투나 약 포장을 촬영해 주세요"
         >
           <View style={[styles.iconBox, { backgroundColor: colors.canvas }]}>
             <Camera size={28} color={colors.primaryBlue} />
@@ -111,10 +117,12 @@ const styles = StyleSheet.create({
   },
   cardDisabled: { opacity: 0.7 },
   iconBox: { width: 60, height: 60, borderRadius: 21, alignItems: "center", justifyContent: "center" },
-  iconBoxPrimary: { backgroundColor: "rgba(255,255,255,0.2)" },
+  iconBoxPrimary: { backgroundColor: colors.whiteOverlay },
   cardText: { flex: 1 },
   cardTitle: { fontSize: 20, fontWeight: "800", color: colors.text },
   cardDesc: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: 3 },
+  // 파란 카드 위 설명 — 흰색을 살짝 눌러서(opacity) 제목과 위계를 둔다. 색은 토큰 그대로.
+  cardDescOnPrimary: { color: colors.white, opacity: 0.85 },
   badge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,

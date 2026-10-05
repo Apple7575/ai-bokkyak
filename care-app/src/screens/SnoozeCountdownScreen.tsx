@@ -17,6 +17,19 @@ function mmss(ms: number): string {
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
+// 미룬 시간을 말로. 몇 분 후(5분~1시간)와 시각 지정(몇 시간 뒤일 수 있다) 둘 다 다룬다.
+// 발사 시각을 모르면(파라미터 깨짐) "잠시 후".
+function afterLabel(ms: number): string {
+  if (!Number.isFinite(ms) || ms <= 0) return "잠시 후";
+  const min = Math.max(1, Math.round(ms / 60_000));
+  if (min < 60) return `${min}분 후`;
+  const h = Math.floor(min / 60), m = min % 60;
+  return m === 0 ? `${h}시간 후` : `${h}시간 ${m}분 후`;
+}
+
+// 자동으로 홈으로 가기까지 — 8초는 어르신이 문구를 읽기도 전에 사라졌다.
+const AUTO_EXIT_SEC = 15;
+
 export function SnoozeCountdownScreen() {
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -28,7 +41,9 @@ export function SnoozeCountdownScreen() {
   };
   const target = new Date(p.fireAt).getTime();
   const [remain, setRemain] = useState(target - Date.now());
-  const [autoLeft, setAutoLeft] = useState(8); // 8초 후 자동으로 홈
+  // 제목에 쓰는 "N분 후"는 들어온 순간 기준으로 고정한다 — 초가 줄어도 제목이 흔들리지 않게.
+  const [after] = useState(() => afterLabel(target - Date.now()));
+  const [autoLeft, setAutoLeft] = useState(AUTO_EXIT_SEC);
   const didNavigate = useRef(false);
 
   useEffect(() => {
@@ -79,12 +94,12 @@ export function SnoozeCountdownScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.md }]}>
-      <Text style={styles.title}>일정 변경됨</Text>
+      <Text style={styles.title}>{`${after} 다시 알려드릴게요`}</Text>
       <Text style={styles.sub}>다음 알림까지 남은 시간</Text>
       <Text style={styles.count}>{mmss(remain)}</Text>
       <View style={{ flex: 1 }} />
       <BigButton
-        label={`일정 화면으로 돌아가기 (${Math.max(0, autoLeft)})`}
+        label={`홈으로 (${Math.max(0, autoLeft)})`}
         onPress={() => {
           if (!didNavigate.current) {
             didNavigate.current = true;
@@ -109,6 +124,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: colors.primaryNavy,
     marginTop: spacing.xl,
+    textAlign: "center",
   },
   sub: {
     fontSize: fontSizes.body,

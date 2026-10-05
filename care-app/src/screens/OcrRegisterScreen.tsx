@@ -16,9 +16,9 @@ import { TIME_OF_DAYS, timeOfDayForHour, hourForTimeOfDay } from "../lib/timeOfD
 import { searchProducts, ProductHit } from "../lib/drugData";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
-import { ensurePermission, scheduleReminders } from "../lib/notifications";
+import { ensurePermission, scheduleReminders, warnNotificationsOff } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
-import { colors, fontSizes, spacing, radii } from "../theme/tokens";
+import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
 const OCR_ART = require("../../assets/illustrations/ocr-envelope.png");
 
 const HOURS = [7, 8, 9, 12, 13, 18, 19, 20, 21];
@@ -124,6 +124,8 @@ export function OcrRegisterScreen() {
         // 알림 예약은 베스트에포트 — 실패해도 일정은 이미 저장됐으므로 재등록(중복)하지 않는다.
         if (granted) { try { await scheduleReminders(data.id, data.medicine_name, it.hour, it.minute, days, it.time_of_day); } catch {} }
       }
+      // 저장은 됐지만 알림 권한이 없으면 알람이 조용히 안 울린다 — 그 사실을 알린다.
+      if (!granted) warnNotificationsOff();
       // 사진 인식 → 확인 화면 → 등록 → '내 약장' 탭 (C-05 확정).
       // reset으로 스택을 비워 하단 탭이 유지되고 뒤로가기가 등록 화면으로 안 돌아가게.
       nav.reset({ index: 0, routes: [{ name: "Tabs", params: { screen: "Cabinet" } }] });
@@ -160,8 +162,9 @@ export function OcrRegisterScreen() {
               <View key={i} style={styles.card}>
                 <View style={styles.cardHead}>
                   <Text style={styles.cardLabel}>약 이름</Text>
-                  <Pressable style={styles.removeBtn} onPress={() => remove(i)} hitSlop={8}>
-                    <Trash2 size={16} color={colors.dangerRed} />
+                  <Pressable style={styles.removeBtn} onPress={() => remove(i)} hitSlop={8}
+                    accessibilityRole="button" accessibilityLabel={`${it.medicine_name || "이 약"} 삭제`}>
+                    <Trash2 size={18} color={colors.dangerRed} />
                     <Text style={styles.remove}>삭제</Text>
                   </Pressable>
                 </View>
@@ -181,6 +184,8 @@ export function OcrRegisterScreen() {
                         key={h.product_code}
                         onPress={() => patch(i, { medicine_name: h.product_name })}
                         style={({ pressed }) => [styles.candItem, pressed && { opacity: 0.9 }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${h.product_name}으로 이름 바꾸기`}
                       >
                         <Text style={styles.candName} numberOfLines={2}>{h.product_name}</Text>
                         {h.company ? <Text style={styles.candCompany}>{h.company}</Text> : null}
@@ -242,13 +247,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.lightBlueBg, borderRadius: radii.button,
     padding: spacing.sm, marginBottom: spacing.sm, gap: spacing.xs,
   },
-  candLabel: { fontSize: 15, fontWeight: "700", color: colors.primaryNavy, marginBottom: 2 },
+  candLabel: { fontSize: 17, fontWeight: "700", color: colors.primaryNavy, marginBottom: 2 },
   candItem: {
+    minHeight: minTouch, justifyContent: "center",
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.button, paddingHorizontal: spacing.sm, paddingVertical: 10,
   },
-  candName: { fontSize: 17, fontWeight: "600", color: colors.text },
-  candCompany: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
+  candName: { fontSize: 19, fontWeight: "600", color: colors.text },
+  candCompany: { fontSize: 16, color: colors.textSecondary, marginTop: 2 },
   loading: { alignItems: "center", paddingVertical: spacing.xl },
   loadingText: { fontSize: fontSizes.body, color: colors.textSecondary, marginTop: spacing.md },
   section: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text, marginTop: spacing.lg, marginBottom: spacing.sm },
@@ -258,7 +264,7 @@ const styles = StyleSheet.create({
   },
   cardHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   cardLabel: { fontSize: fontSizes.body, fontWeight: "700", color: colors.text, marginTop: spacing.md, marginBottom: spacing.sm },
-  removeBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
+  removeBtn: { flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44, paddingHorizontal: spacing.xs },
   remove: { fontSize: fontSizes.body, color: colors.dangerRed, fontWeight: "700" },
   input: {
     backgroundColor: colors.lightBlueBg, borderColor: colors.border, borderWidth: 1,

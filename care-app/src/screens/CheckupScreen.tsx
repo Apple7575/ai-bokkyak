@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, View, Text, StyleSheet, Pressable, ActivityIndicator, Vibration } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Check, X, Clock } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { BigButton } from "../components/BigButton";
 import { CareCheckIcon } from "../components/CareIcons";
 import { MedicineMark } from "../components/MedicineMark";
 import { supabase, Schedule, Patient } from "../lib/supabase";
@@ -63,59 +64,64 @@ export function CheckupScreen() {
   const aliveRef = useRef(true);
   const doneScale = useRef(new Animated.Value(0.65)).current;
 
+  // 오늘 확인할 약 목록 조회. 처음 들어올 때와 오류 화면의 "다시 시도"가 같은 함수를 부른다.
+  const load = useCallback(async () => {
+    setPhase("loading");
+    setErrorMsg(null);
+    try {
+      const pid = await getPatientId();
+      if (!pid) throw new Error("환자 정보가 없어요. 앱을 다시 설정해 주세요.");
+      patientIdRef.current = pid;
+      const now = new Date();
+      baseDateRef.current = now;
+
+      const { data: patient } = await supabase
+        .from("patients").select("*").eq("id", pid).maybeSingle();
+
+      const { data: schs, error: sErr } = await supabase
+        .from("schedules").select("*").eq("patient_id", pid).eq("active", true);
+      if (sErr) throw new Error("복약 일정을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.");
+
+      // 오늘 이미 복용 완료로 기록된 약은 다시 묻지 않는다.
+      const dayStart = new Date(now); dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+      const { data: recs, error: rErr } = await supabase
+        .from("intake_records").select("*").eq("patient_id", pid)
+        .gte("scheduled_for", dayStart.toISOString())
+        .lt("scheduled_for", dayEnd.toISOString());
+      if (rErr) throw new Error("오늘 복약 기록을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.");
+      const done = new Set(
+        (recs ?? []).filter((r) => r.status === "completed").map((r) => r.schedule_id as string)
+      );
+
+      const items = buildCheckupList((schs ?? []) as Schedule[], done, now);
+      if (!aliveRef.current) return;
+      setList(items);
+
+      setPatientName((patient as Patient | null)?.name ?? undefined);
+      if (items.length === 0) {
+        // 홈의 pending과 같은 기준 — 오늘 이미 복용 완료한 일정은 다음 복약 후보가 아니다.
+        const nx = ((schs ?? []) as Schedule[])
+          .filter((s) => !done.has(s.id))
+          .map((s) => ({ at: nextNotificationTime(s, now), name: s.medicine_name }))
+          .sort((a, b) => a.at.getTime() - b.at.getTime())[0];
+        setNextDose(nx ?? null);
+        setPhase("done");
+      } else {
+        setPhase("asking");
+      }
+    } catch (e: any) {
+      if (!aliveRef.current) return;
+      setErrorMsg(e?.message ?? "불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setPhase("error");
+    }
+  }, []);
+
   useEffect(() => {
     aliveRef.current = true;
-    (async () => {
-      try {
-        const pid = await getPatientId();
-        if (!pid) throw new Error("환자 정보가 없어요. 앱을 다시 설정해 주세요.");
-        patientIdRef.current = pid;
-        const now = new Date();
-        baseDateRef.current = now;
-
-        const { data: patient } = await supabase
-          .from("patients").select("*").eq("id", pid).maybeSingle();
-
-        const { data: schs, error: sErr } = await supabase
-          .from("schedules").select("*").eq("patient_id", pid).eq("active", true);
-        if (sErr) throw new Error("복약 일정을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.");
-
-        // 오늘 이미 복용 완료로 기록된 약은 다시 묻지 않는다.
-        const dayStart = new Date(now); dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
-        const { data: recs, error: rErr } = await supabase
-          .from("intake_records").select("*").eq("patient_id", pid)
-          .gte("scheduled_for", dayStart.toISOString())
-          .lt("scheduled_for", dayEnd.toISOString());
-        if (rErr) throw new Error("오늘 복약 기록을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.");
-        const done = new Set(
-          (recs ?? []).filter((r) => r.status === "completed").map((r) => r.schedule_id as string)
-        );
-
-        const items = buildCheckupList((schs ?? []) as Schedule[], done, now);
-        if (!aliveRef.current) return;
-        setList(items);
-
-        setPatientName((patient as Patient | null)?.name ?? undefined);
-        if (items.length === 0) {
-          // 홈의 pending과 같은 기준 — 오늘 이미 복용 완료한 일정은 다음 복약 후보가 아니다.
-          const nx = ((schs ?? []) as Schedule[])
-            .filter((s) => !done.has(s.id))
-            .map((s) => ({ at: nextNotificationTime(s, now), name: s.medicine_name }))
-            .sort((a, b) => a.at.getTime() - b.at.getTime())[0];
-          setNextDose(nx ?? null);
-          setPhase("done");
-        } else {
-          setPhase("asking");
-        }
-      } catch (e: any) {
-        if (!aliveRef.current) return;
-        setErrorMsg(e?.message ?? "불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
-        setPhase("error");
-      }
-    })();
+    void load();
     return () => { aliveRef.current = false; };
-  }, []);
+  }, [load]);
 
   useEffect(() => {
     if (phase !== "done" || takenCount === 0) return;
@@ -169,9 +175,10 @@ export function CheckupScreen() {
         <ScreenHeader title="복약 확인" />
         <View style={s.center}>
           <Text style={s.errorText}>{errorMsg}</Text>
-          <Pressable onPress={() => nav.goBack()} style={({ pressed }) => [s.primaryBtn, pressed && { opacity: 0.9 }]}>
-            <Text style={s.primaryBtnText}>돌아가기</Text>
-          </Pressable>
+          <View style={s.retry}>
+            <BigButton label="다시 시도" onPress={() => { void load(); }} />
+            <BigButton label="돌아가기" variant="secondary" onPress={() => nav.goBack()} />
+          </View>
         </View>
       </View>
     );
@@ -201,6 +208,7 @@ export function CheckupScreen() {
           <Pressable
             onPress={() => nav.goBack()}
             style={({ pressed }) => [s.primaryBtn, pressed && { opacity: 0.9 }]}
+            accessibilityRole="button"
           >
             <Text style={s.primaryBtnText}>홈으로</Text>
           </Pressable>
@@ -268,6 +276,7 @@ const s = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: spacing.md },
   centerText: { fontSize: fontSizes.body, color: colors.textSecondary, textAlign: "center" },
   errorText: { fontSize: 20, color: colors.dangerRed, textAlign: "center", lineHeight: 30 },
+  retry: { alignSelf: "stretch" },
   greeting: { fontSize: fontSizes.emphasis, fontWeight: "700", color: colors.text, textAlign: "center", lineHeight: 32, marginBottom: spacing.sm },
   progress: { fontSize: fontSizes.body, fontWeight: "700", color: colors.textSecondary, marginBottom: spacing.md },
   card: {

@@ -44,10 +44,10 @@ const KIND_COLOR: Record<RuleKind, { fg: string; bg: string }> = {
 
 // 근거 수준(서버 판정에만 있음) → 표시 라벨. 없는 값(none_known 등)은 보여 주지 않는다.
 const EVIDENCE_LABEL: Record<string, string> = {
-  established: "명확한 근거",
-  theoretical: "이론적 우려",
-  limited: "이론적 우려",
-  conflicting: "근거 충돌",
+  established: "연구로 확인됨",
+  theoretical: "가능성 있음",
+  limited: "가능성 있음",
+  conflicting: "의견이 갈림",
 };
 
 // 카카오 연결 여부 조회를 기다리는 최대 시간 — 넘으면 조회 실패(null)로 보고 결과를 연다.
@@ -336,7 +336,7 @@ export function QuickCheckResultScreen() {
             {nothingChecked ? (
               <BigButton label="다시 고르기" onPress={toPick} showArrow />
             ) : (
-              <BigButton label="이 약들 복용 알람 설정하기" onPress={toAlarm} showArrow />
+              <BigButton label="복용 알람 시간 정하기" onPress={toAlarm} showArrow />
             )}
             <BigButton label="나중에 할게요" variant="secondary" onPress={toHome} />
           </View>

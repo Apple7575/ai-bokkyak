@@ -113,7 +113,7 @@ export function NameEntryScreen() {
           style={styles.input}
           value={name}
           onChangeText={setName}
-          placeholder="홍길동"
+          placeholder="이름을 적어 주세요"
           placeholderTextColor={colors.textSecondary}
           maxLength={20}
           returnKeyType="done"

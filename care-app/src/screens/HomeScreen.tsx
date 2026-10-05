@@ -3,8 +3,9 @@ import { View, Text, ScrollView, StyleSheet, Pressable, Image, Alert } from "rea
 import notifee from "@notifee/react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Bell, User, Clock, Pencil, ClipboardCheck, ChevronRight, AlertTriangle, X } from "lucide-react-native";
+import { User, Clock, Pencil, ClipboardCheck, ChevronRight, AlertTriangle, X } from "lucide-react-native";
 import { MedicineMark } from "../components/MedicineMark";
+import { BigButton } from "../components/BigButton";
 import { supabase, Schedule, IntakeRecord } from "../lib/supabase";
 import { getPatientId, getPatientName, getKakaoBannerDismissed, setKakaoBannerDismissed } from "../lib/storage";
 import { isKakaoLinked, linkKakao } from "../lib/kakaoAccount";
@@ -12,6 +13,7 @@ import { commitQuickCheckDraft } from "../lib/quickCheckDraft";
 import { nextNotificationTime, todaySlot } from "../lib/schedule";
 import { relativeDay } from "../lib/repeatDays";
 import { hasExactAlarm } from "../lib/alarmPermissions";
+import { hasNotificationPermission, openNotificationSettings, ensurePermission } from "../lib/notifications";
 import { MedKind } from "../lib/medKind";
 import { getKindMap, resolveKind } from "../lib/medStore";
 import { lookupIngredients, fetchContraindications } from "../lib/drugData";
@@ -55,6 +57,17 @@ export function HomeScreen() {
   });
   const [total, setTotal] = useState(0);
   const [alarmOk, setAlarmOk] = useState(true);
+  // OS 알림 권한. 거부된 채로 두면 알람이 조용히 안 울리므로 홈에서 배너로 알린다.
+  const [notifOk, setNotifOk] = useState(true);
+  // 아직 한 번도 묻지 않은 사람(iOS는 묻기 전엔 설정에 토글조차 없다)은 먼저 묻고,
+  // 거부된 상태면 OS 설정으로 데려간다.
+  const fixNotifications = async () => {
+    const ok = await ensurePermission().catch(() => false);
+    setNotifOk(ok);
+    if (!ok) await openNotificationSettings();
+  };
+  // 일정 조회 실패(인터넷 끊김 등). 빈 화면("오늘 드실 약이 없어요")으로 보이면 안 된다.
+  const [loadError, setLoadError] = useState(false);
   const [warnCount, setWarnCount] = useState(0);
   // 인사말에 쓰는 이름 — 3/3·NameEntry에서 저장한 것. 없으면 이름 없이 인사한다.
   const [name, setName] = useState<string | null>(null);
@@ -121,11 +134,28 @@ export function HomeScreen() {
     void retryDraft(pid);
     void isKakaoLinked(pid).then(setLinked);
     void getKakaoBannerDismissed().then(setBannerDismissed);
-    const { data } = await supabase.from("schedules").select("*")
+    // 권한 배너는 네트워크와 무관하므로 조회 성패와 상관없이 갱신한다.
+    void hasExactAlarm().then(setAlarmOk);
+    void hasNotificationPermission().then(setNotifOk);
+
+    const now = new Date();
+    const { data, error } = await supabase.from("schedules").select("*")
       .eq("patient_id", pid).eq("active", true).order("hour");
+    // 오늘 기록 — 완료/건너뜀/미룸 배지
+    const dayStart = new Date(now); dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+    const { data: recs, error: recErr } = error ? { data: null, error } : await supabase.from("intake_records").select("*")
+      .eq("patient_id", pid)
+      .gte("scheduled_for", dayStart.toISOString())
+      .lt("scheduled_for", dayEnd.toISOString());
+    if (error || recErr) {
+      // 삼키지 않는다 — 이전 화면 값은 그대로 두고 오류 블록과 "다시 시도"를 보인다.
+      setLoadError(true);
+      return;
+    }
+    setLoadError(false);
     const all = (data ?? []) as Schedule[];
     const kinds = await getKindMap();
-    const now = new Date();
 
     // 내 약장 요약 — 같은 약이 여러 시간대로 등록돼 있어도 1종으로 센다.
     const byName = new Map<string, MedKind | "미분류">();
@@ -144,13 +174,6 @@ export function HomeScreen() {
       return d.length === 0 || d.includes(now.getDay());
     });
 
-    // 오늘 기록 — 완료/건너뜀/미룸 배지
-    const dayStart = new Date(now); dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
-    const { data: recs } = await supabase.from("intake_records").select("*")
-      .eq("patient_id", pid)
-      .gte("scheduled_for", dayStart.toISOString())
-      .lt("scheduled_for", dayEnd.toISOString());
     const statusBy = new Map<string, IntakeRecord["status"]>();
     for (const r of (recs ?? []) as IntakeRecord[]) statusBy.set(r.schedule_id, r.status);
 
@@ -174,8 +197,6 @@ export function HomeScreen() {
       .sort((a, b) => a.at.getTime() - b.at.getTime())[0];
     setNext(nx ? { ...nx, kind: resolveKind(nx.s.medicine_name, kinds) ?? "미분류" } : null);
 
-    hasExactAlarm().then(setAlarmOk);
-
     // 주의 조합 — 참조 데이터가 없으면 조용히 0으로 두고 배너를 숨긴다.
     const names = [...byName.keys()];
     if (names.length < 2) { setWarnCount(0); return; }
@@ -197,14 +218,16 @@ export function HomeScreen() {
       style={styles.scroll}
       contentContainerStyle={[styles.c, { paddingTop: spacing.md, paddingBottom: tabBarClearance + insets.bottom }]}
     >
-      {/* 상단 액션 줄 — 로고는 뺐다(PM 요청 2026-08-27) */}
+      {/* 상단 액션 줄 — 로고는 뺐다(PM 요청 2026-08-27). 종 아이콘도 뺐다 — 눌리는 것처럼 보였지만
+          아무 일도 하지 않는 장식이었다. */}
       <View style={styles.brandRow}>
         <View style={{ flex: 1 }} />
-        <View style={styles.iconBtn}><Bell size={22} color={colors.primaryBlue} /></View>
         <Pressable
           onPress={() => nav.navigate("More")}
-          style={({ pressed }) => [styles.iconBtn, styles.iconBtnGap, pressed && { opacity: 0.85 }]}
+          style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.85 }]}
           hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel="더보기"
         >
           <User size={22} color={colors.primaryBlue} />
         </Pressable>
@@ -233,9 +256,21 @@ export function HomeScreen() {
         </View>
       ) : null}
 
+      {/* OS 알림 권한 경고 — 꺼져 있으면 알람이 하나도 울리지 않는다 */}
+      {!notifOk ? (
+        <Pressable style={styles.warnPerm} onPress={() => { void fixNotifications(); }}
+          accessibilityRole="button" accessibilityLabel="알림이 꺼져 있어요. 알림 켜기">
+          <AlertTriangle size={20} color={colors.dangerRed} />
+          <Text style={styles.warnPermText}>
+            알림이 꺼져 있어요. 약 시간에 알람이 울리지 않아요. 눌러서 알림 켜기
+          </Text>
+        </Pressable>
+      ) : null}
+
       {/* 정확알람 권한 경고 */}
       {!alarmOk ? (
-        <Pressable style={styles.warnPerm} onPress={() => notifee.openAlarmPermissionSettings()}>
+        <Pressable style={styles.warnPerm} onPress={() => notifee.openAlarmPermissionSettings()}
+          accessibilityRole="button" accessibilityLabel="알람 및 리마인더 권한 설정 열기">
           <AlertTriangle size={20} color={colors.dangerRed} />
           <Text style={styles.warnPermText}>
             정확한 복약 알람을 위해 '알람 및 리마인더' 권한이 필요해요. 눌러서 설정 열기
@@ -273,6 +308,8 @@ export function HomeScreen() {
               onPress={() => nav.navigate("ButtonRegister", { editId: next.s.id })}
               style={styles.heroEdit}
               hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="약 수정"
             >
               <Pencil size={20} color={colors.white} />
             </Pressable>
@@ -281,7 +318,9 @@ export function HomeScreen() {
 
         {/* 시각만 크게 쓰면 내일 알람이 오늘 것처럼 보인다 — 날짜 맥락을 먼저 (QA 2026-10-03) */}
         {next ? <Text style={styles.heroDay}>{relativeDay(next.at, new Date())}</Text> : null}
-        <Text style={[styles.heroTime, !next && { marginTop: spacing.md }]}>{next ? fmt(next.at) : "등록된 약이 없어요"}</Text>
+        <Text style={[styles.heroTime, !next && { marginTop: spacing.md }]}>
+          {next ? fmt(next.at) : loadError ? "불러오지 못했어요" : "등록된 약이 없어요"}
+        </Text>
         {next ? (
           <View style={styles.heroMedRow}>
             <Text style={styles.heroMed}>{next.s.medicine_name}</Text>
@@ -296,6 +335,7 @@ export function HomeScreen() {
         <Pressable
           onPress={() => nav.navigate("Checkup")}
           style={({ pressed }) => [styles.voiceBtn, pressed && { opacity: 0.9 }]}
+          accessibilityRole="button"
         >
           <ClipboardCheck size={22} color={colors.white} />
           <Text style={styles.voiceBtnText}>오늘 복약 확인하기</Text>
@@ -306,12 +346,18 @@ export function HomeScreen() {
       <View style={styles.card}>
         <View style={styles.cardHead}>
           <Text style={styles.cardTitle}>오늘 복약 일정</Text>
-          <Pressable onPress={() => nav.navigate("Cabinet")} style={styles.moreBtn} hitSlop={8}>
+          <Pressable onPress={() => nav.navigate("Cabinet")} style={[styles.moreBtn, styles.moreBtnTouch]} hitSlop={8}
+            accessibilityRole="button" accessibilityLabel="복약 일정 전체 보기">
             <Text style={styles.moreText}>전체 보기</Text>
             <ChevronRight size={18} color={colors.textSecondary} />
           </Pressable>
         </View>
-        {rows.length === 0 ? (
+        {loadError ? (
+          <View style={styles.loadErrorBox}>
+            <Text style={styles.empty}>불러오지 못했어요. 인터넷 연결을 확인해 주세요.</Text>
+            <BigButton label="다시 시도" variant="secondary" onPress={() => { void load(); }} />
+          </View>
+        ) : rows.length === 0 ? (
           <Text style={styles.empty}>
             {next
               ? `오늘은 드실 약이 없어요. 다음은 ${relativeDay(next.at, new Date())} ${fmt(next.at)} · ${next.s.medicine_name}`
@@ -323,6 +369,8 @@ export function HomeScreen() {
               key={r.s.id}
               onPress={() => nav.navigate("MedicineDetail", { scheduleId: r.s.id })}
               style={({ pressed }) => [styles.doseRow, pressed && { opacity: 0.9 }]}
+              accessibilityRole="button"
+              accessibilityLabel={`${r.s.medicine_name} ${fmt(r.at)} ${r.status}, 자세히 보기`}
             >
               <MedicineMark name={r.s.medicine_name} size={44} />
               {/* 약 이름이 1순위 — 좁은 폰(360dp)에서도 눌리지 않게 시각·구분은 둘째 줄로 */}
@@ -347,6 +395,8 @@ export function HomeScreen() {
       <Pressable
         onPress={() => nav.navigate("Cabinet")}
         style={({ pressed }) => [styles.card, pressed && { opacity: 0.95 }]}
+        accessibilityRole="button"
+        accessibilityLabel={`내 약장, 총 ${total}종 관리 중`}
       >
         <View style={styles.cardHead}>
           <Text style={styles.cardTitle}>내 약장</Text>
@@ -376,6 +426,7 @@ export function HomeScreen() {
           <Pressable
             onPress={() => nav.navigate("Interaction")}
             style={({ pressed }) => [styles.warnBtn, pressed && { opacity: 0.9 }]}
+            accessibilityRole="button"
           >
             <Text style={styles.warnBtnText}>약사에게 확인 요청</Text>
             <ChevronRight size={18} color={colors.white} />
@@ -397,7 +448,6 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
     borderWidth: 1, borderColor: colors.border,
   },
-  iconBtnGap: { marginLeft: spacing.sm },
   greet: { fontSize: 32, fontWeight: "800", color: colors.primaryNavy, marginTop: -spacing.xs, letterSpacing: -0.8 },
   greetSub: { fontSize: 19, lineHeight: 28, color: colors.textSecondary, marginTop: -spacing.sm },
   kakaoBanner: {
@@ -437,7 +487,7 @@ const styles = StyleSheet.create({
   heroMedRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: 2 },
   heroMed: { color: colors.white, fontSize: 22, fontWeight: "700", flexShrink: 1 },
   heroBadge: { backgroundColor: "rgba(255,255,255,0.25)", borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 3 },
-  heroBadgeText: { color: colors.white, fontSize: 15, fontWeight: "700" },
+  heroBadgeText: { color: colors.white, fontSize: 16, fontWeight: "700" },
   voiceBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
     // 옛 디자인 그대로: 파란 히어로 위 반투명 흰 버튼
@@ -453,8 +503,11 @@ const styles = StyleSheet.create({
   cardHead: { flexDirection: "row", alignItems: "center", marginBottom: spacing.sm },
   cardTitle: { fontSize: 24, fontWeight: "800", color: colors.primaryNavy, flex: 1 },
   moreBtn: { flexDirection: "row", alignItems: "center", gap: 2 },
+  // 눌리는 "전체 보기"는 44 이상 — 글자 한 줄(≈26)만으로는 어르신이 맞추기 어렵다.
+  moreBtnTouch: { minHeight: 44, paddingLeft: spacing.sm },
   moreText: { fontSize: fontSizes.body, color: colors.textSecondary, fontWeight: "600" },
   empty: { fontSize: 19, color: colors.textSecondary, paddingVertical: spacing.md },
+  loadErrorBox: { gap: spacing.xs },
   doseRow: {
     flexDirection: "row", alignItems: "center", gap: spacing.sm,
     paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.border,
@@ -464,18 +517,18 @@ const styles = StyleSheet.create({
   doseTime: { fontSize: fontSizes.body, fontWeight: "700", color: colors.text },
   doseName: { fontSize: 20, fontWeight: "700", color: colors.text },
   kindBadge: { borderRadius: radii.pill, paddingHorizontal: 9, paddingVertical: 3 },
-  kindBadgeText: { fontSize: 14, fontWeight: "700" },
+  kindBadgeText: { fontSize: 16, fontWeight: "700" },
   statusBadge: {
     marginLeft: "auto", borderRadius: radii.pill, paddingHorizontal: 12, paddingVertical: 5,
     backgroundColor: colors.lightBlueBg,
   },
   statusDone: { backgroundColor: colors.primaryBlue },
-  statusText: { fontSize: 15, fontWeight: "700", color: colors.textSecondary },
+  statusText: { fontSize: 16, fontWeight: "700", color: colors.textSecondary },
   statusDoneText: { color: colors.white },
 
   tileRow: { flexDirection: "row", gap: spacing.sm },
   tile: { flex: 1, borderRadius: radii.card, paddingVertical: spacing.md, paddingHorizontal: spacing.sm },
-  tileLabel: { fontSize: 15, fontWeight: "700" },
+  tileLabel: { fontSize: 16, fontWeight: "700" },
   tileCount: { fontSize: 30, fontWeight: "800", color: colors.primaryNavy, marginTop: 2 },
 
   warnCard: {
