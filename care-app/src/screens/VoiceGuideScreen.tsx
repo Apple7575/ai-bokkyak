@@ -145,21 +145,31 @@ export function VoiceGuideScreen() {
     }
   }
 
-  // 「나중에」는 바로 홈으로 — 읽을 안내 문구가 없어 기다릴 이유가 없다.
-  function skip() {
-    void logGuideEvent({ step: "skipped", ...stats.current });
-    nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
-  }
-
+  // 회의 2026-10-06: 「나중에」를 없애고 뒤로 가면 앞 화면(결과·알람 물음)으로 돌아간다.
+  // 거기서 「나중에 할게요」를 고르면 된다.
   function goBack() {
     if (sheetOpen) { setSheetOpen(false); return; }
     if (nav.canGoBack()) nav.goBack();
+    else goHome();
   }
 
   // 저장은 이미 끝났다 — 홈으로 가기만 한다.
   function goHome() {
     nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
   }
+
+  // 화면을 떠나는 모든 길(헤더 뒤로·안드로이드 뒤로·iOS 스와이프)을 여기서 받는다.
+  // 저장 중에는 떠나지 않는다 — 저장이 끝난 뒤 앞 화면에서 다시 설정하면 같은 알람이 두 벌 생긴다.
+  // 완료 뒤에도 앞 화면으로 돌아가지 않고 홈으로 간다 — 같은 이유. 코드가 부르는 reset(홈으로)은 그대로 통과.
+  useEffect(() => nav.addListener("beforeRemove", (e: any) => {
+    if (e.data.action.type === "RESET") return;
+    if (savingRef.current) { e.preventDefault(); return; }
+    if (step === "done") { e.preventDefault(); goHome(); return; }
+    void logGuideEvent({ step: "skipped", ...stats.current });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [nav, step]);
+  // iOS 스와이프는 beforeRemove로 막히지 않아 제스처 자체를 끈다.
+  useEffect(() => { nav.setOptions({ gestureEnabled: step === "setup" && !saving }); }, [nav, step, saving]);
 
   const byMedicine = setup.mode === "medicines";
   const times = chosenTimes(setup);
@@ -168,17 +178,13 @@ export function VoiceGuideScreen() {
     // 상단 인셋은 ScrollView 바깥에. contentContainerStyle에 주면 스크롤할 때
     // 내용이 상태바 밑으로 올라와 겹친다.
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      {/* 헤더 — 뒤로 · 나중에 (한 화면이라 진행 표시는 없다). 완료 단계에선 둘 다 숨긴다 —
+      {/* 헤더 — 뒤로만 (한 화면이라 진행 표시는 없다). 완료 단계에선 숨긴다 —
           이미 저장했으니 되돌아가 다시 저장하면 같은 알람이 또 생긴다. */}
       {step === "setup" ? (
         <View style={styles.header}>
-          <Pressable onPress={goBack} hitSlop={12} style={styles.backBtn}
+          <Pressable onPress={goBack} disabled={saving} hitSlop={12} style={styles.backBtn}
             accessibilityRole="button" accessibilityLabel="뒤로">
             <ChevronLeft size={26} color={colors.textSecondary} />
-          </Pressable>
-          <Pressable onPress={skip} hitSlop={10} style={styles.skipBtn}
-            accessibilityRole="button" accessibilityLabel="나중에 설정하기">
-            <Text style={styles.skipText}>나중에</Text>
           </Pressable>
         </View>
       ) : null}
@@ -336,8 +342,6 @@ const styles = StyleSheet.create({
     height: 60, paddingHorizontal: spacing.md,
   },
   backBtn: { width: 72, height: 44, justifyContent: "center" },
-  skipBtn: { width: 72, height: 44, alignItems: "flex-end", justifyContent: "center" },
-  skipText: { fontSize: fontSizes.body, color: colors.textSecondary, fontWeight: "600" },
   // flexGrow — 내용이 짧으면 spacer가 늘어나 배너를 아래로 민다
   body: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.md },
   bodyDone: { paddingTop: spacing.lg, gap: spacing.md },

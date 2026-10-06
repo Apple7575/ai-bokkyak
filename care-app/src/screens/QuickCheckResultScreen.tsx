@@ -152,9 +152,10 @@ export function QuickCheckResultScreen() {
   }, [route.params]);
 
   // 점검한 이름을 그대로 넘겨 약마다 시간대를 고르게 한다(회의 2026-09-06·09-12).
+  // 쌓아서 연다 — 알람 설정에서 뒤로 가면 이 결과로 돌아온다(회의 2026-10-06).
   function toAlarm() {
     const medicines = state.phase === "ok" ? state.names : [];
-    nav.reset({ index: 1, routes: [{ name: "Tabs" }, { name: "VoiceGuide", params: { medicines } }] });
+    nav.navigate("VoiceGuide", { medicines });
   }
   function toHome() {
     nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
