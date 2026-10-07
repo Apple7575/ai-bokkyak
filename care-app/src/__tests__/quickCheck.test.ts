@@ -1,7 +1,7 @@
 import {
   SUPPLEMENT_PRESETS, SUPPLEMENT_MORE, MEDICINE_PRESETS, AGES, CONDS, NONE_SUPPLEMENT, NONE_MEDICINE, NONE_CONDITION,
   toggleItem, addItem, checkItems, unmatchedNames, checkedCount, checkedNamesLine, EMPTY_DRAFT,
-  isPreset, customNames, summarize, topFinding, groupByKind,
+  isPreset, customNames, summarize, topFinding, groupByKind, lockedGroups, isResultLocked,
   unmatchedDescription, PRESET_LABELS, isUnfinished,
 } from "../lib/quickCheck";
 import type { QuickFinding, RuleKind } from "../lib/quickCheckRules";
@@ -139,6 +139,52 @@ describe("summarize / topFinding / groupByKind", () => {
   });
   it("groupByKind: kind 순서로 묶는다", () => {
     expect(groupByKind(list).map((g) => [g.kind, g.items.length])).toEqual([["priority", 1], ["timing", 2], ["overlap", 1], ["caution", 1]]);
+  });
+});
+
+describe("lockedGroups — 잠금 목록(첫 건 제외, kind별 개수)", () => {
+  it("0건·1건이면 잠글 것이 없다 — 첫 건만 보여 주면 끝", () => {
+    expect(lockedGroups([])).toEqual([]);
+    expect(lockedGroups([f("c", "x", "caution")])).toEqual([]);
+  });
+  it("2건: 입력 순서가 아니라 정렬 순서로 첫 건을 뺀다", () => {
+    // 입력은 주의사항이 앞이지만 정렬하면 우선 확인이 첫 건 → 남는 건 주의사항 1건.
+    expect(lockedGroups([f("c", "x", "caution"), f("p", "x", "priority")])).toEqual([{ kind: "caution", count: 1 }]);
+  });
+  it("3건 이상 섞이면 첫 건의 kind가 0건이 되어 빠지고, 나머지는 KIND_ORDER 순서로 센다", () => {
+    const list = [f("c", "x", "caution"), f("t", "x", "timing"), f("p", "x", "priority"), f("o", "x", "overlap"), f("t2", "x", "timing")];
+    expect(topFinding(list)?.kind).toBe("priority");
+    expect(lockedGroups(list)).toEqual([
+      { kind: "timing", count: 2 }, { kind: "overlap", count: 1 }, { kind: "caution", count: 1 },
+    ]);
+  });
+  it("첫 건과 같은 kind가 더 있으면 그 kind는 남은 개수로 남는다(한 건만 빠진다)", () => {
+    const list = [f("c", "x", "caution"), f("o", "x", "overlap"), f("t", "x", "timing"), f("p2", "x", "priority"), f("p1", "x", "priority")];
+    expect(lockedGroups(list)).toEqual([
+      { kind: "priority", count: 1 }, { kind: "timing", count: 1 }, { kind: "overlap", count: 1 }, { kind: "caution", count: 1 },
+    ]);
+  });
+  it("남은 개수의 합은 전체 − 1이고, 입력 배열은 바꾸지 않는다", () => {
+    const list = [f("c", "x", "caution"), f("t", "x", "timing"), f("p", "x", "priority"), f("t2", "x", "timing")];
+    const before = list.map((x) => x.a);
+    expect(lockedGroups(list).reduce((n, g) => n + g.count, 0)).toBe(list.length - 1);
+    expect(list.map((x) => x.a)).toEqual(before);
+  });
+});
+
+describe("isResultLocked — 2건 이상이고 카카오 미연결(또는 조회 중)일 때만 잠근다", () => {
+  // linked: undefined=조회 중 · null=조회 실패 · false=미연결 · true=연결됨
+  const table: [number, boolean | null | undefined, boolean][] = [
+    // 1건 이하 — 가릴 것이 없으니 연결 상태와 상관없이 연다
+    [0, undefined, false], [0, null, false], [0, false, false], [0, true, false],
+    [1, undefined, false], [1, null, false], [1, false, false], [1, true, false],
+    // 2건 이상 — 미연결(false)·조회 중(undefined)만 잠그고, 연결됨(true)·조회 실패(null)는 연다
+    // (조회 실패로 안전 정보를 가리지 않고, 조회 중엔 가릴 내용이 잠깐 비치지 않게 잠가 둔다)
+    [2, undefined, true], [2, null, false], [2, false, true], [2, true, false],
+    [3, undefined, true], [3, null, false], [3, false, true], [3, true, false],
+  ];
+  it.each(table)("전체 %i건 · linked %p → 잠금 %p", (total, linked, expected) => {
+    expect(isResultLocked(total, linked)).toBe(expected);
   });
 });
 
