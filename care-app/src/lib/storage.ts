@@ -1,17 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // 보호자 기능을 뺐다. 쓰는 사람은 본인 한 종류뿐이라 역할 구분도, 보호자에게
-// 건네주던 6자리 코드도 없다. "가입했나"는 환자 id가 있느냐로 판단한다.
+// 건네주던 6자리 코드도 없다. 환자 id는 로그인한 계정의 환자 행이다(account.ts adoptPatient) —
+// "로그인했나"는 환자 id와 로그인 세션이 함께 있느냐로 본다(account.ts isSignedIn).
 //
-// care.role / care.patientCode 키는 더 쓰지 않지만 clearAll이 지울 수 있게
-// 남겨 둔다 — 이전 버전을 쓰던 기기에 값이 남아 있다.
+// care.role / care.patientCode / care.kakaoBannerDismissed 키는 더 쓰지 않지만 clearAll이
+// 지울 수 있게 남겨 둔다 — 이전 버전을 쓰던 기기에 값이 남아 있다.
 const KEYS = {
   patientId: "care.patientId",
   onboarded: "care.onboarded",
   patientName: "care.patientName",
-  kakaoBannerDismissed: "care.kakaoBannerDismissed",
 };
-const LEGACY_KEYS = ["care.role", "care.patientCode"];
+const LEGACY_KEYS = ["care.role", "care.patientCode", "care.kakaoBannerDismissed"];
 
 export async function getOnboarded(): Promise<boolean> {
   return (await AsyncStorage.getItem(KEYS.onboarded)) === "1";
@@ -36,13 +36,6 @@ export async function setPatientName(name: string): Promise<void> {
   await AsyncStorage.setItem(KEYS.patientName, name);
 }
 
-// 홈의 "카카오 연결" 배너를 ✕로 닫았는지. 한 번 닫으면 다시 띄우지 않는다(더보기에서 연결 가능).
-export async function getKakaoBannerDismissed(): Promise<boolean> {
-  return (await AsyncStorage.getItem(KEYS.kakaoBannerDismissed)) === "1";
-}
-export async function setKakaoBannerDismissed(): Promise<void> {
-  await AsyncStorage.setItem(KEYS.kakaoBannerDismissed, "1");
-}
 export async function clearAll(): Promise<void> {
   await AsyncStorage.multiRemove([...Object.values(KEYS), ...LEGACY_KEYS]);
 }

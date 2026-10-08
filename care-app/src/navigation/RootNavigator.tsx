@@ -6,8 +6,14 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RootStackParamList, TabParamList } from "./types";
 import { getPatientId, getOnboarded } from "../lib/storage";
+import { supabase, hasStoredSession } from "../lib/supabase";
+import { adoptPatient, clearLocalSession, findMyPatient } from "../lib/account";
+import { resyncAllAlarms } from "../lib/alarmSync";
 import { IntroScreen } from "../screens/IntroScreen";
-import { NameEntryScreen } from "../screens/NameEntryScreen";
+import { LoginScreen } from "../screens/LoginScreen";
+import { ConsentScreen } from "../screens/ConsentScreen";
+import { AccountScreen } from "../screens/AccountScreen";
+import { QuickCheckHistoryScreen } from "../screens/QuickCheckHistoryScreen";
 import { AlarmPromptScreen } from "../screens/AlarmPromptScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { RecordScreen } from "../screens/RecordScreen";
@@ -63,22 +69,56 @@ function PatientTabs() {
   );
 }
 
+// 시작할 때 로그인 상태 판정 — 회의 2026-10-08.
+// 로그인 = 기기에 로그인 세션이 있고, 그 계정의 환자가 이 기기에 앉아 있다(환자 id). 환자 id가 없으면
+// 서버에서 찾아 앉힌다(다른 기기에서 가입했거나, 동의까지 마친 직후 앱이 꺼진 경우).
+//  · 세션은 있는데 인터넷 문제로 확인하지 못함 + 환자 id 있음 → 그대로 로그인으로 본다(홈).
+//  · 환자 id만 있고 세션이 없음 → 로그인 전 옛 빌드의 흔적. 알람·저장값을 지우고 로그아웃 상태로.
+//  · 세션만 있고 환자가 없음(동의 전에 멈춤) → 로그아웃 상태로 본다. 다시 로그인하면 동의로 간다.
+async function resolveSignedIn(): Promise<boolean> {
+  const pid = await getPatientId();
+  let session = null;
+  try {
+    session = (await supabase.auth.getSession()).data.session;
+  } catch {
+    session = null;
+  }
+  if (session) {
+    if (pid) return true;
+    try {
+      const mine = await findMyPatient();
+      if (!mine) return false;
+      await adoptPatient(mine);
+      void resyncAllAlarms().catch(() => {});
+      return true;
+    } catch {
+      return false; // 인터넷이 없어 내 환자를 모른다 — 로그인 화면에서 다시 시도한다.
+    }
+  }
+  // 토큰 갱신이 인터넷 문제로 실패하면 getSession이 세션 없이 돌아온다 — 저장된 세션이 남아 있으면 로그인 상태다.
+  if (await hasStoredSession()) return pid !== null;
+  if (pid) await clearLocalSession();
+  return false;
+}
+
 export function RootNavigator() {
-  const [init, setInit] = useState<{ signedUp: boolean; onboarded: boolean } | "loading">("loading");
+  const [init, setInit] = useState<{ signedIn: boolean; onboarded: boolean } | "loading">("loading");
   const [alarmSid, setAlarmSid] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
-      const signedUp = (await getPatientId()) !== null;
+      // 옛 빌드 정리(clearLocalSession)가 onboarded 표시를 다시 세우므로 정리 전에 읽는다.
       const onboarded = await getOnboarded();
+      const signedIn = await resolveSignedIn().catch(() => false);
       try {
         const initial = await notifee.getInitialNotification();
         const sid = initial?.notification?.data?.scheduleId as string | undefined;
-        if (sid) setAlarmSid(sid);
+        // 로그아웃 상태면 알람 화면을 열지 않는다 — 기록할 환자가 없다.
+        if (sid && signedIn) setAlarmSid(sid);
       } catch {
         // 알림으로 시작하지 않은 일반 진입은 그대로 진행한다.
       }
-      setInit({ signedUp, onboarded });
+      setInit({ signedIn, onboarded });
     })();
   }, []);
 
@@ -86,21 +126,18 @@ export function RootNavigator() {
     return <View style={styles.loading}><ActivityIndicator size="large" color={colors.primaryBlue} /></View>;
   }
 
-  const initialRouteName: keyof RootStackParamList = alarmSid
-    ? "Alarm"
-    : !init.signedUp && !init.onboarded
-      ? "Intro"
-      : !init.signedUp
-        ? "NameEntry"
-        : "Tabs";
+  // 로그인 전이면 인트로 — 소개를 이미 본 사람은 시작 장(1분 점검 · 건너뛰기 · 로그인)부터.
+  const initialRouteName: keyof RootStackParamList = alarmSid ? "Alarm" : init.signedIn ? "Tabs" : "Intro";
+  const introParams = !init.signedIn && init.onboarded ? { slide: "cta" as const } : undefined;
 
   return (
     <Stack.Navigator
       initialRouteName={initialRouteName}
       screenOptions={{ headerShown: false, contentStyle: styles.stack, animation: "slide_from_right" }}
     >
-      <Stack.Screen name="Intro" component={IntroScreen} />
-      <Stack.Screen name="NameEntry" component={NameEntryScreen} />
+      <Stack.Screen name="Intro" component={IntroScreen} initialParams={introParams} />
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Consent" component={ConsentScreen} />
       <Stack.Screen name="AlarmPrompt" component={AlarmPromptScreen} />
       <Stack.Screen name="Tabs" component={PatientTabs} />
       <Stack.Screen name="VoiceGuide" component={VoiceGuideScreen} />
@@ -115,6 +152,8 @@ export function RootNavigator() {
       <Stack.Screen name="Checkup" component={CheckupScreen} />
       <Stack.Screen name="AlarmSound" component={AlarmSoundScreen} />
       <Stack.Screen name="Privacy" component={PrivacyScreen} />
+      <Stack.Screen name="Account" component={AccountScreen} />
+      <Stack.Screen name="QuickCheckHistory" component={QuickCheckHistoryScreen} />
       <Stack.Screen name="MedicineDetail" component={MedicineDetailScreen} />
       <Stack.Screen name="Interaction" component={InteractionScreen} />
       <Stack.Screen name="QuickCheckInput" component={QuickCheckInputScreen} />

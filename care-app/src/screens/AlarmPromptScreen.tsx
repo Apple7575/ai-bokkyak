@@ -10,7 +10,7 @@ import { colors, fontSizes, spacing, radii, shadows } from "../theme/tokens";
 const LOGO_CARD = 104;
 const LOGO_SIZE = 80;
 
-// 이름 입력 직후(Case C·D) — 점검을 건너뛴 사용자에게도 알람을 설정할 기회를 준다.
+// 처음 가입(로그인 → 동의) 직후, 점검 없이 들어온 사용자(Case C·D) — 알람을 설정할 기회를 준다.
 // 두 선택 모두 앞으로만 가므로 뒤로 가기 버튼은 없다.
 export function AlarmPromptScreen() {
   const nav = useNavigation<any>();

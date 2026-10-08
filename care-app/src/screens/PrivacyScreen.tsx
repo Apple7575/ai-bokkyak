@@ -1,13 +1,10 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import notifee from "@notifee/react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { Trash2 } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { IllustrationBanner } from "../components/IllustrationBanner";
-import { supabase } from "../lib/supabase";
-import { getPatientId, clearAll } from "../lib/storage";
-import { clearDraft } from "../lib/quickCheckDraft";
+import { deleteMyAccount } from "../lib/account";
 import { colors, fontSizes, radii, spacing, minTouch } from "../theme/tokens";
 
 const PRIVACY_ART = require("../../assets/illustrations/privacy-lock.png");
@@ -102,23 +99,17 @@ const SECTIONS: Section[] = [
 
 export function PrivacyScreen() {
   const nav = useNavigation<any>();
+  // 동의 화면의 「보기」로 열었으면 아직 가입 전이라 지울 데이터가 없다 — 삭제 버튼을 숨긴다.
+  const fromConsent = useRoute<any>().params?.from === "consent";
   const [deleting, setDeleting] = useState(false);
 
+  // 계정 관리의 「계정 삭제」와 같은 길 — 로그인 계정을 지우면 환자·일정·기록·알람 로그·점검 결과가
+  // 서버에서 함께 지워지고(cascade), 기기의 알람·저장값·점검 초안·세션도 정리된다(account.ts).
   async function deleteEverything(): Promise<void> {
     setDeleting(true);
     try {
-      // 예약된 알람부터 정리 — 데이터가 사라진 뒤 알람이 울리는 일이 없게.
-      await notifee.cancelAllNotifications().catch(() => {});
-      const pid = await getPatientId();
-      if (pid) {
-        // 일정·기록·알람 로그는 patients FK의 on delete cascade로 함께 지워진다.
-        const { error } = await supabase.from("patients").delete().eq("id", pid);
-        if (error) throw error;
-      }
-      await clearAll();
-      // 1분 점검 초안도 지운다 — 남겨 두면 다음 사람의 환자로 저장(commit)될 수 있다.
-      await clearDraft();
-      nav.reset({ index: 0, routes: [{ name: "Intro" }] });
+      await deleteMyAccount();
+      nav.reset({ index: 0, routes: [{ name: "Intro", params: { slide: "cta" } }] });
     } catch {
       setDeleting(false);
       Alert.alert(
@@ -131,7 +122,7 @@ export function PrivacyScreen() {
   function confirmDelete(): void {
     Alert.alert(
       "모든 데이터를 삭제할까요?",
-      "등록하신 약과 복약 기록이 모두 지워지고 처음 화면으로 돌아가요. 되돌릴 수 없습니다.",
+      "계정과 함께 등록하신 약, 알람, 복약 기록, 점검 결과가 모두 지워지고 처음 화면으로 돌아가요. 되돌릴 수 없습니다.",
       [
         { text: "취소", style: "cancel" },
         { text: "삭제", style: "destructive", onPress: () => { void deleteEverything(); } },
@@ -159,19 +150,23 @@ export function PrivacyScreen() {
           ))}
         </View>
 
-        <Pressable
-          onPress={confirmDelete}
-          disabled={deleting}
-          style={({ pressed }) => [styles.deleteBtn, (pressed || deleting) && { opacity: 0.8 }]}
-        >
-          <Trash2 size={20} color="#fff" />
-          <Text style={styles.deleteBtnText}>
-            {deleting ? "삭제 중…" : "모든 데이터 삭제"}
-          </Text>
-        </Pressable>
-        <Text style={styles.deleteNote}>
-          이 기기에서 앱 데이터가 삭제되고 처음 화면으로 돌아가요.
-        </Text>
+        {fromConsent ? null : (
+          <>
+            <Pressable
+              onPress={confirmDelete}
+              disabled={deleting}
+              style={({ pressed }) => [styles.deleteBtn, (pressed || deleting) && { opacity: 0.8 }]}
+            >
+              <Trash2 size={20} color="#fff" />
+              <Text style={styles.deleteBtnText}>
+                {deleting ? "삭제 중…" : "모든 데이터 삭제"}
+              </Text>
+            </Pressable>
+            <Text style={styles.deleteNote}>
+              계정과 서버에 저장된 정보가 모두 삭제되고 처음 화면으로 돌아가요.
+            </Text>
+          </>
+        )}
       </ScrollView>
     </View>
   );

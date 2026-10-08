@@ -48,6 +48,18 @@ export async function saveDraft(draft: QuickCheckDraft): Promise<void> {
   await AsyncStorage.setItem(KEY, JSON.stringify(draft));
 }
 
+// 저장(commit)한 초안 → 결과 화면 params. commit이 초안의 판정 결과를 비우므로 결과 화면은
+// 이 값을 params로 받아야 한다(점검 직후 Analyzing, 로그인 직후 afterLogin이 쓴다).
+export function resultParamsOf(d: QuickCheckDraft) {
+  return {
+    findings: d.findings ?? [], unmatched: d.unmatched, names: checkItems(d),
+    durUnavailable: d.durUnavailable === true,
+    unmappedIngredients: d.unmappedIngredients ?? [],
+    uncoveredConditions: d.uncoveredConditions ?? [],
+    engine: d.engine,
+  };
+}
+
 export async function clearDraft(): Promise<void> {
   await AsyncStorage.removeItem(KEY);
 }

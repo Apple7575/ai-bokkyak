@@ -5,6 +5,8 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import * as Crypto from "expo-crypto";
 import type { User } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured, AUTH_STORAGE_KEY } from "./supabase";
+
+export { hasStoredSession } from "./supabase";
 import { parseAuthCallback, isUserCanceled, formatAppleFullName, bytesToHex } from "./authHelpers";
 
 export { displayNameFrom, loginProviderLabel, loginProviderOf } from "./authHelpers";
@@ -121,15 +123,5 @@ export async function currentUser(): Promise<User | null> {
     return data.session?.user ?? null;
   } catch {
     return null;
-  }
-}
-
-// 기기에 로그인 세션이 남아 있나 — 네트워크 없이 저장소만 본다. 인터넷이 끊겨 토큰을
-// 갱신하지 못한 때에도 "로그인한 사람"을 로그아웃된 사람으로 착각하지 않으려고 쓴다.
-export async function hasStoredSession(): Promise<boolean> {
-  try {
-    return (await AsyncStorage.getItem(AUTH_STORAGE_KEY)) !== null;
-  } catch {
-    return false;
   }
 }

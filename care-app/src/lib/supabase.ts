@@ -39,6 +39,16 @@ export const supabase = createClient(
   }
 );
 
+// 기기에 로그인 세션이 남아 있나 — 네트워크 없이 저장소만 본다. 인터넷이 끊겨 토큰을
+// 갱신하지 못한 때에도 로그인한 사람을 로그아웃된 사람으로 착각하지 않으려고 쓴다.
+export async function hasStoredSession(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(AUTH_STORAGE_KEY)) !== null;
+  } catch {
+    return false;
+  }
+}
+
 // 토큰 자동 갱신은 앱이 화면에 있을 때만 — 뒤에 있는 동안 타이머가 멈춰 있다가 한꺼번에 돌면
 // 갱신이 꼬인다(Supabase의 React Native 권장 방식).
 AppState.addEventListener("change", (state) => {

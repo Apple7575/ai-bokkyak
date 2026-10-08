@@ -8,7 +8,7 @@ import { checkItems, QuickCheckDraft, QuickFinding, PRESET_LABELS } from "../lib
 import { expandChipNames } from "../lib/chipAliases";
 import { runServerCheck, serverToFindings, ServerCheckResult } from "../lib/quickCheckServer";
 import { serverConditionInput } from "../lib/conditionAliases";
-import { loadDraft, saveDraft, commitQuickCheckDraft } from "../lib/quickCheckDraft";
+import { loadDraft, saveDraft, commitQuickCheckDraft, resultParamsOf } from "../lib/quickCheckDraft";
 import { getPatientId } from "../lib/storage";
 import { colors, fontSizes, spacing, radii, shadows } from "../theme/tokens";
 
@@ -18,8 +18,9 @@ import { colors, fontSizes, spacing, radii, shadows } from "../theme/tokens";
 //    "다시 시도하기"만 보여 준다. 앱 내장 규칙·기기 DUR 폴백은 제거됐다 — 되살리지 말 것.
 //  · 종류명 칩은 chipAliases 로 서버 계열·성분 이름을 덧붙여 보내고, 응답에서 다시 칩 이름으로 되돌린다.
 // 조회가 순식간에 끝나도 최소 시간은 보여 준다 — 바로 넘어가면 "정말 봤나?" 싶어진다.
-// 판정이 끝나면 곧바로 서버(quick_check_results)에 저장한다 — 3/3에서 환자를 만들었으므로
-// 여기서 commit할 수 있다. 저장에 실패해도 결과는 보여 주고, 초안은 남겨 HomeScreen이 재시도한다.
+// 판정이 끝나면 로그인한 사람(기기에 환자 id가 있다)은 곧바로 서버(quick_check_results)에 저장한다.
+// 로그인 전이면 저장하지 않고 기기 초안의 결과만 보여 준다 — 저장은 결과 화면에서 로그인한 뒤에
+// 한다(afterLogin). 저장에 실패해도 결과는 보여 주고, 초안은 남겨 HomeScreen이 재시도한다.
 
 const STEPS = ["약과 영양제 조합 확인", "성분 확인", "주의 조합 대조", "결과 정리"] as const;
 const MIN_MS = 2400;
@@ -66,7 +67,7 @@ export function QuickCheckAnalyzingScreen() {
   const [done, setDone] = useState(0);          // 켜진 체크 개수
   const [failed, setFailed] = useState<null | "network" | "storage">(null);
   const [attempt, setAttempt] = useState(0);
-  // 실패 화면의 보조 버튼 — 환자가 있으면 홈으로, 없으면 이름 한 칸으로.
+  // 실패 화면의 보조 버튼 — 환자가 있으면(로그인) 홈으로, 없으면 로그인해서 시작하기로.
   const [hasPatient, setHasPatient] = useState(false);
   useEffect(() => {
     let alive = true;
@@ -100,8 +101,8 @@ export function QuickCheckAnalyzingScreen() {
         if (alive()) setFailed("storage");
         return;
       }
-      // 서버 저장. 실패는 여기서 삼킨다 — 초안이 기기에 남아 HomeScreen이 홈에 들어올 때마다
-      // 다시 시도하고, 결과 화면은 초안에서 읽으면 되므로 사용자를 막지 않는다.
+      // 서버 저장(로그인한 사람만). 실패는 여기서 삼킨다 — 초안이 기기에 남아 HomeScreen이 홈에
+      // 들어올 때마다 다시 시도하고, 결과 화면은 초안에서 읽으면 되므로 사용자를 막지 않는다.
       const pid = await getPatientId();
       let committed: QuickCheckDraft | null = null;
       if (pid) {
@@ -112,13 +113,7 @@ export function QuickCheckAnalyzingScreen() {
       if (!alive()) return;
       // commit이 초안의 판정 결과를 비웠으므로(입력은 남는다) 결과는 params로 넘긴다.
       // 저장 못 했으면 초안에 결과가 남아 있어 결과 화면이 초안에서 읽는다.
-      nav.replace("QuickCheckResult", committed ? {
-        findings: committed.findings, unmatched: committed.unmatched, names: checkItems(committed),
-        durUnavailable: committed.durUnavailable === true,
-        unmappedIngredients: committed.unmappedIngredients ?? [],
-        uncoveredConditions: committed.uncoveredConditions ?? [],
-        engine: committed.engine,
-      } : undefined);
+      nav.replace("QuickCheckResult", committed ? resultParamsOf(committed) : undefined);
     } catch {
       timers.forEach(clearTimeout);
       if (alive()) setFailed("network");
@@ -173,7 +168,7 @@ export function QuickCheckAnalyzingScreen() {
             {hasPatient ? (
               <BigButton label="건너뛰고 홈으로" variant="secondary" onPress={() => nav.reset({ index: 0, routes: [{ name: "Tabs" }] })} />
             ) : (
-              <BigButton label="건너뛰고 시작하기" variant="secondary" onPress={() => nav.reset({ index: 0, routes: [{ name: "NameEntry" }] })} />
+              <BigButton label="건너뛰고 시작하기" variant="secondary" onPress={() => nav.navigate("Login", { purpose: "skip" })} />
             )}
           </View>
         ) : null}

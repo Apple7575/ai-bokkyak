@@ -7,7 +7,6 @@ import { Check, Leaf, Package, Pill } from "lucide-react-native";
 import { Logo } from "../components/Logo";
 import { INTRO_SLIDES, SKIP_TARGET_INDEX, dotState, nextIndex, prevIndex } from "../lib/introSlides";
 import { setOnboarded } from "../lib/storage";
-import { restoreWithKakao } from "../lib/kakaoAccount";
 import { colors, fontSizes, minTouch, radii, shadows, spacing } from "../theme/tokens";
 
 // 인트로 — 브랜드 1장 → 온보딩 2장 → 시작 CTA, 총 4장을 한 화면에서 넘긴다.
@@ -114,15 +113,17 @@ export function IntroScreen() {
   useEffect(() => () => { clearAuto(); opacity.stopAnimation(); }, [clearAuto, opacity]);
 
   // 하드웨어 뒤로가기 — 이전 슬라이드. 첫 슬라이드에서는 기본 동작.
+  // 로그인 화면이 위에 쌓여 있을 때는 손대지 않는다(그 화면이 닫혀야 한다).
   useEffect(() => {
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (!nav.isFocused()) return false;
       const prev = prevIndex(indexRef.current);
       if (prev === null) return false;
       goTo(prev);
       return true;
     });
     return () => sub.remove();
-  }, [goTo]);
+  }, [goTo, nav]);
 
   const tapNext = () => goTo(nextIndex(indexRef.current));
   const skip = () => goTo(SKIP_TARGET_INDEX);
@@ -144,25 +145,25 @@ export function IntroScreen() {
       leaving.current = false;
     }
   }
-  // 회의 2026-09-10(B안): 가입 화면이 없다. 점검은 3/3에서 이름을 받아 환자를 만들고
-  // 결과 → 복용 알람 설정으로 잇는다. 건너뛰면 이름 한 칸(NameEntry) → 바로 홈.
+  // 회의 2026-10-08: 점검은 로그인 없이 하고, 결과를 저장할 때 로그인한다.
+  // 건너뛰면 로그인(카카오·Apple) → 처음이면 동의 → 알람 설정 물음. 쓰던 계정이면 로그인 → 홈.
   // from: "intro" — 점검 1/3의 「뒤로」가 인트로로 돌아오게 한다(회의 2026-09-20).
   const startQuickCheck = () => void leave([{ name: "QuickCheckInput", params: { from: "intro" } }]);
-  const skipSetup = () => void leave([{ name: "NameEntry" }]);
-  // 휴대폰을 바꾼 사용자 — 카카오와 연결해 둔 예전 정보를 불러온다. 눌린 링크만 busy.
-  const [restoring, setRestoring] = useState(false);
-  async function restore() {
-    if (restoring || leaving.current) return;
-    setRestoring(true);
+  // 로그인은 쌓아서 연다 — 로그인 화면의 「뒤로」가 이 시작 장으로 돌아온다.
+  async function toLogin(purpose: "skip" | "returning") {
+    if (leaving.current) return;
+    leaving.current = true;
     clearAuto();
     try {
-      const r = await restoreWithKakao();
-      if (r.ok) { await leave([{ name: "Tabs" }]); return; }
-      if (!r.canceled) Alert.alert("카카오로 불러오기", r.message);
+      await setOnboarded();
     } catch {
-      Alert.alert("카카오로 불러오기", "인터넷 연결을 확인하고 다시 시도해 주세요.");
+      // 온보딩 완료 표시는 다음 실행에 인트로를 다시 보일지만 정한다 — 진행은 막지 않는다.
     }
-    setRestoring(false);
+    try {
+      nav.navigate("Login", { purpose });
+    } finally {
+      leaving.current = false;
+    }
   }
 
   const slide = INTRO_SLIDES[index];
@@ -191,7 +192,7 @@ export function IntroScreen() {
         {index === 0 ? <Brand1 onTap={tapNext} /> : null}
         {index === 1 ? <Onboarding1 onNext={tapNext} /> : null}
         {index === 2 ? <Onboarding2 onNext={tapNext} /> : null}
-        {index === 3 ? <Cta onPrimary={startQuickCheck} onSecondary={skipSetup} onRestore={() => void restore()} restoring={restoring} /> : null}
+        {index === 3 ? <Cta onPrimary={startQuickCheck} onSecondary={() => void toLogin("skip")} onLogin={() => void toLogin("returning")} /> : null}
       </Animated.View>
     </View>
   );
@@ -322,9 +323,10 @@ function Onboarding2({ onNext }: { onNext: () => void }) {
 }
 
 // ── 4. 시작 CTA ─────────────────────────────────────────────────────────────
-const CHECKS = ["이름만 적고 바로", "영양제·약 한 번에 분석", "사진·이름 일부로도 가능"];
+// 첫 줄: 점검은 로그인 없이 된다(회의 2026-10-08). 옛 문구 「이름만 적고 바로」는 3/3 이름 칸이 없어져 바꿨다.
+const CHECKS = ["로그인 없이 바로", "영양제·약 한 번에 분석", "사진·이름 일부로도 가능"];
 
-function Cta({ onPrimary, onSecondary, onRestore, restoring }: { onPrimary: () => void; onSecondary: () => void; onRestore: () => void; restoring: boolean }) {
+function Cta({ onPrimary, onSecondary, onLogin }: { onPrimary: () => void; onSecondary: () => void; onLogin: () => void }) {
   return (
     <View style={styles.onb}>
       <ScrollView contentContainerStyle={styles.ctaCenter} showsVerticalScrollIndicator={false}>
@@ -349,7 +351,7 @@ function Cta({ onPrimary, onSecondary, onRestore, restoring }: { onPrimary: () =
           ))}
         </View>
       </ScrollView>
-      {/* 회의 2026-09-03: 점검+알람은 한 흐름 — 하면 둘 다, 건너뛰면 가입 후 바로 홈 */}
+      {/* 회의 2026-09-03: 점검+알람은 한 흐름. 회의 2026-10-08: 건너뛰면 로그인부터 */}
       <Reveal delay={1600} duration={550}>
         <Pressable onPress={onPrimary} accessibilityRole="button" accessibilityLabel="1분 점검하고 시작하기"
           style={({ pressed }) => [styles.ctaPrimary, pressed && styles.pressed]}>
@@ -362,11 +364,11 @@ function Cta({ onPrimary, onSecondary, onRestore, restoring }: { onPrimary: () =
           <Text style={styles.ctaSecondaryText}>지금은 건너뛰기</Text>
         </Pressable>
       </Reveal>
-      {/* 기기 이전 — 카카오와 연결해 둔 예전 정보 불러오기. 처음 쓰는 사람에게는 보조 링크다. */}
+      {/* 이미 쓰던 계정 — 로그인하면 약과 기록을 그대로 불러온다. 처음 쓰는 사람에게는 보조 링크다. */}
       <Reveal delay={1900} duration={550}>
-        <Pressable onPress={onRestore} disabled={restoring} accessibilityRole="button" accessibilityLabel="카카오로 불러오기"
-          style={({ pressed }) => [styles.ctaRestore, (pressed || restoring) && { opacity: 0.6 }]}>
-          <Text style={styles.ctaRestoreText}>{restoring ? "불러오는 중…" : "이미 쓰던 계정이 있어요 · 카카오로 불러오기"}</Text>
+        <Pressable onPress={onLogin} accessibilityRole="button" accessibilityLabel="이미 계정이 있어요. 로그인"
+          style={({ pressed }) => [styles.ctaRestore, pressed && { opacity: 0.6 }]}>
+          <Text style={styles.ctaRestoreText}>이미 계정이 있어요 · 로그인</Text>
         </Pressable>
       </Reveal>
     </View>

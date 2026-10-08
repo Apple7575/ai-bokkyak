@@ -2,7 +2,7 @@
 //
 // 영양제·복용약(종류명 칩 + 검색·사진 제품명)과 기본 정보를 골라 서버(quick_check_v1)가 판정한다.
 // 판정은 서버 전용(2026-09-17) — 앱 내장 규칙·기기 DUR 폴백은 없다.
-// 결과는 QuickFinding 목록으로 종류별로 보여 준다. 주의 2건 이상이면 카카오 연결 전에는 첫 건만 연다(회의 2026-09-13 안 2, isResultLocked).
+// 결과는 QuickFinding 목록으로 종류별로 전부 보여 준다(회의 2026-10-08: 결과 잠금 없앰 — 누구에게나 전부).
 
 import { QuickFinding, RuleKind, KIND_ORDER, sortFindings } from "./quickCheckRules";
 
@@ -121,20 +121,6 @@ export function topFinding(findings: QuickFinding[]): QuickFinding | null {
 export function groupByKind(findings: QuickFinding[]): { kind: RuleKind; items: QuickFinding[] }[] {
   const s = sortFindings(findings);
   return KIND_ORDER.map((kind) => ({ kind, items: s.filter((f) => f.kind === kind) })).filter((g) => g.items.length > 0);
-}
-
-/** 잠금 목록: 첫 건(topFinding)은 따로 보여 주므로 뺀 나머지를 kind별 개수로 센다(KIND_ORDER 순서, 0건 묶음 제외).
- *  제목은 화면이 KIND_LABEL로 붙인다 — 잠겼을 때나 열렸을 때나 같은 말이 보이게. */
-export function lockedGroups(findings: QuickFinding[]): { kind: RuleKind; count: number }[] {
-  const { byKind } = summarize(sortFindings(findings).slice(1));
-  return KIND_ORDER.map((kind) => ({ kind, count: byKind[kind] })).filter((g) => g.count > 0);
-}
-
-/** 결과를 잠글까 — 회의 2026-09-13(안 2): 주의 2건 이상이면 카카오 연결 전에는 첫 건만 보여 준다.
- *  linked: false=미연결(잠금) · undefined=아직 조회 중(잠금 유지 — 처음 쓰는 사람이 대부분이라 가릴 내용이 잠깐 비치지 않게)
- *  · true=연결됨(열림) · null=조회 실패(열림 — 네트워크 탓에 안전 정보를 가리지 않는다). */
-export function isResultLocked(total: number, linked: boolean | null | undefined): boolean {
-  return total >= 2 && (linked === false || linked === undefined);
 }
 
 /** 결과 화면 부제 "혈압약 · 오메가3 · 비타민D 를 대조했어요" — 4개 이상이면 앞 3개 + "외 N개". 0개면 빈 문자열. */

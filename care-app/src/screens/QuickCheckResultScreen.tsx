@@ -2,26 +2,28 @@ import React, { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, Pressable, Modal, ActivityIndicator, Share, Alert, Platform } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ShieldCheck, Stethoscope, MessageCircle, X, SearchX, Lock } from "lucide-react-native";
+import { ShieldCheck, Stethoscope, MessageCircle, X, SearchX } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
 import { getPatientId, getPatientName } from "../lib/storage";
-import { isKakaoLinked, linkKakao } from "../lib/kakaoAccount";
+import { isSignedIn } from "../lib/account";
 import {
-  checkedCount as countChecked, checkItems, checkedNamesLine, summarize, topFinding, lockedGroups, isResultLocked, groupByKind,
+  checkedCount as countChecked, checkItems, checkedNamesLine, summarize, groupByKind,
   unmatchedDescription, QuickFinding, RuleKind,
 } from "../lib/quickCheck";
 import { KIND_LABEL } from "../lib/quickCheckRules";
 import { buildQuickCheckShareMessage } from "../lib/quickCheckShare";
-import { loadDraft } from "../lib/quickCheckDraft";
+import { loadDraft, commitQuickCheckDraft } from "../lib/quickCheckDraft";
 import { DISCLAIMER } from "../lib/voiceScript";
 import { colors, fontSizes, spacing, radii, minTouch, shadows } from "../theme/tokens";
 
-// 점검 결과 — 회의 2026-09-10(B안, 목업 B-1): 종류별로 전부 보여 준다. 단 회의 2026-09-13(안 2)로 잠금이 돌아왔다 —
-// 주의 2건 이상이면 카카오 연결 전에는 첫 건만(⑤). 푸는 조건은 옛 "가입"이 아니라 카카오 연결이다.
-// 3/3에서 환자를 만들었고 점검 직후 서버에 저장했으므로 "결과 저장하고 …" 갈래는 없다.
-// 다음 갈래는 둘뿐: 이 약들로 복용 알람 설정하기 / 나중에 할게요(홈).
-// 결과 데이터: 앞 화면(Analyzing·Home 재시도)이 commit 후 params로 넘긴 것을 우선 쓰고,
-// 없으면(저장 실패로 초안이 남은 경우) 기기 초안에서 읽는다.
+// 점검 결과 — 회의 2026-09-10(B안, 목업 B-1): 종류별로 전부 보여 준다.
+// 결과 잠금(첫 건만 공개, 카카오 연결로 해제 — dba43a5)은 회의 2026-10-08에 없앴다. 누구에게나 전부 보인다.
+// 점검은 로그인 없이 된다. 다음 갈래는 둘:
+//   복용 알람 시간 정하기 — 로그인했으면 결과를 저장하고 알람 설정으로, 아니면 로그인(purpose "save")으로.
+//   나중에 할게요 — 로그인했으면 홈, 아니면 인트로 시작 장(로그인 없이 쓸 수 있는 건 점검뿐이다).
+// 결과 데이터: 앞 화면(Analyzing·로그인 직후·지난 점검)이 params로 넘긴 것을 우선 쓰고,
+// 없으면(로그인 전이거나 저장 실패로 초안이 남은 경우) 기기 초안에서 읽는다.
+// 지난 점검 목록에서 열면(from: "history") 아래 버튼은 「닫기」 하나뿐이다.
 
 type State =
   | { phase: "loading" }
@@ -49,9 +51,6 @@ const EVIDENCE_LABEL: Record<string, string> = {
   limited: "가능성 있음",
   conflicting: "의견이 갈림",
 };
-
-// 카카오 연결 여부 조회를 기다리는 최대 시간 — 넘으면 조회 실패(null)로 보고 결과를 연다.
-const LINK_LOOKUP_TIMEOUT_MS = 5000;
 
 function FindingCard({ f }: { f: QuickFinding }) {
   const c = KIND_COLOR[f.kind];
@@ -84,36 +83,16 @@ export function QuickCheckResultScreen() {
   const [state, setState] = useState<State>({ phase: "loading" });
   const [name, setName] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
-  // 카카오 연결 여부 — 결과를 잠글지 정한다. undefined=아직 조회 중(잠금 유지), null=조회 실패(연다). isResultLocked 참고.
-  const [linked, setLinked] = useState<boolean | null | undefined>(undefined);
-  // 연결 중 두 번 눌러 로그인 창이 두 번 뜨지 않게(다른 버튼을 잠그는 게 아니라 재진입만 막는다).
-  // ref는 동기 가드, state는 버튼 문구·비활성용.
-  const linkBusy = useRef(false);
-  const [linking, setLinking] = useState(false);
-  // 연결 중에 화면을 떠났으면 늦게 끝난 실패 안내가 다른 화면 위에 뜨지 않게.
-  const mounted = useRef(true);
-  useEffect(() => () => { mounted.current = false; }, []);
-
+  const fromHistory = route.params?.from === "history";
+  // 로그인했나 — 버튼 아래 안내 한 줄만 정한다. 버튼을 누를 때는 다시 확인한다(그사이 바뀌었을 수 있다).
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
   useEffect(() => {
     let alive = true;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    (async () => {
-      let v: boolean | null;
-      try {
-        const pid = await getPatientId();
-        // 응답 없이 멈춘 요청(타임아웃이 없다)도 실패로 친다 — 결과가 영영 잠겨 있지 않게.
-        const timeout = new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), LINK_LOOKUP_TIMEOUT_MS); });
-        v = pid ? await Promise.race([isKakaoLinked(pid), timeout]) : null;
-      } catch {
-        v = null; // 조회 실패 — 영영 잠겨 있지 않게 연다(안전 정보를 가리지 않는다)
-      } finally {
-        if (timer) clearTimeout(timer);
-      }
-      // 연결에 성공한(true) 뒤에 늦게 도착한 조회 결과가 다시 잠그지 않게.
-      if (alive) setLinked((cur) => (cur === true ? true : v));
-    })();
-    return () => { alive = false; if (timer) clearTimeout(timer); };
+    void isSignedIn().then((v) => { if (alive) setSignedIn(v); });
+    return () => { alive = false; };
   }, []);
+  // 두 번 눌러 알람 설정·로그인 화면이 두 번 열리지 않게(입력을 잠그는 게 아니라 재진입만 막는다).
+  const leaving = useRef(false);
 
   useEffect(() => {
     let alive = true;
@@ -152,41 +131,42 @@ export function QuickCheckResultScreen() {
   }, [route.params]);
 
   // 점검한 이름을 그대로 넘겨 약마다 시간대를 고르게 한다(회의 2026-09-06·09-12).
-  // 쌓아서 연다 — 알람 설정에서 뒤로 가면 이 결과로 돌아온다(회의 2026-10-06).
-  function toAlarm() {
-    const medicines = state.phase === "ok" ? state.names : [];
-    nav.navigate("VoiceGuide", { medicines });
+  // 쌓아서 연다 — 알람 설정·로그인에서 뒤로 가면 이 결과로 돌아온다(회의 2026-10-06).
+  async function toAlarm() {
+    if (leaving.current) return;
+    leaving.current = true;
+    try {
+      const medicines = state.phase === "ok" ? state.names : [];
+      if (!(await isSignedIn())) {
+        nav.navigate("Login", { purpose: "save", medicines });
+        return;
+      }
+      // 초안에서 읽은 결과(params 없음)는 아직 서버에 없다 — 지금 저장해 둔다.
+      // 실패해도 알람 설정은 막지 않는다: 초안이 남아 홈이 다시 저장을 시도한다.
+      if (!route.params?.findings) {
+        const pid = await getPatientId();
+        if (pid) {
+          try { await commitQuickCheckDraft(pid); } catch (e) { console.warn("QuickCheckResult: 결과 저장 실패", (e as Error)?.message ?? e); }
+        }
+      }
+      nav.navigate("VoiceGuide", { medicines });
+    } finally {
+      leaving.current = false;
+    }
   }
-  function toHome() {
-    nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
+  // 로그인 전이면 홈이 없다 — 인트로 시작 장(1분 점검 · 건너뛰기 · 로그인)으로 돌아간다.
+  async function later() {
+    if (leaving.current) return;
+    leaving.current = true;
+    try {
+      if (await isSignedIn()) nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
+      else nav.reset({ index: 0, routes: [{ name: "Intro", params: { slide: "cta" } }] });
+    } finally {
+      leaving.current = false;
+    }
   }
   function toPick() {
     nav.reset({ index: 0, routes: [{ name: "QuickCheckInput" }] });
-  }
-  // 잠긴 결과를 카카오 연결로 연다. 취소는 조용히, 실패만 Alert로 알린다.
-  // 성공엔 안내 Alert를 두지 않는다 — 가려졌던 상세가 나타나는 것이 곧 확인이다.
-  async function unlock() {
-    if (linkBusy.current) return;
-    linkBusy.current = true;
-    setLinking(true);
-    try {
-      const pid = await getPatientId();
-      if (!pid) {
-        if (mounted.current) Alert.alert("카카오 연결", "내 정보를 찾지 못했어요. 앱을 다시 시작해 주세요.");
-        return;
-      }
-      const r = await linkKakao(pid);
-      if (r.ok) { setLinked(true); return; }
-      if (r.canceled) return;
-      // 앞선 조회가 실패해 몰랐을 뿐 이미 연결돼 있을 수 있다 — 한 번 더 확인해 맞으면 연다.
-      if ((await isKakaoLinked(pid)) === true) { setLinked(true); return; }
-      if (mounted.current) Alert.alert("카카오 연결", r.message);
-    } catch {
-      if (mounted.current) Alert.alert("카카오 연결", "인터넷 연결을 확인하고 다시 시도해 주세요.");
-    } finally {
-      linkBusy.current = false;
-      setLinking(false);
-    }
   }
   // 시스템 공유 시트 — 카카오톡은 여기서 고른다(카카오 SDK 없음). 취소는 조용히, 실패만 알린다.
   async function share() {
@@ -208,9 +188,6 @@ export function QuickCheckResultScreen() {
   // 대조한 이름이 2개 미만이면 조합 점검 자체가 성립하지 않는다 — "이상 없음"이라 하면 안 된다.
   const nothingChecked = state.phase === "ok" && state.checkedCount < 2;
   const summary = summarize(findings);
-  const top = topFinding(findings);
-  const lockedKinds = lockedGroups(findings);
-  const locked = state.phase === "ok" && isResultLocked(summary.total, linked);
   const namesLine = checkedNamesLine(names);
   const title = summary.total > 0
     ? `${name ? `${name}님, ` : ""}확인 필요 ${summary.total}건`
@@ -239,7 +216,7 @@ export function QuickCheckResultScreen() {
         ) : null}
 
         {/* ③ 안내 노트 — 제품명 대조를 못 한 채 저장된 구버전 결과(지금 판정은 서버 전용이라 새로 생기지 않는다) */}
-        {state.phase === "ok" && state.durUnavailable ? (
+        {state.phase === "ok" && state.durUnavailable && !fromHistory ? (
           <View style={styles.durNote}>
             <Text style={styles.note}>인터넷 연결 문제로 제품명 자료 대조는 하지 못했어요. 연결을 확인하고 다시 대조해 보세요.</Text>
             <BigButton label="제품명 다시 대조하기" variant="secondary" onPress={() => nav.replace("QuickCheckAnalyzing")} />
@@ -279,48 +256,14 @@ export function QuickCheckResultScreen() {
           </View>
         ) : null}
 
-        {/* ⑤ 종류별 전부 — 회의 2026-09-13(안 2): 주의 2건 이상이면 첫 건만 공개, 나머지는 카카오 연결로 연다.
-            조회 실패(null)면 연다(네트워크 탓에 안전 정보를 가리지 않는다). */}
+        {/* ⑤ 종류별 전부 — 누구에게나 전부 보여 준다(잠금 없음, 회의 2026-10-08) */}
         {state.phase === "ok" && summary.total > 0 ? (
-          locked ? (
-            <>
-              <Text style={styles.section}>가장 먼저 확인해보세요.</Text>
-              {top ? <FindingCard f={top} /> : null}
-              {lockedKinds.length > 0 ? (
-                <>
-                  <Text style={styles.section}>추가로 확인할 내용이 있어요.</Text>
-                  <View style={styles.lockedBox}>
-                    {lockedKinds.map((g, i) => (
-                      <View key={g.kind} style={[styles.lockedRow, i === lockedKinds.length - 1 && styles.lockedRowLast]}>
-                        <Text style={styles.lockedTitle}>{KIND_LABEL[g.kind]}</Text>
-                        <Text style={styles.lockedCount}>{`${g.count}건`}</Text>
-                        <Lock size={18} color={colors.textSecondary} />
-                      </View>
-                    ))}
-                  </View>
-                </>
-              ) : null}
-              <Pressable
-                onPress={() => { void unlock(); }}
-                disabled={linking}
-                style={({ pressed }) => [styles.kakaoBtn, styles.unlockBtn, pressed && { opacity: 0.85 }, linking && styles.unlockBtnBusy]}
-                accessibilityRole="button"
-              >
-                <MessageCircle size={22} color={colors.kakaoInk} fill={colors.kakaoInk} />
-                <Text style={[styles.kakaoText, styles.unlockText]}>
-                  {linking ? "연결 중…" : `카카오 연결하고 상세 ${summary.total - 1}건 보기`}
-                </Text>
-              </Pressable>
-              <Text style={styles.unlockCaption}>휴대폰을 바꿔도 그대로 · 3초</Text>
-            </>
-          ) : (
-            groupByKind(findings).map((g) => (
-              <View key={g.kind} style={styles.group}>
-                <Text style={styles.section}>{`${KIND_LABEL[g.kind]} ${g.items.length}건`}</Text>
-                {g.items.map((f, i) => <FindingCard key={`${f.kind}|${f.a}|${f.b}|${i}`} f={f} />)}
-              </View>
-            ))
-          )
+          groupByKind(findings).map((g) => (
+            <View key={g.kind} style={styles.group}>
+              <Text style={styles.section}>{`${KIND_LABEL[g.kind]} ${g.items.length}건`}</Text>
+              {g.items.map((f, i) => <FindingCard key={`${f.kind}|${f.a}|${f.b}|${i}`} f={f} />)}
+            </View>
+          ))
         ) : null}
 
         {/* ⑥ 대조 2개 미만 — 조합 점검이 성립하지 않는다 */}
@@ -331,15 +274,21 @@ export function QuickCheckResultScreen() {
           </View>
         ) : null}
 
-        {/* ⑦ 버튼 — 알람 설정 / 나중에 */}
-        {state.phase === "ok" ? (
+        {/* ⑦ 버튼 — 알람 설정 / 나중에. 지난 점검에서 연 결과는 「닫기」만 */}
+        {state.phase === "ok" && fromHistory ? (
+          <View style={styles.actions}>
+            <BigButton label="닫기" variant="secondary" onPress={() => nav.goBack()} />
+          </View>
+        ) : null}
+        {state.phase === "ok" && !fromHistory ? (
           <View style={styles.actions}>
             {nothingChecked ? (
               <BigButton label="다시 고르기" onPress={toPick} showArrow />
             ) : (
-              <BigButton label="복용 알람 시간 정하기" onPress={toAlarm} showArrow />
+              <BigButton label="복용 알람 시간 정하기" onPress={() => { void toAlarm(); }} showArrow />
             )}
-            <BigButton label="나중에 할게요" variant="secondary" onPress={toHome} />
+            <BigButton label="나중에 할게요" variant="secondary" onPress={() => { void later(); }} />
+            {signedIn === false ? <Text style={styles.loginHint}>결과를 저장하려면 로그인이 필요해요</Text> : null}
           </View>
         ) : null}
 
@@ -412,20 +361,9 @@ const styles = StyleSheet.create({
   pharmPillText: { fontSize: 18, fontWeight: "700", color: colors.successGreen },
   pharmNote: { flex: 1, fontSize: 18, lineHeight: 24, fontWeight: "600", color: colors.textSecondary, minWidth: 160 },
 
-  // 잠긴 종류 목록 — 종류 이름과 건수만 보이고 내용은 가려진 상태(열렸을 때 section 제목과 같은 말)
-  lockedBox: { backgroundColor: colors.cardBg, borderRadius: radii.card, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, ...shadows.card },
-  lockedRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, minHeight: minTouch, borderBottomWidth: 1, borderBottomColor: colors.canvasMuted },
-  lockedRowLast: { borderBottomWidth: 0 },
-  lockedTitle: { flex: 1, fontSize: fontSizes.body, fontWeight: "700", color: colors.text },
-  lockedCount: { fontSize: fontSizes.body, fontWeight: "800", color: colors.textSecondary },
-  // 잠금 해제 버튼 — 노란 kakaoBtn을 그대로 쓰되, 문구가 길어 좁은 폰·큰 글씨에서 두 줄이 되어도 안 깨지게 한다.
-  unlockBtn: { paddingVertical: spacing.sm + 4, paddingHorizontal: spacing.md },
-  unlockBtnBusy: { opacity: 0.45 },
-  unlockText: { flexShrink: 1, textAlign: "center" },
-  unlockCaption: { fontSize: fontSizes.body, fontWeight: "600", color: colors.textSecondary, textAlign: "center", marginTop: -spacing.sm },
-
   group: { gap: spacing.md },
   actions: { marginTop: spacing.sm, gap: spacing.sm },
+  loginHint: { fontSize: fontSizes.body, fontWeight: "600", color: colors.textSecondary, textAlign: "center" },
 
   shareBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, minHeight: minTouch,

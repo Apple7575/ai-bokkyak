@@ -1,14 +1,11 @@
 import React, { useCallback, useState } from "react";
-import { Image, View, Text, Pressable, ScrollView, StyleSheet, Alert } from "react-native";
+import { Image, View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { Volume2, Shield, LogOut, ChevronRight } from "lucide-react-native";
-import notifee from "@notifee/react-native";
+import { Volume2, Shield, ChevronRight, ClipboardList, User } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
-import { BigButton } from "../components/BigButton";
-import { clearAll, getPatientId, getPatientName } from "../lib/storage";
-import { clearDraft } from "../lib/quickCheckDraft";
-import { isKakaoLinked, linkKakao } from "../lib/kakaoAccount";
+import { getPatientName } from "../lib/storage";
+import { currentUser, loginProviderLabel } from "../lib/auth";
 import { colors, fontSizes, radii, spacing, shadows, tabBarClearance } from "../theme/tokens";
 
 const SETTINGS_ART = require("../../assets/illustrations/settings-dial-accent.png");
@@ -19,6 +16,8 @@ type IconType = React.ComponentType<{ size?: number; color?: string }>;
 type MenuItem = { Icon: IconType; label: string; color: string; route: string };
 
 const menuItems: MenuItem[] = [
+  // 저장해 둔 1분 점검 결과를 다시 연다(회의 2026-10-08).
+  { Icon: ClipboardList, label: "지난 복용 점검", color: colors.successGreen, route: "QuickCheckHistory" },
   { Icon: Volume2, label: "알람 소리 설정", color: colors.primaryBlue, route: "AlarmSound" },
   // "음성 안내 속도"는 2026-10-03에 뺐다 — 앱이 읽어 주는 곳이 없어져 설정할 대상이 없다.
   // "큰 글씨 모드(준비 중)"는 2026-10-04에 뺐다 — 구현 전까지는 보여 주지 않는다.
@@ -29,82 +28,37 @@ export function SettingsScreen() {
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
 
-  // 계정 영역 — 회의 2026-09-10: 카카오는 가입이 아니라 "기기 이전용 연결". 여기서 연결 상태를 보여 주고
-  // 미연결이면 연결 버튼을 둔다. linked: null = 조회 실패(버튼은 남기고 문구만 바꾼다).
+  // 계정 줄 — 이름과 로그인 수단. 로그아웃·계정 삭제는 계정 관리 화면에 있다(회의 2026-10-08).
+  // 옛 「카카오 연결하기」와 「처음 화면으로 돌아가기」는 로그인으로 대체돼 없앴다.
   const [name, setName] = useState<string | null>(null);
-  const [linked, setLinked] = useState<boolean | null>(null);
-  const [linking, setLinking] = useState(false);
+  const [provider, setProvider] = useState<string | null>(null);
   useFocusEffect(useCallback(() => {
     let alive = true;
-    (async () => {
-      const [n, pid] = await Promise.all([getPatientName(), getPatientId()]);
-      if (!alive) return;
-      setName(n);
-      const v = pid ? await isKakaoLinked(pid) : null;
-      if (alive) setLinked(v);
-    })();
+    void getPatientName().then((n) => { if (alive) setName(n); });
+    void currentUser().then((u) => { if (alive) setProvider(loginProviderLabel(u)); });
     return () => { alive = false; };
   }, []));
-
-  const onLink = async () => {
-    if (linking) return;
-    const pid = await getPatientId();
-    if (!pid) { Alert.alert("연결하지 못했어요", "내 정보를 찾지 못했어요. 앱을 다시 시작해 주세요."); return; }
-    setLinking(true);
-    try {
-      const r = await linkKakao(pid);
-      if (r.ok) {
-        setLinked(true);
-        Alert.alert("연결됐어요", "휴대폰을 바꿔도 이 정보를 그대로 쓸 수 있어요.");
-      } else if (!r.canceled) {
-        Alert.alert("카카오 연결하기", r.message);
-      }
-    } finally {
-      setLinking(false);
-    }
-  };
-
-  const doLogout = async () => {
-    await notifee.cancelAllNotifications().catch(() => {});
-    // 카카오 로그인은 Supabase Auth 세션을 만들지 않으므로 끊을 세션이 없다.
-    // 기기에 남는 건 patientId뿐이고 clearAll()이 지운다. 같은 카카오 계정으로
-    // 다시 로그인하면 kakao_id로 약장을 되찾는다.
-    await clearAll();
-    // 1분 점검 초안도 지운다 — 남겨 두면 다음 사람의 환자로 저장(commit)될 수 있다.
-    await clearDraft();
-    nav.reset({ index: 0, routes: [{ name: "Intro" }] });
-  };
-
-  // 한 번 누르면 기기에 남은 연결이 전부 지워지므로 반드시 확인을 받는다.
-  const onLogout = () => {
-    Alert.alert(
-      "처음 화면으로 돌아갈까요?",
-      "이 휴대폰에서 약과 기록이 보이지 않게 돼요. 카카오를 연결해 두셨다면 다시 불러올 수 있어요.",
-      [
-        { text: "취소", style: "cancel" },
-        { text: "돌아가기", style: "destructive", onPress: () => { void doLogout(); } },
-      ],
-    );
-  };
 
   return (
     <View style={styles.screen}>
       <ScreenHeader title="더보기" />
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance + insets.bottom }]}>
-        {/* 계정 — 이름과 카카오 연결 상태 */}
-        <View style={styles.accountCard}>
-          <Text style={styles.accountName}>{name ? name : "이름 없음"}</Text>
-          <Text style={styles.accountStatus}>
-            {linked === true
-              ? "카카오와 연결돼 있어요 · 휴대폰을 바꿔도 그대로"
-              : linked === false
-                ? "이 휴대폰에만 저장돼 있어요"
-                : "연결 상태를 확인하지 못했어요"}
-          </Text>
-          {linked !== true ? (
-            <BigButton variant="secondary" label={linking ? "연결 중…" : "카카오 연결하기"} onPress={() => { void onLink(); }} disabled={linking} />
-          ) : null}
-        </View>
+        {/* 계정 — 이름 · 로그인 수단 → 계정 관리 */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`계정 관리. ${name ?? "이름 없음"}`}
+          onPress={() => nav.navigate("Account")}
+          style={({ pressed }) => [styles.accountCard, pressed && { opacity: 0.9 }]}
+        >
+          <View style={[styles.iconBox, { backgroundColor: colors.primarySoft }]}>
+            <User size={22} color={colors.primaryBlue} />
+          </View>
+          <View style={styles.rowTextWrap}>
+            <Text style={styles.accountName}>{name ? name : "이름 없음"}</Text>
+            <Text style={styles.accountStatus}>{provider ? `${provider}로 로그인 · 계정 관리` : "계정 관리"}</Text>
+          </View>
+          <ChevronRight size={18} color={colors.textSecondary} />
+        </Pressable>
 
         <View style={styles.introCard}>
           <View style={styles.introCopy}>
@@ -132,16 +86,6 @@ export function SettingsScreen() {
             </Pressable>
           ))}
         </View>
-
-        {/* 처음 화면으로 (기기 연결 해제) — 확인창 후 실행 */}
-        <View style={styles.group}>
-          <Pressable accessibilityRole="button" onPress={onLogout} style={({ pressed }) => [styles.rowItem, pressed && { opacity: 0.9 }]}>
-            <View style={[styles.iconBox, { backgroundColor: colors.dangerRed + "1A" }]}>
-              <LogOut size={20} color={colors.dangerRed} />
-            </View>
-            <Text style={[styles.rowLabel, { color: colors.dangerRed, flex: 1 }]}>처음 화면으로 돌아가기</Text>
-          </Pressable>
-        </View>
       </ScrollView>
     </View>
   );
@@ -151,11 +95,12 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.md, gap: spacing.md },
   accountCard: {
+    flexDirection: "row", alignItems: "center", gap: spacing.md, minHeight: 88,
     backgroundColor: colors.surfaceRaised, borderColor: colors.border, borderWidth: 1,
-    borderRadius: radii.card, padding: spacing.md, gap: spacing.xs, ...shadows.card,
+    borderRadius: radii.card, padding: spacing.md, ...shadows.card,
   },
   accountName: { fontSize: fontSizes.title, fontWeight: "800", color: colors.primaryNavy },
-  accountStatus: { fontSize: fontSizes.body, lineHeight: 26, color: colors.textSecondary, marginBottom: spacing.xs },
+  accountStatus: { marginTop: 2, fontSize: fontSizes.body, lineHeight: 26, color: colors.textSecondary },
   introCard: {
     minHeight: 126, padding: spacing.md, justifyContent: "center", overflow: "hidden",
     backgroundColor: colors.sageSoft, borderColor: colors.border, borderWidth: 1,
