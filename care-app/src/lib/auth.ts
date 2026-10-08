@@ -5,10 +5,9 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import * as Crypto from "expo-crypto";
 import type { User } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured, AUTH_STORAGE_KEY } from "./supabase";
-
-export { hasStoredSession } from "./supabase";
 import { parseAuthCallback, isUserCanceled, formatAppleFullName, bytesToHex } from "./authHelpers";
 
+export { hasStoredSession } from "./supabase";
 export { displayNameFrom, loginProviderLabel, loginProviderOf } from "./authHelpers";
 
 // 간편 로그인 — 교체 가능한 좁은 경계 (회의 2026-10-08).
