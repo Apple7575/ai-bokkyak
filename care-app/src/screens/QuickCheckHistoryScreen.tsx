@@ -10,8 +10,10 @@ import { getPatientId } from "../lib/storage";
 import { HistoryEntry, historyEntry, historyNamesLine, koreanDateTime } from "../lib/quickCheckHistory";
 import { colors, fontSizes, radii, spacing, shadows, minTouch } from "../theme/tokens";
 
-// 지난 복용 점검 — 저장해 둔 1분 점검 결과를 최근 것부터 보여 주고, 누르면 그 결과를 다시 연다.
-// 결과 화면은 점검 직후와 같은 화면을 쓰되 from: "history"로 열어 「닫기」만 둔다.
+// 내 복용분석 결과 보기(더보기) — 저장해 둔 1분 복용분석 결과를 최근 것부터 보여 주고, 누르면 그 결과를 다시 연다.
+// 결과 화면은 점검 직후와 같은 화면을 쓰되 from: "history"로 열어 「복용분석 다시하기」·「닫기」만 둔다.
+// 아래에는 늘 「복용분석 다시하기」를 둔다(목록이 비었을 때도) — 쌓아서 열어 1/3에서 뒤로 가면 여기로 돌아온다.
+// 다시 한 분석은 끝나자마자 저장되고(로그인 상태, QuickCheckAnalyzing), 이 화면에 돌아오면 다시 읽어 목록에 보인다.
 
 const LIMIT = 100;
 
@@ -45,6 +47,8 @@ export function QuickCheckHistoryScreen() {
     return () => { alive = false; };
   }, [load]));
 
+  const recheck = () => nav.navigate("QuickCheckInput");
+
   function open(e: HistoryEntry) {
     if (!e.params) {
       Alert.alert("열 수 없는 결과예요", "예전 버전에서 저장한 결과라 지금 화면으로 보여 드릴 수 없어요. 다시 점검해 주세요.");
@@ -55,15 +59,15 @@ export function QuickCheckHistoryScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader title="지난 복용 점검" />
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: spacing.xl + insets.bottom }]}>
+      <ScreenHeader title="내 복용분석 결과 보기" />
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: spacing.lg }]}>
         {state.phase === "loading" ? (
           <View style={styles.center}><ActivityIndicator size="large" color={colors.primaryBlue} /></View>
         ) : null}
 
         {state.phase === "error" ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>점검 기록을 불러오지 못했어요</Text>
+            <Text style={styles.emptyTitle}>결과를 불러오지 못했어요</Text>
             <Text style={styles.emptyDesc}>인터넷 연결을 확인하고 다시 시도해 주세요.</Text>
             <BigButton label="다시 시도하기" variant="secondary" onPress={() => { void load(() => true); }} />
           </View>
@@ -72,9 +76,8 @@ export function QuickCheckHistoryScreen() {
         {state.phase === "ok" && state.entries.length === 0 ? (
           <View style={styles.empty}>
             <ClipboardCheck size={40} color={colors.primaryBlue} />
-            <Text style={styles.emptyTitle}>아직 저장된 점검이 없어요</Text>
-            <Text style={styles.emptyDesc}>1분 복용 점검을 하면 결과가 여기에 쌓여요.</Text>
-            <BigButton label="1분 점검 하러 가기" onPress={() => nav.navigate("QuickCheckInput")} showArrow />
+            <Text style={styles.emptyTitle}>아직 저장된 결과가 없어요</Text>
+            <Text style={styles.emptyDesc}>아래 「복용분석 다시하기」로 분석하면 결과가 여기에 쌓여요.</Text>
           </View>
         ) : null}
 
@@ -95,6 +98,11 @@ export function QuickCheckHistoryScreen() {
           </Pressable>
         )) : null}
       </ScrollView>
+
+      {/* 목록이 길어도 늘 보이게 화면 아래에 붙인다 */}
+      <View style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}>
+        <BigButton label="복용분석 다시하기" onPress={recheck} showArrow />
+      </View>
     </View>
   );
 }
@@ -123,6 +131,7 @@ const styles = StyleSheet.create({
   names: { fontSize: fontSizes.body, lineHeight: 26, color: colors.text },
   badge: { alignSelf: "flex-start", borderRadius: radii.pill, paddingHorizontal: 12, minHeight: 32, justifyContent: "center" },
   badgeText: { fontSize: fontSizes.body, fontWeight: "700" },
+  footer: { paddingHorizontal: spacing.md, paddingTop: spacing.xs, backgroundColor: colors.canvas },
 });
 
 const BADGE = {

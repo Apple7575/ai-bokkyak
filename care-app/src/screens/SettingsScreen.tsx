@@ -2,7 +2,7 @@ import React, { useCallback, useState } from "react";
 import { Image, View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { Volume2, Shield, ChevronRight, ClipboardList, User } from "lucide-react-native";
+import { Volume2, Shield, ChevronRight, ClipboardList, RotateCcw, User } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { getPatientName } from "../lib/storage";
 import { currentUser, loginProviderLabel } from "../lib/auth";
@@ -16,8 +16,11 @@ type IconType = React.ComponentType<{ size?: number; color?: string }>;
 type MenuItem = { Icon: IconType; label: string; color: string; route: string };
 
 const menuItems: MenuItem[] = [
-  // 저장해 둔 1분 점검 결과를 다시 연다(회의 2026-10-08).
-  { Icon: ClipboardList, label: "지난 복용 점검", color: colors.successGreen, route: "QuickCheckHistory" },
+  // 저장해 둔 1분 복용분석 결과를 다시 연다(회의 2026-10-08, 이름은 2026-10-09).
+  { Icon: ClipboardList, label: "내 복용분석 결과 보기", color: colors.successGreen, route: "QuickCheckHistory" },
+  // 앞서 고른 것이 채워진 채로 다시 분석한다. 쌓아서 열어 1/3에서 뒤로 가면 여기로 돌아온다.
+  // 로그인했으니 결과는 분석이 끝나면 바로 저장된다(QuickCheckAnalyzing) — 위 목록에 쌓인다.
+  { Icon: RotateCcw, label: "복용분석 다시하기", color: colors.successGreen, route: "QuickCheckInput" },
   { Icon: Volume2, label: "알람 소리 설정", color: colors.primaryBlue, route: "AlarmSound" },
   // "음성 안내 속도"는 2026-10-03에 뺐다 — 앱이 읽어 주는 곳이 없어져 설정할 대상이 없다.
   // "큰 글씨 모드(준비 중)"는 2026-10-04에 뺐다 — 구현 전까지는 보여 주지 않는다.

@@ -38,7 +38,7 @@ export type RootStackParamList = {
   QuickCheckResult: {
     findings?: import("../lib/quickCheckRules").QuickFinding[]; unmatched?: string[]; names?: string[]; durUnavailable?: boolean;
     unmappedIngredients?: string[]; uncoveredConditions?: string[]; engine?: "server" | "local";
-    // from: "history" — 지난 점검 목록에서 다시 연 결과. 아래 버튼이 「닫기」 하나뿐이다.
+    // from: "history" — 더보기 「내 복용분석 결과 보기」 목록에서 다시 연 결과. 아래 버튼은 「복용분석 다시하기」·「닫기」.
     from?: "history";
   } | undefined;
 };

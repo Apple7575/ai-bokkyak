@@ -27,7 +27,7 @@
 --   intake_records      select · upsert(insert+update) · delete(되돌리기)    → 본인 환자 행만, 4동작 모두
 --   alarm_events        insert만
 --   voice_guide_events  insert만 — patient_id 가 없는 익명 지표라 행 조건 없이 insert 만 연다
---   quick_check_results insert · select(더보기 → 지난 복용 점검)
+--   quick_check_results insert · select(더보기 → 내 복용분석 결과 보기)
 --   delete_my_account() 계정 삭제(아래)
 --
 -- 계정 삭제: delete_my_account() 가 auth.users 의 내 행을 지운다. patients.user_id 가
@@ -97,7 +97,7 @@ drop policy if exists auth_alarm_events_insert on public.alarm_events;
 create policy auth_alarm_events_insert on public.alarm_events for insert to authenticated
   with check (patient_id in (select id from public.patients where user_id = (select auth.uid())));
 
--- ── quick_check_results: insert · select(지난 복용 점검), 내 환자 것만 ────────
+-- ── quick_check_results: insert · select(내 복용분석 결과 보기), 내 환자 것만 ──
 grant select, insert on public.quick_check_results to authenticated;
 drop policy if exists auth_quick_check_results_select on public.quick_check_results;
 create policy auth_quick_check_results_select on public.quick_check_results for select to authenticated
