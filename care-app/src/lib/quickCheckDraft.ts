@@ -5,7 +5,7 @@ import { isQuickFinding } from "./quickCheckRules";
 
 // 가입 전 "1분 복용 점검" 초안을 기기에 보관한다.
 // 판정이 끝나면 commitQuickCheckDraft()가 서버(quick_check_results)에 옮기고, 초안에는 입력(영양제·약·
-// 기본 정보)만 남긴다 — 결과 화면의 "다시 점검하기"가 같은 입력으로 다시 판정할 수 있게.
+// 기본 정보)만 남긴다 — 「복용분석 다시하기」가 앞서 고른 것을 채운 채로 다시 점검할 수 있게.
 
 const KEY = "quickcheck.draft.v1";
 

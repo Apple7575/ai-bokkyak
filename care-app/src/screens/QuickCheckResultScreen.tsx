@@ -4,6 +4,8 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ShieldCheck, Stethoscope, MessageCircle, X, SearchX } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
+import { SignInButtons } from "../components/SignInButtons";
+import { useSignIn } from "../navigation/useSignIn";
 import { getPatientId, getPatientName } from "../lib/storage";
 import { isSignedIn } from "../lib/account";
 import {
@@ -18,12 +20,15 @@ import { colors, fontSizes, spacing, radii, minTouch, shadows } from "../theme/t
 
 // 점검 결과 — 회의 2026-09-10(B안, 목업 B-1): 종류별로 전부 보여 준다.
 // 결과 잠금(첫 건만 공개, 카카오 연결로 해제 — dba43a5)은 회의 2026-10-08에 없앴다. 누구에게나 전부 보인다.
-// 점검은 로그인 없이 된다. 다음 갈래는 둘:
-//   복용 알람 시간 정하기 — 로그인했으면 결과를 저장하고 알람 설정으로, 아니면 로그인(purpose "save")으로.
-//   나중에 할게요 — 로그인했으면 홈, 아니면 인트로 시작 장(로그인 없이 쓸 수 있는 건 점검뿐이다).
+// 점검은 로그인 없이 된다. 아래 버튼 (회의 2026-10-09):
+//   로그인 전 — 저장 카드(가입하면 이 결과를 저장하고 다시 볼 수 있다 + 「카카오로 시작하기」, iOS는 Apple도)에서
+//     이 화면에서 바로 로그인한다(useSignIn, purpose "save": 쓰던 계정이면 결과 저장 후 알람 설정, 처음이면 동의 화면).
+//     그 아래 「복용분석 다시하기」 · 「나중에 할게요」(인트로 시작 장 — 로그인 없이 쓸 수 있는 건 점검뿐이다).
+//   로그인 후 — 「복용 알람 시간 정하기」(결과를 저장하고 알람 설정으로) · 「복용분석 다시하기」 · 「나중에 할게요」(홈).
+//   지난 결과에서 열면(from: "history") — 「복용분석 다시하기」 · 「닫기」.
+//   대조한 이름이 2개 미만이면 저장할 조합 결과가 없다 — 「다시 고르기」 · 「나중에 할게요」.
 // 결과 데이터: 앞 화면(Analyzing·로그인 직후·지난 점검)이 params로 넘긴 것을 우선 쓰고,
 // 없으면(로그인 전이거나 저장 실패로 초안이 남은 경우) 기기 초안에서 읽는다.
-// 지난 점검 목록에서 열면(from: "history") 아래 버튼은 「닫기」 하나뿐이다.
 
 type State =
   | { phase: "loading" }
@@ -84,7 +89,8 @@ export function QuickCheckResultScreen() {
   const [name, setName] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const fromHistory = route.params?.from === "history";
-  // 로그인했나 — 버튼 아래 안내 한 줄만 정한다. 버튼을 누를 때는 다시 확인한다(그사이 바뀌었을 수 있다).
+  // 로그인했나 — 아래 버튼 묶음을 고른다(확인 전에는 버튼을 그리지 않는다). 알람 버튼을 누를 때는 다시 확인한다
+  // (그사이 세션이 없어졌을 수 있다).
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   useEffect(() => {
     let alive = true;
@@ -93,6 +99,8 @@ export function QuickCheckResultScreen() {
   }, []);
   // 두 번 눌러 알람 설정·로그인 화면이 두 번 열리지 않게(입력을 잠그는 게 아니라 재진입만 막는다).
   const leaving = useRef(false);
+  // 결과 화면에서 바로 로그인 — 로그인 뒤 이 결과를 저장하고 점검한 이름 그대로 알람을 맞춘다(afterLogin "save").
+  const { busy, signIn, isBusy } = useSignIn("save", state.phase === "ok" ? state.names : undefined);
 
   useEffect(() => {
     let alive = true;
@@ -156,7 +164,7 @@ export function QuickCheckResultScreen() {
   }
   // 로그인 전이면 홈이 없다 — 인트로 시작 장(1분 점검 · 건너뛰기 · 로그인)으로 돌아간다.
   async function later() {
-    if (leaving.current) return;
+    if (leaving.current || isBusy()) return;
     leaving.current = true;
     try {
       if (await isSignedIn()) nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
@@ -165,8 +173,13 @@ export function QuickCheckResultScreen() {
       leaving.current = false;
     }
   }
-  function toPick() {
-    nav.reset({ index: 0, routes: [{ name: "QuickCheckInput" }] });
+  // 「복용분석 다시하기」·「다시 고르기」 — 앞서 고른 것(기기 초안)이 채워진 채로 1/3부터 연다. 바꿔서 다시 점검하면 된다.
+  // 지난 결과에서 열었으면 쌓는다 — 뒤로 가면 이 결과로 돌아온다.
+  // 점검 직후 결과면 이 결과 위에 쌓지 않고 점검부터 다시 — 1/3의 「뒤로」는 로그인했으면 홈, 아니면 인트로 시작 장.
+  function recheck() {
+    if (leaving.current || isBusy()) return;
+    if (fromHistory) nav.navigate("QuickCheckInput");
+    else nav.reset({ index: 0, routes: [{ name: "QuickCheckInput", params: { from: "intro" } }] });
   }
   // 시스템 공유 시트 — 카카오톡은 여기서 고른다(카카오 SDK 없음). 취소는 조용히, 실패만 알린다.
   async function share() {
@@ -203,7 +216,7 @@ export function QuickCheckResultScreen() {
         {state.phase === "empty" ? (
           <View style={styles.safe}>
             <Text style={styles.safeDesc}>점검 결과가 없어요. 처음부터 다시 점검해 주세요.</Text>
-            <BigButton label="다시 점검하기" variant="secondary" onPress={toPick} />
+            <BigButton label="복용분석 다시하기" variant="secondary" onPress={recheck} />
           </View>
         ) : null}
 
@@ -274,21 +287,36 @@ export function QuickCheckResultScreen() {
           </View>
         ) : null}
 
-        {/* ⑦ 버튼 — 알람 설정 / 나중에. 지난 점검에서 연 결과는 「닫기」만 */}
+        {/* ⑦ 버튼 — 지난 결과 / 2개 미만 / 로그인 후 / 로그인 전(저장 카드). 로그인 여부를 확인하기 전에는 그리지 않는다 */}
         {state.phase === "ok" && fromHistory ? (
           <View style={styles.actions}>
+            <BigButton label="복용분석 다시하기" onPress={recheck} showArrow />
             <BigButton label="닫기" variant="secondary" onPress={() => nav.goBack()} />
           </View>
         ) : null}
-        {state.phase === "ok" && !fromHistory ? (
+        {state.phase === "ok" && !fromHistory && nothingChecked ? (
           <View style={styles.actions}>
-            {nothingChecked ? (
-              <BigButton label="다시 고르기" onPress={toPick} showArrow />
-            ) : (
-              <BigButton label="복용 알람 시간 정하기" onPress={() => { void toAlarm(); }} showArrow />
-            )}
+            <BigButton label="다시 고르기" onPress={recheck} showArrow />
             <BigButton label="나중에 할게요" variant="secondary" onPress={() => { void later(); }} />
-            {signedIn === false ? <Text style={styles.loginHint}>결과를 저장하려면 로그인이 필요해요</Text> : null}
+          </View>
+        ) : null}
+        {state.phase === "ok" && !fromHistory && !nothingChecked && signedIn === true ? (
+          <View style={styles.actions}>
+            <BigButton label="복용 알람 시간 정하기" onPress={() => { void toAlarm(); }} showArrow />
+            <BigButton label="복용분석 다시하기" variant="secondary" onPress={recheck} />
+            <BigButton label="나중에 할게요" variant="secondary" onPress={() => { void later(); }} />
+          </View>
+        ) : null}
+        {state.phase === "ok" && !fromHistory && !nothingChecked && signedIn === false ? (
+          <View style={styles.actions}>
+            <View style={styles.saveCard}>
+              {/* 줄은 직접 나눈다 — 한글은 글자 단위로 줄이 바뀌어 단어가 쪼개진다 */}
+              <Text style={styles.saveTitle} accessibilityRole="header">{"가입하면 이 결과를 저장하고\n언제든 다시 볼 수 있어요"}</Text>
+              <Text style={styles.saveSub}>복용 알람도 함께 맞춰 드려요.</Text>
+              <SignInButtons kakaoLabel="카카오로 시작하기" busy={busy} onPress={(kind) => { void signIn(kind); }} />
+            </View>
+            <BigButton label="복용분석 다시하기" variant="secondary" onPress={recheck} disabled={busy !== null} />
+            <BigButton label="나중에 할게요" variant="secondary" onPress={() => { void later(); }} disabled={busy !== null} />
           </View>
         ) : null}
 
@@ -363,7 +391,12 @@ const styles = StyleSheet.create({
 
   group: { gap: spacing.md },
   actions: { marginTop: spacing.sm, gap: spacing.sm },
-  loginHint: { fontSize: fontSizes.body, fontWeight: "600", color: colors.textSecondary, textAlign: "center" },
+  saveCard: {
+    backgroundColor: colors.surfaceRaised, borderColor: colors.border, borderWidth: 1, borderRadius: radii.card,
+    padding: spacing.md, gap: spacing.sm, ...shadows.card,
+  },
+  saveTitle: { fontSize: 21, lineHeight: 30, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.4 },
+  saveSub: { fontSize: fontSizes.body, lineHeight: 26, color: colors.textSecondary, marginBottom: spacing.xs },
 
   shareBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, minHeight: minTouch,
