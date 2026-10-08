@@ -26,6 +26,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.modoobokyak.app",
+      "usesAppleSignIn": true,
       "buildNumber": "36",
       "bitcode": false,
       "infoPlist": {
@@ -94,6 +95,7 @@
         }
       ],
       "expo-web-browser",
+      "expo-apple-authentication",
       "expo-font"
     ],
     "extra": {
