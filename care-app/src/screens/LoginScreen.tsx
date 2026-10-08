@@ -23,7 +23,9 @@ const IOS = Platform.OS === "ios";
 
 const COPY: Record<LoginPurpose, { title: string; sub: string }> = {
   save: {
-    title: "결과를 저장하고 알람을 받으려면 로그인해 주세요",
+    // 짧게, 줄은 직접 나눈다 — 한글은 글자 단위로 줄이 바뀌어 길면 「로/그인」처럼 단어가 쪼개진다.
+    // 알람 이야기는 아래 설명 줄이 맡는다.
+    title: "결과를 저장하려면\n로그인해 주세요",
     sub: "로그인하면 휴대폰을 바꿔도 점검 결과와 알람이 그대로 남아요.",
   },
   skip: {
