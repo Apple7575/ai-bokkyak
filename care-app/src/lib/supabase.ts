@@ -22,8 +22,8 @@ export const AUTH_STORAGE_KEY = "care.auth";
 
 // 로그인은 Supabase Auth(카카오·Apple 간편 로그인)로 한다 — 회의 2026-10-08.
 // 서버가 사용자를 구분해야 RLS로 "내 행만"을 걸 수 있다(migrate-auth-1-additive.sql).
-// 세션은 AsyncStorage에 남겨 앱을 다시 열어도 로그인이 유지된다. 앱으로 돌아오는 주소는
-// 우리가 직접 처리하므로(auth.ts) URL에서 세션을 읽지 않고, 코드 교환은 PKCE로 한다.
+// 세션은 AsyncStorage에 남겨 앱을 다시 열어도 로그인이 유지된다. 세션은 auth.ts가 직접 받아 앉히므로
+// (카카오: 엣지 함수가 만든 세션을 setSession, Apple: signInWithIdToken) URL에서 세션을 읽지 않는다.
 export const supabase = createClient(
   isSupabaseConfigured ? url : "https://placeholder.supabase.co",
   isSupabaseConfigured ? anonKey : "placeholder-anon-key",
@@ -34,7 +34,6 @@ export const supabase = createClient(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: false,
-      flowType: "pkce",
     },
   }
 );

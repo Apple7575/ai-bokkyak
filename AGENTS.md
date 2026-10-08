@@ -10,6 +10,12 @@
   이메일·전화·비밀번호 없음, 회의 2026-10-08). 1분 점검은 로그인 없이 되고, 결과 저장·알람부터
   로그인한다(처음이면 동의 화면). 로그인 계정 하나에 환자 행 하나(`patients.user_id`).
   로그인은 `lib/auth.ts`, 내 환자·로그아웃·계정 삭제는 `lib/account.ts`에 가둔다.
+  **카카오는 Supabase의 카카오 로그인(provider kakao)을 쓰지 않는다** — 그 기능은 `account_email`을
+  늘 요청하는데 우리 카카오 앱은 비즈 앱이 아니라 KOE205로 막힌다(2026-10-09, 카카오 콘솔·Supabase 설정은
+  지금 바꾸지 않기로 함). 앱은 `profile_nickname`만 요청하는 직접 연동으로 인가 코드를 받고, 엣지 함수
+  `?op=kakao-session`이 그 코드를 확인해 Supabase 계정(가짜 이메일 `kakao-<회원번호>@kakao.modubokyak.com`,
+  메일은 보내지 않음, `app_metadata.login = "kakao"`)과 세션을 만들어 준다. 옛 빌드용 `?op=kakao-login`은 그대로 둔다.
+  Apple은 Supabase `signInWithIdToken`을 그대로 쓴다.
   쓰는 사람은 본인(환자) 한 종류다.
   **보호자 기능은 없다** — 6자리 `patient_code`로 보호자가 읽기 전용 열람하는
   기능은 회의 결정으로 제거됐다. 되살리자는 제안을 하지 말 것. 코드에도 흔적이

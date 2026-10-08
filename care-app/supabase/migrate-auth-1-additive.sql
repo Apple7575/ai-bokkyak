@@ -4,6 +4,12 @@
 --       새 앱은 로그인한 계정(auth.users) 하나에 환자 행(patients) 하나를 묶고(user_id),
 --       처음 로그인 때 받은 동의를 patients.consent 에 남긴다. 서버가 사용자를 구분할 수 있게 됐으니
 --       이제 RLS로 "내 행만"을 걸 수 있다(migrate-rls-tier1.sql 머리말의 3단계).
+--       카카오 계정은 Supabase의 카카오 로그인이 아니라 엣지 함수 ?op=kakao-session 이 만든다(2026-10-09 —
+--       비즈 앱이 아니라 account_email 을 요청할 수 없다). 그래서 카카오 계정도 auth.users 의 provider 는 "email"
+--       (가짜 주소, 메일은 보내지 않음)이고 raw_app_meta_data 의 login = 'kakao', kakao_id 로 구분한다.
+--       아래 정책·함수는 로그인 수단을 보지 않고 auth.uid() 만 보므로 이 방식과 상관없이 그대로 맞다.
+--       그 엣지 함수는 옛 빌드에서 카카오를 연결해 둔 환자 행(patients.kakao_id, user_id null)을 service role 로
+--       그 계정에 묶어 준다(user_id 칸이 없으면 건너뛴다) — 이 파일을 먼저 실행해 두면 테스터의 기록이 이어진다.
 --
 -- 이 파일은 지금 바로 실행해도 안전하다 — 옛 빌드를 깨지 않는다.
 --   · 컬럼은 더하기만 한다(user_id·consent 둘 다 null 허용). 옛 빌드의 insert 는 그대로 된다.
