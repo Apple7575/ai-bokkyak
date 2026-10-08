@@ -1,88 +1,67 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Image, View, Text, ScrollView, StyleSheet, Pressable, Alert } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { View, Text, ScrollView, StyleSheet, Pressable, Alert, Modal, useWindowDimensions } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Check, ChevronLeft, Clock } from "lucide-react-native";
+import { Bell, Check, ChevronLeft } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
 import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { isKakaoLinked, linkKakao } from "../lib/kakaoAccount";
 import { ensurePermission, scheduleReminders, warnNotificationsOff } from "../lib/notifications";
 import { ensureStrongAlarmReady } from "../lib/alarmPermissions";
-import { CUES, CueId, DISCLAIMER } from "../lib/voiceScript";
-import { DoseTime, Slot, SLOTS, afterMealTimes } from "../lib/voiceParse";
+import { DISCLAIMER } from "../lib/voiceScript";
+import { Slot, SLOTS } from "../lib/voiceParse";
 import { slotLabel } from "../lib/timeOfDay";
 import {
-  GuideState, INITIAL_STATE, cuesForStep,
-  onPickCount, onPickTimes, onAcceptDefaults, onConfirm, onSkip,
-  stepIndex, GUIDE_TOTAL_STEPS,
+  AlarmSetup, initialSetup, medSlotsOf, toggleMedSlot, pickCount, chosenTimes, canFinish, showsUnslottedNote,
+  medicinesAt, bumpSlotTime, bannerText, scheduleRows, ampm,
 } from "../lib/voiceGuideFlow";
 import { logGuideEvent } from "../lib/analytics";
-import { colors, fontSizes, spacing, radii, minTouch } from "../theme/tokens";
+import { colors, fontSizes, spacing, radii, shadows } from "../theme/tokens";
 
-const VOICE_ART = require("../../assets/illustrations/voice-companion.png");
-
-// 복용 알람 설정 온보딩 (문서 §4).
+// 복용 알람 설정 — 한 화면 (회의 2026-09-03·09-12: 4단계 → 1단계).
 //
-// 안내는 글자로, 대답은 화면 터치로 받는다. 음성 입력(STT)은 뺐다 —
-// 인식 실패·에코·마이크 권한이라는 실패 지점이 셋이나 되는데, 온보딩은
-// 여기서 막히면 앱 자체를 못 쓰는 자리라 확실한 길 하나만 남겼다.
-// 그래서 문구도 "말씀해 주세요"가 아니라 "아래에서 골라 주세요"라고 한다.
-//
-// 2026-10-03 팀 결정: 이 화면은 글자만 보여 준다. 녹음 멘트 재생·음성 길이에
-// 맞춘 자막 타이핑·화면 탭으로 재생 중단은 모두 뺐다(재생기·타이핑 훅·mp3 삭제).
-// 문장은 여전히 voiceScript.ts 한 곳에 있고, 어느 단계에 어느 문장을 보여 줄지는
-// voiceGuideFlow.ts가 정한다. 한 단계에 문장이 여럿이면 줄바꿈으로 이어 붙여
-// 한 번에 전부 보여 준다.
-//
-// 온보딩에서는 약 이름을 받지 않는다 — 횟수와 시간만 정한다(문서 §1).
-// 약 이름은 나중에 약장의 간편 등록에서 받는다. (회의 2026-09-03: 알람 설정을
-// 마치면 바로 홈이다 — 위험 분석을 여기서 다시 제안하지 않는다. 점검은
-// 인트로 → 1분 점검 → 가입 → 결과 → 알람 설정의 한 흐름으로만 잇는다.)
+// 1분 점검 결과에서 오면(Case A) 방금 점검한 약 이름을 받아 약마다 시간대를 고르고 그 이름
+// 그대로 저장한다(회의 2026-09-06·09-12). 알람 물음에서 오면(Case C) 이름이 없으니 하루 횟수만
+// 고르고 「아침 약」처럼 임시 이름으로 저장한다 — 실제 이름은 약장의 간편 등록에서.
+// 시각은 시간대마다 하나를 함께 쓰고 「시간 바꾸기」 시트에서 ±30분으로 고친다.
+// 안내는 글자로만, 대답은 화면 터치로만 받는다 — 소리·음성 인식 없음(2026-10-03).
+// 저장은 「설정 완료」에서 한다 — "끝났어요"를 보여 준 뒤에 저장하면 거기서 앱을 닫은 사람은
+// 알람이 없는데도 설정했다고 믿는다. 마치면 바로 홈이다(회의 2026-09-03).
 
-// 단계에 딸린 문장(들)을 화면에 보여 줄 한 덩어리로 합친다. 여럿이면 줄바꿈으로 잇는다.
-function captionFor(ids: CueId[]): string {
-  return ids.map((id) => CUES[id].text).join("\n");
-}
-
-function ampm(h: number, m: number): string {
-  const ap = h < 12 ? "오전" : "오후";
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${ap} ${h12}:${String(m).padStart(2, "0")}`;
-}
+type Step = "setup" | "done";
 
 export function VoiceGuideScreen() {
   const nav = useNavigation<any>();
+  const route = useRoute<any>();
   const insets = useSafeAreaInsets();
-  const [state, setState] = useState<GuideState>(INITIAL_STATE);
-  // 지금 단계의 안내 문구. 들어서는 즉시 전문을 그대로 보여 준다.
-  const [caption, setCaption] = useState<string>(captionFor(cuesForStep("count")));
+  const { height: windowHeight } = useWindowDimensions();
+  // 들어올 때 받은 약 이름으로 모드를 한 번 정한다(정리·중복 제거는 initialSetup이).
+  const [setup, setSetup] = useState<AlarmSetup>(() => initialSetup(route.params?.medicines));
+  const [step, setStep] = useState<Step>("setup");
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  // 더블탭 동기 가드 — state만으로는 첫 await 사이의 두 번째 탭을 못 막아 알람 행이 두 벌 생긴다.
-  const savingRef = useRef(false);
-  // 지금 시각을 조정 중인 시간 카드. 시안대로 고른 카드에만 −/+ 를 띄운다.
-  const [editing, setEditing] = useState<number | null>(null);
   // 완료 단계의 카카오 "연결" 카드 — 회의 2026-09-10: 카카오는 기기 이전용 연결. 미연결(false)일 때만 띄운다.
   // null(아직 모름·조회 실패)·true면 카드 없음. saving과 별개의 busy — 연결 중에도 "홈으로 가기"는 살아 있다.
   const [linked, setLinked] = useState<boolean | null>(null);
   const [linking, setLinking] = useState(false);
 
-  const stateRef = useRef(state);
-  stateRef.current = state;
+  // 두 번 눌러 저장이 겹치지 않게 하는 동기 가드(state는 버튼 문구·비활성용).
+  const savingRef = useRef(false);
+  // 저장 중에 화면을 떠났으면, 늦게 끝난 저장이 다른 화면 위에 Alert를 띄우지 않게.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   // 로그 (문서 §7): 어디서 막히는지 보려면 진행 방식이 필요하다.
-  // tapInterrupt는 음성을 끊은 횟수였다 — 글자만 보여 주는 지금은 늘 0이지만
-  // 로그 스키마(voice_guide_events.tap_interrupt_count)는 그대로라 열은 남긴다.
+  // buttonFallback — 한 화면이 된 뒤로는 설정에 든 탭 수(칩·횟수·±30분)를 센다.
+  // tapInterrupt — 늘 0. 음성을 끊던 횟수였고 로그 스키마(tap_interrupt_count) 때문에 자리만 남겼다.
   const stats = useRef({ buttonFallback: 0, tapInterrupt: 0 });
-
-  // 단계에 딸린 문구를 즉시 전부 보여 준다. 빈 배열이면 지금 문구를 유지한다.
-  function showCues(ids: CueId[]) {
-    if (ids.length === 0) return;
-    setCaption(captionFor(ids));
-  }
 
   // 완료 단계에 들어서면 연결 상태를 한 번 조회한다.
   useEffect(() => {
-    if (state.step !== "done") return;
+    if (step !== "done") return;
     let alive = true;
     (async () => {
       const pid = await getPatientId();
@@ -91,7 +70,7 @@ export function VoiceGuideScreen() {
       if (alive) setLinked(v);
     })();
     return () => { alive = false; };
-  }, [state.step]);
+  }, [step]);
 
   async function linkAccount(): Promise<void> {
     if (linking) return;
@@ -111,278 +90,185 @@ export function VoiceGuideScreen() {
     }
   }
 
-  function pickCount(n: number) {
+  function toggle(medicine: string, slot: Slot) {
     stats.current.buttonFallback++;
-    const t = onPickCount(stateRef.current, n);
-    setState(t.state);
-    setEditing(null);
-    showCues(t.play);
+    setSetup((s) => toggleMedSlot(s, medicine, slot));
   }
 
-  // 시간대 칩 탭 — 그 시간대의 카드를 조정 대상으로 고른다 (시안).
-  function selectSlot(slot: Slot) {
-    const i = stateRef.current.times.findIndex((t) => t.slot === slot);
-    setEditing((prev) => (i < 0 || prev === i ? null : i));
-  }
-
-  function useAfterMealDefaults() {
+  function chooseCount(n: number) {
     stats.current.buttonFallback++;
-    const s = stateRef.current;
-    // 시각이 아직 없으면 식후 기본값을 제안(V03)하고, 있으면 그대로 확정한다.
-    if (s.times.length === 0) {
-      const times = afterMealTimes(s.slots);
-      setState({ ...s, times, proposedDefaults: true });
-      showCues(["V03"]);
-      return;
-    }
-    const t = onPickTimes(s, s.times);
-    setState(t.state);
-    showCues(t.play);
+    setSetup((s) => pickCount(s, n));
   }
 
-  // V03(식후 기본값 제안)에 대한 응답.
-  function acceptDefaults(ok: boolean) {
+  function bump(slot: Slot, deltaMin: number) {
     stats.current.buttonFallback++;
-    const t = onAcceptDefaults(stateRef.current, ok);
-    setState(t.state);
-    showCues(t.play);
+    setSetup((s) => bumpSlotTime(s, slot, deltaMin));
   }
 
-  function confirm(ok: boolean) {
-    stats.current.buttonFallback++;
-    const t = onConfirm(stateRef.current, ok);
-    setState(t.state);
-    setEditing(null);
-    showCues(t.play);
-  }
-
-  function skip() {
-    const t = onSkip(stateRef.current);
-    setState(t.state);
-    showCues(t.play);
-    void logGuideEvent({ step: "skipped", ...stats.current });
-    setTimeout(() => nav.reset({ index: 0, routes: [{ name: "Tabs" }] }), 1500);
-  }
-
-  // 시각을 30분 단위로 조정한다 (문서 §4 "탭 수정 가능").
-  function bumpTime(i: number, deltaMin: number) {
-    setState((prev) => {
-      const times = [...prev.times];
-      const t = times[i];
-      if (!t) return prev;
-      let total = t.hour * 60 + t.minute + deltaMin;
-      total = ((total % 1440) + 1440) % 1440;
-      times[i] = { ...t, hour: Math.floor(total / 60), minute: total % 60 };
-      return { ...prev, times };
-    });
-  }
-
-  // 완료 → 알람 저장. 약 이름은 아직 없으므로 시간대 이름으로 임시 등록한다
-  // (문서 §1: 온보딩에서 약 이름을 받지 않는다).
-  async function saveAlarms(): Promise<void> {
-    if (savingRef.current) return;
-    savingRef.current = true; // 첫 await 전에 동기적으로 잠근다
+  // 「설정 완료」 — 여기서 저장한다. 실패하면 이 화면에 남아 다시 누를 수 있다.
+  async function finish(): Promise<void> {
+    if (savingRef.current || !canFinish(setup)) return;
+    savingRef.current = true;
     setSaving(true);
-    const pid = await getPatientId();
-    if (!pid) { savingRef.current = false; setSaving(false); return; }
+    const rows = scheduleRows(setup);
     try {
+      const pid = await getPatientId();
+      if (!pid) {
+        if (mounted.current) Alert.alert("저장에 실패했어요", "내 정보를 찾지 못했어요. 앱을 다시 시작해 주세요.");
+        return;
+      }
       await ensureStrongAlarmReady();
       const granted = await ensurePermission();
-      for (const t of state.times) {
-        const { data, error } = await supabase.from("schedules").insert({
-          patient_id: pid,
-          medicine_name: `${t.slot} 약`,   // 약장의 간편 등록에서 실제 약 이름으로 바꾼다
-          time_of_day: t.slot, hour: t.hour, minute: t.minute,
-          repeat_days: [] as number[], active: true,
-        }).select().single();
-        if (error || !data) throw error ?? new Error("insert 실패");
-        if (granted) {
+      // 한 번에 넣는다 — 여러 행 insert는 한 문장이라 전부 들어가거나 하나도 안 들어간다.
+      // 행마다 넣으면 중간에 실패한 뒤 시각을 고치거나 칸을 끄고 다시 눌러도 먼저 들어간 행이 그대로 남는다.
+      const { data, error } = await supabase.from("schedules").insert(rows.map((r) => ({ patient_id: pid, ...r }))).select();
+      if (error || !data) throw error ?? new Error("insert 실패");
+      if (granted) {
+        for (const d of data) {
+          // 예약이 실패해도 행은 저장됐다 — 앱을 다시 열 때 resyncAllAlarms가 다시 예약한다.
           try {
-            await scheduleReminders(data.id, data.medicine_name, t.hour, t.minute, [], t.slot);
+            await scheduleReminders(d.id, d.medicine_name, d.hour, d.minute, d.repeat_days ?? [], d.time_of_day);
           } catch {}
         }
       }
+      if (!mounted.current) return;
       void logGuideEvent({ step: "done", ...stats.current });
+      setSheetOpen(false);
+      setStep("done");
       // 저장은 됐지만 알림 권한이 없으면 알람이 조용히 안 울린다 — 그 사실을 알린다.
       if (!granted) warnNotificationsOff();
-      // 회의 2026-09-03: 알람 설정을 마치면 바로 홈. 약 등록·위험 분석을 이어 붙이지 않는다.
-      nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
     } catch {
-      Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
+      if (mounted.current) Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
+    } finally {
       savingRef.current = false;
       setSaving(false);
     }
   }
 
-  const progress = stepIndex(state.step);
-
-  // 뒤로: 한 단계 되돌린다. 첫 단계에서 누르면 안내를 그만두고 앞 화면으로.
-  // 되돌아간 단계의 문구를 다시 보여 줘 어디로 왔는지 알려 준다.
+  // 회의 2026-10-06: 「나중에」를 없애고 뒤로 가면 앞 화면(결과·알람 물음)으로 돌아간다.
+  // 거기서 「나중에 할게요」를 고르면 된다.
   function goBack() {
-    setEditing(null);
-    const s = stateRef.current;
-    if (s.step === "time") {
-      setState({ ...s, step: "count", proposedDefaults: false });
-      showCues(cuesForStep("count"));
-      return;
-    }
-    if (s.step === "confirm") {
-      setState({ ...s, step: "time" });
-      showCues(cuesForStep("time"));
-      return;
-    }
+    if (sheetOpen) { setSheetOpen(false); return; }
     if (nav.canGoBack()) nav.goBack();
+    else goHome();
   }
+
+  // 저장은 이미 끝났다 — 홈으로 가기만 한다.
+  function goHome() {
+    nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
+  }
+
+  // 화면을 떠나는 모든 길(헤더 뒤로·안드로이드 뒤로·iOS 스와이프)을 여기서 받는다.
+  // 저장 중에는 떠나지 않는다 — 저장이 끝난 뒤 앞 화면에서 다시 설정하면 같은 알람이 두 벌 생긴다.
+  // 완료 뒤에도 앞 화면으로 돌아가지 않고 홈으로 간다 — 같은 이유. 코드가 부르는 reset(홈으로)은 그대로 통과.
+  useEffect(() => nav.addListener("beforeRemove", (e: any) => {
+    if (e.data.action.type === "RESET") return;
+    if (savingRef.current) { e.preventDefault(); return; }
+    if (step === "done") { e.preventDefault(); goHome(); return; }
+    void logGuideEvent({ step: "skipped", ...stats.current });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [nav, step]);
+  // iOS 스와이프는 beforeRemove로 막히지 않아 제스처 자체를 끈다.
+  useEffect(() => { nav.setOptions({ gestureEnabled: step === "setup" && !saving }); }, [nav, step, saving]);
+
+  const byMedicine = setup.mode === "medicines";
+  const times = chosenTimes(setup);
 
   return (
     // 상단 인셋은 ScrollView 바깥에. contentContainerStyle에 주면 스크롤할 때
     // 내용이 상태바 밑으로 올라와 겹친다.
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <ScrollView contentContainerStyle={[styles.c, { paddingTop: spacing.md, paddingBottom: spacing.xl + insets.bottom }]}>
-        {/* 헤더 — 뒤로가기 · 진행 표시(4칸) · 건너뛰기 (시안 + 문서 §4) */}
+      {/* 헤더 — 뒤로만 (한 화면이라 진행 표시는 없다). 완료 단계에선 숨긴다 —
+          이미 저장했으니 되돌아가 다시 저장하면 같은 알람이 또 생긴다. */}
+      {step === "setup" ? (
         <View style={styles.header}>
-          <Pressable onPress={goBack} hitSlop={12} style={styles.backBtn}
+          <Pressable onPress={goBack} disabled={saving} hitSlop={12} style={styles.backBtn}
             accessibilityRole="button" accessibilityLabel="뒤로">
             <ChevronLeft size={26} color={colors.textSecondary} />
           </Pressable>
+        </View>
+      ) : null}
 
-          {progress !== null ? (
-            <View style={styles.progressWrap} accessibilityLabel={`${progress}단계, 전체 ${GUIDE_TOTAL_STEPS}단계`}>
-              <View style={styles.segRow}>
-                {Array.from({ length: GUIDE_TOTAL_STEPS }, (_, i) => (
-                  <View key={i} style={[styles.seg, i < progress && styles.segOn]} />
+      <ScrollView contentContainerStyle={[styles.body, step === "done" && styles.bodyDone]}>
+        {step === "setup" ? (
+          <>
+            <Text style={styles.title}>{byMedicine ? "각 약을 언제 드세요?" : "하루에 몇 번 드세요?"}</Text>
+            <Text style={styles.sub}>
+              {byMedicine ? `방금 점검한 ${setup.medicines.length}가지예요` : "약과 영양제를 드시는 횟수예요"}
+            </Text>
+
+            {/* Case A — 약마다 시간대 칩(여러 개). 미리 켜 둔 칸은 없다 */}
+            {byMedicine ? (
+              <View style={styles.medList}>
+                {setup.medicines.map((m) => (
+                  <View key={m} style={styles.medCard}>
+                    <Text style={styles.medName}>{m}</Text>
+                    <View style={styles.slotRow}>
+                      {SLOTS.map((slot) => {
+                        const on = medSlotsOf(setup, m).includes(slot);
+                        return (
+                          <Pressable key={slot} onPress={() => toggle(m, slot)} disabled={saving}
+                            hitSlop={{ top: 6, bottom: 6, left: 3, right: 3 }}
+                            accessibilityRole="button" accessibilityLabel={`${m} ${slotLabel(slot)}`}
+                            accessibilityState={{ selected: on, disabled: saving }}
+                            style={({ pressed }) => [styles.slotChip, on && styles.slotChipOn, pressed && styles.pressed]}>
+                            <Text style={[styles.slotChipText, on && styles.slotChipTextOn]} numberOfLines={1} adjustsFontSizeToFit>
+                              {slotLabel(slot)}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
                 ))}
               </View>
-              <Text style={styles.progressText}>{progress}/{GUIDE_TOTAL_STEPS}</Text>
-            </View>
-          ) : <View style={styles.progressWrap} />}
-
-          {state.step !== "done" && state.step !== "skipped" ? (
-            <Pressable onPress={skip} hitSlop={10} style={styles.skipBtn}
-              accessibilityRole="button" accessibilityLabel="나중에 설정하기">
-              <Text style={styles.skipText}>나중에</Text>
-            </Pressable>
-          ) : <View style={styles.skipBtn} />}
-        </View>
-
-        <View style={styles.voiceArtCard}>
-          <Image source={VOICE_ART} style={styles.voiceArt} resizeMode="contain" />
-        </View>
-
-        {/* 안내 문구 — 소리 없이 글자로만. 들어서는 즉시 전문이 보인다. */}
-        <Text style={styles.caption} accessibilityRole="text" accessibilityLiveRegion="polite">
-          {caption}
-        </Text>
-
-        {/* 단계 1 — 횟수 버튼 2x2 (문서 §4) */}
-        {state.step === "count" ? (
-          <View style={styles.grid}>
-            {[1, 2, 3, 4].map((n) => (
-              <Pressable key={n} onPress={() => pickCount(n)}
-                style={({ pressed }) => [styles.gridBtn, pressed && styles.pressedCard]}>
-                <Text style={styles.gridText}>{n === 4 ? "4번 이상" : `${n}번`}</Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-
-        {/* 단계 2 — 시간대 칩 + 시간 카드. 칩을 누르면 그 카드만 −/+ 가 열린다 (시안) */}
-        {state.step === "time" ? (
-          <>
-            <View style={styles.chipRow}>
-              {SLOTS.filter((s) => state.slots.includes(s)).map((s: Slot) => {
-                const i = state.times.findIndex((t) => t.slot === s);
-                const on = editing !== null && editing === i;
-                return (
-                  <Pressable key={s} onPress={() => selectSlot(s)} hitSlop={6}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: on }}
-                    style={({ pressed }) => [styles.chip, on && styles.chipOn, pressed && { opacity: 0.9 }]}>
-                    <Text style={[styles.chipText, on && styles.chipTextOn]}>{slotLabel(s)}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            {state.times.map((t: DoseTime, i: number) => {
-              const open = editing === i;
-              return (
-                <Pressable key={`${t.slot}-${i}`} onPress={() => setEditing(open ? null : i)}
-                  style={[styles.timeCard, open && styles.timeCardOn]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${slotLabel(t.slot)} ${ampm(t.hour, t.minute)}, 눌러서 시간 조정`}>
-                  <Clock size={20} color={open ? colors.primaryBlue : colors.textSecondary} />
-                  <Text style={styles.timeSlot}>{slotLabel(t.slot)}</Text>
-                  {open ? (
-                    <Pressable onPress={() => bumpTime(i, -30)} style={styles.bump} hitSlop={8}
-                      accessibilityRole="button" accessibilityLabel="30분 앞으로">
-                      <Text style={styles.bumpText}>−30분</Text>
-                    </Pressable>
-                  ) : null}
-                  <Text style={styles.timeValue}>{ampm(t.hour, t.minute)}</Text>
-                  {open ? (
-                    <Pressable onPress={() => bumpTime(i, 30)} style={styles.bump} hitSlop={8}
-                      accessibilityRole="button" accessibilityLabel="30분 뒤로">
-                      <Text style={styles.bumpText}>+30분</Text>
-                    </Pressable>
-                  ) : null}
-                </Pressable>
-              );
-            })}
-
-            {/* 식후 기본값을 제안한 상태(V03)면 네/다시로 받는다 */}
-            {state.proposedDefaults ? (
-              <>
-                <Pressable onPress={() => acceptDefaults(true)}
-                  style={({ pressed }) => [styles.wideBtn, pressed && { opacity: 0.9 }]}>
-                  <Check size={22} color={colors.white} />
-                  <Text style={styles.wideText}>네, 이 시간으로 할게요</Text>
-                </Pressable>
-                <Pressable onPress={() => acceptDefaults(false)}
-                  style={({ pressed }) => [styles.wideBtnGhost, pressed && { opacity: 0.9 }]}>
-                  <Text style={styles.wideTextGhost}>다시 고를게요</Text>
-                </Pressable>
-              </>
             ) : (
-              <Pressable onPress={useAfterMealDefaults}
-                style={({ pressed }) => [styles.wideBtn, pressed && { opacity: 0.9 }]}>
-                <Text style={styles.wideText}>
-                  {state.times.length > 0 ? "이 시간으로 할게요" : "식사 후로 맞춰 주세요"}
-                </Text>
-              </Pressable>
+              // Case C — 하루 횟수 2x2. 시간대는 횟수에 맞춰 정해진다(defaultSlotsFor)
+              <View style={styles.countGrid}>
+                {[1, 2, 3, 4].map((n) => {
+                  const on = setup.count === n;
+                  return (
+                    <Pressable key={n} onPress={() => chooseCount(n)} disabled={saving}
+                      accessibilityRole="button" accessibilityState={{ selected: on, disabled: saving }}
+                      style={({ pressed }) => [styles.countBtn, on && styles.countBtnOn, pressed && styles.pressed]}>
+                      <Text style={[styles.countText, on && styles.countTextOn]}>{n === 4 ? "4번 이상" : `${n}번`}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             )}
-          </>
-        ) : null}
 
-        {/* 단계 3 — 요약. 동적 내용은 화면 전용, 음성으로 읽지 않는다 (문서 §2) */}
-        {state.step === "confirm" ? (
-          <>
-            <View style={styles.summary}>
-              <Text style={styles.summaryTitle}>하루 {state.times.length}번 알림을 드릴게요</Text>
-              {state.times.map((t, i) => (
-                <Text key={i} style={styles.summaryLine}>{`${slotLabel(t.slot)} · ${ampm(t.hour, t.minute)}`}</Text>
-              ))}
-            </View>
-            <Pressable onPress={() => confirm(true)}
-              style={({ pressed }) => [styles.wideBtn, pressed && { opacity: 0.9 }]}>
-              <Check size={22} color={colors.white} />
-              <Text style={styles.wideText}>네, 맞아요</Text>
-            </Pressable>
-            <Pressable onPress={() => confirm(false)}
-              style={({ pressed }) => [styles.wideBtnGhost, pressed && { opacity: 0.9 }]}>
-              <Text style={styles.wideTextGhost}>다시 설정할게요</Text>
-            </Pressable>
-          </>
-        ) : null}
+            {/* 배너를 버튼 바로 위로 민다(시안). 약이 많으면 목록과 함께 스크롤된다. */}
+            <View style={styles.spacer} />
 
-        {/* 단계 4 — 완료. 회의 2026-09-03: 위험 분석을 다시 제안하지 않고 바로 홈으로 */}
-        {state.step === "done" ? (
+            {showsUnslottedNote(setup) ? (
+              <Text style={styles.note}>시간을 고르지 않은 약은 알람을 맞추지 않아요</Text>
+            ) : null}
+
+            {/* 시각 요약 — 배너 전체를 누를 수 있게 해 「시간 바꾸기」를 크게 잡는다 */}
+            {times.length > 0 ? (
+              <Pressable onPress={() => setSheetOpen(true)} disabled={saving}
+                accessibilityRole="button" accessibilityLabel={`${bannerText(setup)}. 시간 바꾸기`}
+                style={({ pressed }) => [styles.banner, pressed && styles.pressed]}>
+                <Bell size={22} color={colors.primaryBlue} />
+                <View style={styles.bannerBody}>
+                  <Text style={styles.bannerText}>{bannerText(setup)}</Text>
+                  <Text style={styles.bannerLink}>시간 바꾸기 ›</Text>
+                </View>
+              </Pressable>
+            ) : null}
+          </>
+        ) : (
           <>
+            {/* 완료 — 회의 2026-09-03: 위험 분석을 다시 제안하지 않고 바로 홈으로 */}
             <View style={styles.doneCard}>
               <Check size={36} color={colors.successGreen} />
               <Text style={styles.doneTitle}>복용 알람 설정이 끝났어요</Text>
-              {state.times.map((t, i) => (
-                <Text key={i} style={styles.summaryLine}>{`${slotLabel(t.slot)} · ${ampm(t.hour, t.minute)}`}</Text>
+              {times.map((t) => (
+                <View key={t.slot} style={styles.doneItem}>
+                  <Text style={styles.summaryLine}>{`${slotLabel(t.slot)} · ${ampm(t.hour, t.minute)}`}</Text>
+                  {byMedicine ? <Text style={styles.summaryMeds}>{medicinesAt(setup, t.slot).join(" · ")}</Text> : null}
+                </View>
               ))}
             </View>
 
@@ -394,95 +280,123 @@ export function VoiceGuideScreen() {
                 <BigButton variant="secondary" label={linking ? "연결 중…" : "카카오 연결하기"} onPress={() => { void linkAccount(); }} disabled={linking} />
               </View>
             ) : null}
+          </>
+        )}
+      </ScrollView>
 
-            {/* 이 버튼이 실제로 알람을 저장한다 — "홈으로 가기"라고만 쓰면 저장되는 줄 모른다 */}
-            <BigButton label={saving ? "저장 중…" : "알람 저장하고 홈으로"} onPress={() => { void saveAlarms(); }} disabled={saving} />
+      <View style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}>
+        {step === "setup" ? (
+          <BigButton label={saving ? "저장 중…" : "설정 완료"} onPress={() => { void finish(); }}
+            disabled={saving || !canFinish(setup)} />
+        ) : (
+          <>
+            <BigButton label="홈으로 가기" onPress={goHome} />
             <Text style={styles.disclaimer}>{DISCLAIMER}</Text>
           </>
-        ) : null}
-      </ScrollView>
+        )}
+      </View>
+
+      {/* 시간 바꾸기 시트 — 고른 시간대마다 ±30분. 고친 시각은 시간대에 남는다(칩을 껐다 켜도) */}
+      <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>
+        <Pressable style={styles.backdrop} onPress={() => setSheetOpen(false)} accessibilityLabel="닫기" />
+        <View style={[styles.sheet, { paddingBottom: spacing.lg + insets.bottom }]}>
+          <View style={styles.grab} />
+          <Text style={styles.sheetTitle}>알림 시간 바꾸기</Text>
+          {/* 시간대 이름은 윗줄에 — 한 줄에 넣으면 큰 글씨 설정에서 가운데 시각이 먼저 줄어든다.
+              시간대가 넷이고 글씨가 크면 길어지므로 목록만 스크롤하고 「완료」는 늘 보이게 둔다. */}
+          <ScrollView style={{ maxHeight: windowHeight * 0.55 }} bounces={false}>
+            {times.map((t) => (
+              <View key={t.slot} style={styles.sheetRow}>
+                <Text style={styles.sheetSlot}>{slotLabel(t.slot)}</Text>
+                <View style={styles.sheetCtrl}>
+                  <Pressable onPress={() => bump(t.slot, -30)} hitSlop={6}
+                    accessibilityRole="button" accessibilityLabel={`${slotLabel(t.slot)} 30분 일찍`}
+                    style={({ pressed }) => [styles.bump, pressed && styles.pressed]}>
+                    <Text style={styles.bumpText} numberOfLines={1}>−30분</Text>
+                  </Pressable>
+                  <Text style={styles.sheetTime} numberOfLines={1} adjustsFontSizeToFit accessibilityLiveRegion="polite">
+                    {ampm(t.hour, t.minute)}
+                  </Text>
+                  <Pressable onPress={() => bump(t.slot, 30)} hitSlop={6}
+                    accessibilityRole="button" accessibilityLabel={`${slotLabel(t.slot)} 30분 늦게`}
+                    style={({ pressed }) => [styles.bump, pressed && styles.pressed]}>
+                    <Text style={styles.bumpText} numberOfLines={1}>+30분</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+          <View style={styles.sheetDone}>
+            <BigButton label="완료" onPress={() => setSheetOpen(false)} />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
-  voiceArtCard: { width: "100%", height: 180, borderRadius: radii.hero, backgroundColor: colors.coralSoft, overflow: "hidden", marginBottom: spacing.md },
-  voiceArt: { width: "106%", height: "112%", marginLeft: -8, marginTop: -8 },
-  c: { padding: spacing.md, gap: spacing.md },
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    marginBottom: spacing.md,
+    height: 60, paddingHorizontal: spacing.md,
   },
-  backBtn: { width: 60, height: 44, justifyContent: "center" },
-  skipBtn: { width: 60, height: 44, alignItems: "flex-end", justifyContent: "center" },
-  progressWrap: { flex: 1, alignItems: "center" },
-  segRow: { flexDirection: "row", gap: 6 },
-  seg: { width: 26, height: 5, borderRadius: 3, backgroundColor: colors.border },
-  segOn: { backgroundColor: colors.primaryBlue },
-  progressText: {
-    marginTop: 6, fontSize: 16, fontWeight: "700", color: colors.textSecondary,
+  backBtn: { width: 72, height: 44, justifyContent: "center" },
+  // flexGrow — 내용이 짧으면 spacer가 늘어나 배너를 아래로 민다
+  body: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.md },
+  bodyDone: { paddingTop: spacing.lg, gap: spacing.md },
+  title: { fontSize: 27, lineHeight: 38, fontWeight: "800", color: colors.primaryNavy, letterSpacing: -0.7 },
+  sub: { marginTop: 6, fontSize: fontSizes.body, lineHeight: 27, fontWeight: "600", color: colors.textSecondary, letterSpacing: -0.3 },
+
+  medList: { marginTop: spacing.md, gap: 10 },
+  medCard: {
+    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1, borderRadius: radii.card,
+    paddingHorizontal: 14, paddingTop: 12, paddingBottom: 14, gap: spacing.sm,
   },
-  skipText: { fontSize: fontSizes.body, color: colors.textSecondary, fontWeight: "600" },
-  caption: {
-    fontSize: 21, color: colors.text, lineHeight: 32, textAlign: "center",
-    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
-    borderRadius: radii.card, padding: spacing.md,
+  medName: { fontSize: fontSizes.body, lineHeight: 26, fontWeight: "800", color: colors.text },
+  slotRow: { flexDirection: "row", gap: 6 },
+  // 좁은 화면·큰 글씨에서도 「자기 전」이 한 줄에 들어가게 글자를 줄여 맞춘다(adjustsFontSizeToFit)
+  slotChip: {
+    flex: 1, minHeight: 48, paddingHorizontal: 4, borderRadius: radii.pill,
+    alignItems: "center", justifyContent: "center",
+    backgroundColor: colors.surfaceRaised, borderWidth: 1.5, borderColor: colors.border,
   },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  gridBtn: {
-    width: "48%", minHeight: 88, alignItems: "center", justifyContent: "center",
-    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
-    borderRadius: radii.card,
+  slotChipOn: { backgroundColor: colors.primarySoft, borderColor: colors.primaryBlue },
+  slotChipText: { fontSize: fontSizes.body, fontWeight: "700", color: colors.textSecondary },
+  slotChipTextOn: { color: colors.primaryBlue },
+
+  countGrid: { marginTop: 18, flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: spacing.sm },
+  countBtn: {
+    width: "48.5%", minHeight: 88, alignItems: "center", justifyContent: "center",
+    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1.5, borderRadius: radii.card,
   },
-  pressedCard: { opacity: 0.9, borderColor: colors.primaryBlue },
-  gridText: { fontSize: 26, fontWeight: "800", color: colors.primaryNavy },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, justifyContent: "center" },
-  chip: {
-    minHeight: 44, paddingHorizontal: spacing.md, paddingVertical: 10, borderRadius: radii.pill,
-    justifyContent: "center",
-    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
+  countBtnOn: { backgroundColor: colors.primarySoft, borderColor: colors.primaryBlue },
+  countText: { fontSize: 26, fontWeight: "800", color: colors.primaryNavy },
+  countTextOn: { color: colors.primaryBlue },
+
+  spacer: { flexGrow: 1, minHeight: spacing.md },
+  note: { fontSize: fontSizes.body, lineHeight: 26, fontWeight: "600", color: colors.textSecondary, marginBottom: spacing.sm },
+  banner: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    backgroundColor: colors.lightBlueBg, borderColor: colors.border, borderWidth: 1, borderRadius: radii.card,
+    paddingVertical: 14, paddingHorizontal: spacing.md,
   },
-  chipOn: { backgroundColor: colors.primaryBlue, borderColor: colors.primaryBlue },
-  chipText: { fontSize: 19, fontWeight: "800", color: colors.textSecondary },
-  chipTextOn: { color: colors.white },
-  timeCard: {
-    flexDirection: "row", alignItems: "center", gap: spacing.sm,
-    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
-    borderRadius: radii.card, padding: spacing.md, minHeight: minTouch,
-  },
-  timeCardOn: { borderColor: colors.primaryBlue, borderWidth: 2 },
-  timeSlot: { fontSize: 19, fontWeight: "800", color: colors.text, width: 52 },
-  timeValue: { flex: 1, fontSize: 21, fontWeight: "800", color: colors.primaryBlue, textAlign: "center" },
-  bump: {
-    minHeight: 44, justifyContent: "center",
-    paddingHorizontal: 10, paddingVertical: 8, borderRadius: radii.button,
-    backgroundColor: colors.lightBlueBg,
-  },
-  bumpText: { fontSize: fontSizes.body, fontWeight: "700", color: colors.primaryBlue },
-  wideBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
-    minHeight: minTouch, borderRadius: radii.button, backgroundColor: colors.primaryBlue,
-  },
-  wideText: { fontSize: 20, fontWeight: "800", color: colors.white },
-  wideBtnGhost: {
-    alignItems: "center", justifyContent: "center", minHeight: minTouch,
-    borderRadius: radii.button, backgroundColor: colors.cardBg,
-    borderColor: colors.border, borderWidth: 1,
-  },
-  wideTextGhost: { fontSize: 20, fontWeight: "700", color: colors.text },
-  summary: {
-    backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
-    borderRadius: radii.card, padding: spacing.lg, gap: 6,
-  },
-  summaryTitle: { fontSize: 24, fontWeight: "800", color: colors.primaryNavy, marginBottom: spacing.xs },
-  summaryLine: { fontSize: 21, color: colors.text },
+  bannerBody: { flex: 1 },
+  bannerText: { fontSize: fontSizes.body, lineHeight: 26, fontWeight: "700", color: colors.primaryNavy },
+  bannerLink: { marginTop: 6, fontSize: fontSizes.body, fontWeight: "800", color: colors.primaryBlue },
+  pressed: { opacity: 0.85 },
+
+  footer: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, backgroundColor: colors.canvas },
+
   doneCard: {
     alignItems: "center", gap: 6,
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.lg,
   },
   doneTitle: { fontSize: 24, fontWeight: "800", color: colors.primaryNavy, marginVertical: spacing.xs },
+  doneItem: { alignItems: "center" },
+  summaryLine: { fontSize: 21, color: colors.text },
+  summaryMeds: { fontSize: fontSizes.body, lineHeight: 26, color: colors.textSecondary, textAlign: "center" },
   linkCard: {
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1,
     borderRadius: radii.card, padding: spacing.lg, gap: spacing.xs,
@@ -490,4 +404,24 @@ const styles = StyleSheet.create({
   linkTitle: { fontSize: fontSizes.emphasis, fontWeight: "800", color: colors.primaryNavy },
   linkBody: { fontSize: fontSizes.body, lineHeight: 27, color: colors.textSecondary, marginBottom: spacing.xs },
   disclaimer: { fontSize: 16, color: colors.textSecondary, textAlign: "center", lineHeight: 24 },
+
+  backdrop: { flex: 1, backgroundColor: colors.overlayStrong },
+  sheet: {
+    backgroundColor: colors.surfaceRaised, borderTopLeftRadius: radii.hero, borderTopRightRadius: radii.hero,
+    paddingHorizontal: 20, paddingTop: 10, ...shadows.floating,
+  },
+  grab: { alignSelf: "center", width: 44, height: 5, borderRadius: 3, backgroundColor: colors.border, marginBottom: 14 },
+  sheetTitle: { fontSize: 22, lineHeight: 32, fontWeight: "800", color: colors.primaryNavy, marginBottom: spacing.xs },
+  sheetRow: { paddingVertical: 12, gap: spacing.xs, borderBottomWidth: 1, borderBottomColor: colors.canvasMuted },
+  sheetSlot: { fontSize: fontSizes.body, fontWeight: "800", color: colors.text },
+  // 세 칸을 고르게 나눈다(시각 칸이 조금 넓게) — 글씨가 커져도 버튼이 시각 자리를 빼앗지 않게
+  sheetCtrl: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  sheetTime: { flex: 1.3, textAlign: "center", fontSize: 20, fontWeight: "800", color: colors.primaryNavy },
+  bump: {
+    flex: 1, minHeight: 48, paddingHorizontal: 6, borderRadius: radii.pill,
+    alignItems: "center", justifyContent: "center",
+    backgroundColor: colors.lightBlueBg, borderWidth: 1.5, borderColor: colors.border,
+  },
+  bumpText: { fontSize: fontSizes.body, fontWeight: "800", color: colors.primaryBlue },
+  sheetDone: { marginTop: 14 },
 });

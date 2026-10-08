@@ -14,8 +14,6 @@ clean alpha edges, no text, no logos, and no watermark.
 
 - `home-medication.png`: A horizontal still life of one weekly pill organizer,
   an analog clock, coral pouch, and eucalyptus leaves in warm morning light.
-- `voice-companion.png`: A Korean senior woman speaking comfortably beside one
-  teal tabletop voice speaker with soft coral and sage sound-wave ribbons.
 - `medicine-cabinet.png`: One rounded light-oak home medicine cabinet, open and
   neatly organized with a few unbranded containers and one weekly organizer.
 - `intake-complete.png`: Natural older hands holding one cream water cup and one

@@ -23,7 +23,8 @@ export function AlarmPromptScreen() {
     return () => { alive = false; };
   }, []);
 
-  const setupAlarm = () => nav.reset({ index: 1, routes: [{ name: "Tabs" }, { name: "VoiceGuide" }] });
+  // 쌓아서 연다 — 알람 설정에서 뒤로 가면 이 물음으로 돌아와 「나중에 할게요」를 고를 수 있다.
+  const setupAlarm = () => nav.navigate("VoiceGuide");
   const later = () => nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
 
   return (

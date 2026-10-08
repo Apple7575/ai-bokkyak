@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View, Text, ScrollView, StyleSheet, Pressable, TextInput, Alert, ActivityIndicator,
-  KeyboardAvoidingView, Keyboard,
+  KeyboardAvoidingView, Keyboard, BackHandler,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { ChevronLeft, ChevronDown, Search, Pencil, Camera, Image as ImageIcon, Check, Plus, X } from "lucide-react-native";
@@ -48,6 +48,7 @@ const LIST_META: Record<"supplements" | "medicines", {
 
 export function QuickCheckInputScreen() {
   const nav = useNavigation<any>();
+  const fromIntro = useRoute<any>().params?.from === "intro";
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState<Step>("supplements");
   const [supplements, setSupplements] = useState<string[]>([]);
@@ -141,20 +142,32 @@ export function QuickCheckInputScreen() {
       await saveDraft({ ...EMPTY_DRAFT, committedAt: prev?.committedAt ?? null, supplements, medicines, profile: { age, conditions } });
     } catch {}
   }
-  // 점검을 떠날 때 — 이미 환자가 있으면(홈에서 다시 점검) 홈으로, 없으면 이름 한 칸으로.
+  // 점검을 떠날 때 — 이미 환자가 있으면 홈으로(홈에서 다시 점검했거나, 3/3에서 환자를 만든 뒤 결과에서
+  // 뒤로 되돌아온 경우 — 인트로로 보내면 「지금은 건너뛰기」가 환자를 하나 더 만든다).
+  // 없으면 인트로에서 왔을 때는 인트로 시작 화면으로(회의 2026-09-20), 아니면 이름 한 칸으로.
+  // 점검을 건너뛰는 길은 인트로의 「지금은 건너뛰기」 하나뿐이다 — 이 화면 상단의 「건너뛰기」는 같은 회의에서 지웠다.
   async function leave() {
     await persistDraft();
     const pid = await getPatientId();
     leavingRef.current = true;
-    nav.reset({ index: 0, routes: [{ name: pid ? "Tabs" : "NameEntry" }] });
+    if (pid) nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
+    else if (fromIntro) nav.reset({ index: 0, routes: [{ name: "Intro", params: { slide: "cta" } }] });
+    else nav.reset({ index: 0, routes: [{ name: "NameEntry" }] });
   }
   function goBack() {
+    // 3/3 저장 중에는 되돌리지 않는다 — 저장이 끝나면 분석 화면으로 넘어가므로 단계만 어긋난다.
+    if (nextBusy.current) return;
     if (stepIndex > 0) { setStep(STEP_ORDER[stepIndex - 1]); setPanel("none"); return; }
     if (nav.canGoBack()) { void persistDraft().then(() => { leavingRef.current = true; nav.goBack(); }); return; }
     void leave();
   }
-  // 건너뛰기 = 점검 없이.
-  function skip() { void leave(); }
+  // 안드로이드 뒤로 버튼도 화면의 「뒤로」와 같게 — 단계를 하나씩 되돌리고 1/3에서는 위 규칙대로.
+  const goBackRef = useRef(goBack);
+  goBackRef.current = goBack;
+  useFocusEffect(useCallback(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => { goBackRef.current(); return true; });
+    return () => sub.remove();
+  }, []));
 
   // 하드웨어 뒤로가기·iOS 스와이프도 헤더 뒤로와 같게 — 단계가 남았으면 한 단계 뒤로, 첫 단계면
   // 고른 것을 초안에 남긴 뒤 떠난다. 코드로 떠날 때(goBack·leave·next)는 leavingRef로 건너뛴다.
@@ -224,7 +237,7 @@ export function QuickCheckInputScreen() {
       style={[styles.screen, { paddingTop: insets.top }]}
       behavior="padding"
     >
-      {/* 상단 바 — 뒤로 · 진행(3칸) · 건너뛰기 (시안 V8 segs) */}
+      {/* 상단 바 — 뒤로 · 진행(3칸) (시안 V8 segs). 오른쪽은 진행 표시를 가운데에 두기 위한 빈 칸 */}
       <View style={styles.header}>
         <Pressable onPress={goBack} hitSlop={12} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="뒤로">
           <ChevronLeft size={26} color={colors.textSecondary} />
@@ -235,9 +248,7 @@ export function QuickCheckInputScreen() {
           </View>
           <Text style={styles.progressText}>{STEP_LABEL[step]}</Text>
         </View>
-        <Pressable onPress={skip} hitSlop={10} style={styles.skipBtn} accessibilityRole="button" accessibilityLabel="건너뛰기">
-          <Text style={styles.skipText}>건너뛰기</Text>
-        </Pressable>
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView
@@ -562,8 +573,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
   },
   backBtn: { width: 72, height: 44, justifyContent: "center" },
-  skipBtn: { minWidth: 72, minHeight: minTouch, alignItems: "flex-end", justifyContent: "center" },
-  skipText: { fontSize: fontSizes.body, color: colors.textSecondary, fontWeight: "600" },
+  headerSpacer: { width: 72 },
   progressWrap: { flex: 1, alignItems: "center" },
   segRow: { flexDirection: "row", gap: 6 },
   seg: { width: 34, height: 5, borderRadius: 3, backgroundColor: colors.border },
