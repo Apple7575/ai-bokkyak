@@ -164,8 +164,10 @@ YouTube "일부 공개" 또는 Google Drive "링크가 있는 모든 사용자" 
 
 ## D. 빌드 파일
 
-- EAS 빌드 페이지: https://expo.dev/accounts/shawn777/projects/care-app/builds (최신 Android production 빌드, versionCode 16)
-- 콘솔에 올릴 때는 빌드 페이지의 "Download" 로 `.aab` 를 받는다. APK가 아니다.
+- **AAB (versionCode 16, 2026-10-08 빌드 완료)**: 바탕화면 `모두의복약-Play테스트-배포묶음/모두의복약-v1.1.0-versionCode16.aab`
+  - 내려받기 링크: https://expo.dev/artifacts/eas/MAVBDAD67NSnMgu8ddhR0wMRGg-qArogOkheaTCUOR8.aab
+  - 빌드 로그: https://expo.dev/accounts/shawn777/projects/care-app/builds/7d63793c-8fc6-41de-a103-028efed484ec
+- 콘솔에는 이 `.aab` 파일을 올린다. APK가 아니다.
 - 다음 빌드부터 같은 명령: `cd care-app && npx eas-cli build -p android --profile production` (versionCode 자동 +1)
 
 ## E. 테스터에게 보낼 글
