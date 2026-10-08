@@ -17,9 +17,16 @@ type Section = { title: string; body: string[] };
 // 실제 수집·이용 범위를 그대로 적는다. 앱이 하지 않는 일(제3자 제공, 광고 등)은
 // 하지 않는다고 명시한다. landing/privacy.html 과 같은 내용이어야 한다(스토어 심사에서
 // 앱 안 문구와 웹 방침이 어긋나면 반려된다) — 한쪽을 고치면 다른 쪽도 고친다.
-const EFFECTIVE_DATE = "2026년 10월 4일";
+const EFFECTIVE_DATE = "2026년 10월 8일";
 
 const SECTIONS: Section[] = [
+  {
+    title: "개인정보 처리자",
+    body: [
+      "모두의 복약을 운영하는 법인 안팜이 이 앱의 개인정보를 처리합니다.",
+      "문의: 앱 스토어 페이지의 지원 이메일",
+    ],
+  },
   {
     title: "1. 수집하는 정보",
     body: [

@@ -55,10 +55,16 @@ export async function ensurePermission(): Promise<boolean> {
 }
 
 // 묻지 않고 현재 알림 권한만 읽는다(홈 배너용). 조회 실패는 true — 괜한 경고를 띄우지 않는다.
+// Android는 앱 권한이 켜져 있어도 채널(아침/점심/저녁/자기 전)만 꺼져 있을 수 있어 채널 차단도 본다.
 export async function hasNotificationPermission(): Promise<boolean> {
   try {
     const settings = await notifee.getNotificationSettings();
-    return settings.authorizationStatus >= 1;
+    if (settings.authorizationStatus < 1) return false;
+    if (Platform.OS === "android") {
+      const channels = await notifee.getChannels();
+      if (channels.some((c) => c.blocked)) return false;
+    }
+    return true;
   } catch {
     return true;
   }
