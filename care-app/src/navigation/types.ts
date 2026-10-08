@@ -8,7 +8,8 @@ export type RootStackParamList = {
   // medicines: purpose "save"일 때 방금 점검한 이름 — 로그인 뒤 이 이름 그대로 알람을 맞춘다.
   Login: { purpose: LoginPurpose; medicines?: string[] };
   // 처음 로그인한 사람만 온다. appleFullName: Apple이 첫 로그인에만 주는 이름(이름 칸 미리 채우기).
-  Consent: { purpose: LoginPurpose; medicines?: string[]; appleFullName?: string | null };
+  // existingPatientId: 옛 빌드에서 이어 붙어 환자 행은 있는데 동의 기록이 없는 계정 — 동의만 채운다.
+  Consent: { purpose: LoginPurpose; medicines?: string[]; appleFullName?: string | null; existingPatientId?: string };
   Account: undefined;
   QuickCheckHistory: undefined;
   AlarmPrompt: undefined;

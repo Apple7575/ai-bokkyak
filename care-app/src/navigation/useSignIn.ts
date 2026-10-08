@@ -33,12 +33,13 @@ export function useSignIn(purpose: LoginPurpose, medicines?: string[]) {
       if (mounted.current) Alert.alert("로그인하지 못했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
       return;
     }
-    if (mine) {
+    if (mine?.consent) {
       await adoptPatient(mine);
       await continueAfterLogin(nav, { purpose, medicines, isNew: false });
       return;
     }
-    nav.navigate("Consent", { purpose, medicines, appleFullName });
+    // 처음 가입 — 또는 옛 빌드에서 이어 붙은 계정이라 동의 기록이 없는 경우. 둘 다 동의 화면을 거친다.
+    nav.navigate("Consent", { purpose, medicines, appleFullName, existingPatientId: mine?.id });
   }
 
   async function signIn(kind: SignInKind): Promise<void> {

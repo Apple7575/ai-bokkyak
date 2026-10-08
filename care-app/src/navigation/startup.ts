@@ -30,7 +30,8 @@ export async function resolveSignedIn(): Promise<boolean> {
     if (pid) return true;
     // 없음(null)과 모름(undefined, 인터넷 문제) 모두 로그아웃 상태로 — 로그인 화면에서 다시 찾는다.
     const mine = await within(findMyPatient(), undefined);
-    if (!mine) return false;
+    // 동의 기록이 없는 환자(옛 빌드에서 이어 붙은 계정)도 로그아웃 상태로 — 다시 로그인하면 동의 화면을 거친다.
+    if (!mine || !mine.consent) return false;
     await adoptPatient(mine);
     void resyncAllAlarms().catch(() => {});
     return true;

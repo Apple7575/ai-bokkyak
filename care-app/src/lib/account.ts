@@ -57,10 +57,21 @@ export async function createMyPatient(name: string, consent: Consent): Promise<M
   if (error) {
     if (error.code === "23505") {
       const existing = await findMyPatient();
-      if (existing) return existing;
+      if (existing) return existing.consent ? existing : recordMyConsent(existing.id, name, consent);
     }
     throw error;
   }
+  return toMyPatient(data);
+}
+
+// 이미 있는 환자 행에 동의를 남긴다 — 옛 빌드에서 카카오를 연결해 둔 테스터는 서버가 계정에 묶어 주지만
+// 동의 기록(consent)이 없다. 민감정보(건강) 동의는 따로 받아야 하므로(개인정보 보호법 제23조) 동의 화면을 거쳐 여기서 채운다.
+export async function recordMyConsent(patientId: string, name: string, consent: Consent): Promise<MyPatient> {
+  const uid = await myUserId();
+  if (!uid) throw new Error("로그인 세션이 없어요");
+  const { data, error } = await supabase.from("patients")
+    .update({ name, consent }).eq("id", patientId).eq("user_id", uid).select(COLUMNS).single();
+  if (error) throw error;
   return toMyPatient(data);
 }
 

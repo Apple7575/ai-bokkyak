@@ -7,7 +7,7 @@ import { Check, ChevronLeft } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
 import { currentUser, displayNameFrom } from "../lib/auth";
 import { NAME_MAX } from "../lib/authHelpers";
-import { adoptPatient, createMyPatient, Consent } from "../lib/account";
+import { adoptPatient, createMyPatient, recordMyConsent, Consent } from "../lib/account";
 import { continueAfterLogin } from "../navigation/afterLogin";
 import type { LoginPurpose } from "../navigation/types";
 import { colors, fontSizes, spacing, radii, minTouch, shadows } from "../theme/tokens";
@@ -28,6 +28,7 @@ export function ConsentScreen() {
   const purpose: LoginPurpose = route.params?.purpose ?? "skip";
   const medicines: string[] | undefined = route.params?.medicines;
   const appleFullName: string | null = route.params?.appleFullName ?? null;
+  const existingPatientId: string | undefined = route.params?.existingPatientId;
 
   const [name, setName] = useState("");
   const [agreed, setAgreed] = useState<Record<Key, boolean>>({ terms: false, privacy: false, sensitive: false });
@@ -65,9 +66,12 @@ export function ConsentScreen() {
     setSaving(true);
     try {
       const consent: Consent = { version: CONSENT_VERSION, terms: true, privacy: true, sensitive: true, agreedAt: new Date().toISOString() };
-      const mine = await createMyPatient(name.trim(), consent);
+      // 옛 빌드에서 이어 붙은 계정은 환자 행이 이미 있다 — 새로 만들지 않고 동의만 남긴다(약·기록 그대로).
+      const mine = existingPatientId
+        ? await recordMyConsent(existingPatientId, name.trim(), consent)
+        : await createMyPatient(name.trim(), consent);
       await adoptPatient(mine);
-      await continueAfterLogin(nav, { purpose, medicines, isNew: true });
+      await continueAfterLogin(nav, { purpose, medicines, isNew: !existingPatientId });
     } catch (e) {
       console.warn("Consent: 시작 실패", (e as Error)?.message ?? e);
       Alert.alert("시작하지 못했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");

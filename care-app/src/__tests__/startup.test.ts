@@ -48,10 +48,19 @@ describe("resolveSignedIn", () => {
   it("세션만 있고 환자 id가 없으면 서버에서 찾아 이 기기에 앉힌다", async () => {
     mockGetPatientId.mockResolvedValue(null);
     withSession(session);
-    mockFindMyPatient.mockResolvedValue({ id: "p9", name: "홍길동" });
+    const mine = { id: "p9", name: "홍길동", consent: { version: "2026-10-08" } };
+    mockFindMyPatient.mockResolvedValue(mine);
     await expect(resolveSignedIn()).resolves.toBe(true);
-    expect(mockAdoptPatient).toHaveBeenCalledWith({ id: "p9", name: "홍길동" });
+    expect(mockAdoptPatient).toHaveBeenCalledWith(mine);
     expect(mockResync).toHaveBeenCalled();
+  });
+
+  it("환자는 있지만 동의 기록이 없으면(옛 빌드에서 이어 붙은 계정) 로그아웃 상태 — 로그인하면 동의 화면으로", async () => {
+    mockGetPatientId.mockResolvedValue(null);
+    withSession(session);
+    mockFindMyPatient.mockResolvedValue({ id: "p9", name: "홍길동", consent: null });
+    await expect(resolveSignedIn()).resolves.toBe(false);
+    expect(mockAdoptPatient).not.toHaveBeenCalled();
   });
 
   it("세션은 있는데 환자가 없으면(동의 전) 로그아웃 상태", async () => {
