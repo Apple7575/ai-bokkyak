@@ -39,13 +39,13 @@ async function ensureChannel(tod: TOD, silent: boolean): Promise<string> {
     return notifee.createChannel({
       id: alarmChannelId(SOUND[tod], true), name: `복약 알람(${slotLabel(tod)}, 진동만)`,
       importance: AndroidImportance.HIGH, vibration: true, vibrationPattern: STRONG_VIBRATION,
-      visibility: AndroidVisibility.PUBLIC,
+      visibility: AndroidVisibility.PRIVATE,
     });
   }
   return notifee.createChannel({
     id: CH[tod], name: `복약 알람(${slotLabel(tod)})`,
     importance: AndroidImportance.HIGH, sound: SOUND[tod], vibration: true,
-    visibility: AndroidVisibility.PUBLIC,
+    visibility: AndroidVisibility.PRIVATE,
   });
 }
 
@@ -107,6 +107,9 @@ function androidAlarm(scheduleId: string, ch: string, sound: string, silent: boo
     // 무음이면 알림 자체의 소리·루프도 끈다(채널만 무음이면 알림 sound가 이긴다).
     ...(silent ? { loopSound: false } : { sound, loopSound: true }),
     vibrationPattern: STRONG_VIBRATION,
+    // Medication names and dosing instructions are health data. Respect the
+    // device's private lock-screen presentation instead of forcing them public.
+    visibility: AndroidVisibility.PRIVATE,
     asForegroundService: true,
     fullScreenAction: { id: "alarm", launchActivity: "default" },
     pressAction: { id: "alarm", launchActivity: "default" },

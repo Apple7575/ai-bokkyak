@@ -16,6 +16,8 @@ import { ensureIOSCategory, stopAlarm, scheduleSnooze, rescheduleNext } from "./
 import { doseSlot } from "./src/lib/schedule";
 import { supabase } from "./src/lib/supabase";
 import { resyncAllAlarms } from "./src/lib/alarmSync";
+import { runLocalAlarmAction } from "./src/lib/alarmResponse";
+import { AlarmRouteParams, alarmRouteFromData } from "./src/lib/alarmPayload";
 import { applyPretendard } from "./src/theme/applyPretendard";
 import { colors } from "./src/theme/tokens";
 
@@ -36,11 +38,11 @@ const navigationTheme = {
   },
 };
 
-function navigateToAlarm(scheduleId: string | undefined, attempt = 0) {
+function navigateToAlarm(alarm: AlarmRouteParams, attempt = 0) {
   if (navRef.isReady()) {
-    navRef.navigate("Alarm", { scheduleId });
+    navRef.navigate("Alarm", alarm);
   } else if (attempt < 50) {
-    setTimeout(() => navigateToAlarm(scheduleId, attempt + 1), 100);
+    setTimeout(() => navigateToAlarm(alarm, attempt + 1), 100);
   }
 }
 
@@ -63,8 +65,8 @@ export default function App() {
   useEffect(() => {
     ensureIOSCategory().catch(() => {});
     const consumePending = async () => {
-      const sid = await takePendingAlarm();
-      if (sid) navigateToAlarm(sid);
+      const alarm = await takePendingAlarm();
+      if (alarm) navigateToAlarm(alarm);
     };
     // 콜드스타트(알람 풀스크린/탭으로 앱이 켜진 경우)의 알람 라우팅은 RootNavigator가
     // 초기 화면을 Alarm으로 잡아 처리한다(홈 깜빡임 방지). 여기선 중복 호출하지 않는다.
@@ -79,10 +81,11 @@ export default function App() {
     const unsub = notifee.onForegroundEvent(async ({ type, detail }) => {
       const data = detail.notification?.data as any;
       const sid = data?.scheduleId as string | undefined;
+      const alarm = alarmRouteFromData(data);
       if (type === EventType.DELIVERED) {
         // 포그라운드에서 DELIVERED → 화면 이동 + 다음 회차 체이닝(백그라운드 DELIVERED와 동일)
         if (sid) {
-          navigateToAlarm(sid);
+          if (alarm) navigateToAlarm(alarm);
           try {
             const { data: s } = await supabase.from("schedules").select("*").eq("id", sid).eq("active", true).maybeSingle();
             if (s) await rescheduleNext(sid, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day, s.medicine_name ?? "");
@@ -91,7 +94,7 @@ export default function App() {
         return;
       }
       if (type === EventType.PRESS) {
-        if (sid) navigateToAlarm(sid);
+        if (alarm) navigateToAlarm(alarm);
         return;
       }
       if (type === EventType.ACTION_PRESS && sid) {
@@ -99,11 +102,14 @@ export default function App() {
         if (!pid) { await stopAlarm(sid); return; } // 기록 불가 — 정리만
         const hour = Number(data?.hour ?? 0), minute = Number(data?.minute ?? 0);
         const slot = doseSlot(hour, minute, new Date());
-        // 기록을 먼저 — 실패하면 catch로 빠져 stopAlarm 전에 멈추므로 알람이 보존된다(index.ts와 동일 순서).
+        // 기기 알람 제어를 먼저 끝내고 서버 기록은 별도로 시도한다(index.ts와 동일 순서).
         try {
           if (detail.pressAction?.id === "complete") {
-            await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "completed", method: "버튼" });
-            await stopAlarm(sid);
+            const result = await runLocalAlarmAction({
+              stop: () => stopAlarm(sid),
+              persist: () => recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "completed", method: "버튼" }),
+            });
+            if (!result.persisted) console.warn("alarm action: intake record was not saved");
             // 다음 정시 회차 재예약(멱등 — 이미 예약돼 있으면 덮어씀)
             try {
               const { data: s } = await supabase.from("schedules").select("*").eq("id", sid).eq("active", true).maybeSingle();
@@ -111,9 +117,12 @@ export default function App() {
             } catch {}
           } else if (detail.pressAction?.id === "snooze") {
             // 알림 액션 스누즈 = 앱 안 열고 기본 10분 빠른 스누즈. stopAlarm(기존 스누즈 취소) 후 예약해야 살아남음.
-            await recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "snoozed", method: "버튼" });
-            await stopAlarm(sid);
-            await scheduleSnooze(sid, String(data?.medName ?? ""), { mode: "duration", minutes: 10 }, hour, minute, String(data?.tod ?? "아침"));
+            const result = await runLocalAlarmAction({
+              stop: () => stopAlarm(sid),
+              afterStop: () => scheduleSnooze(sid, String(data?.medName ?? ""), { mode: "duration", minutes: 10 }, hour, minute, String(data?.tod ?? "아침")),
+              persist: () => recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "snoozed", method: "버튼" }),
+            });
+            if (!result.persisted) console.warn("alarm action: snooze record was not saved");
             // 다음 정시 회차 재예약(멱등)
             try {
               const { data: s } = await supabase.from("schedules").select("*").eq("id", sid).eq("active", true).maybeSingle();

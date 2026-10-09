@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { AlarmRouteParams } from "./alarmPayload";
 
 // 보호자 기능을 뺐다. 쓰는 사람은 본인 한 종류뿐이라 역할 구분도, 보호자에게
 // 건네주던 6자리 코드도 없다. 환자 id는 로그인한 계정의 환자 행이다(account.ts adoptPatient) —
@@ -41,11 +42,18 @@ export async function clearAll(): Promise<void> {
 }
 
 const PENDING = "care.pendingAlarm";
-export async function setPendingAlarm(scheduleId: string): Promise<void> {
-  await AsyncStorage.setItem(PENDING, scheduleId);
+export async function setPendingAlarm(alarm: AlarmRouteParams): Promise<void> {
+  await AsyncStorage.setItem(PENDING, JSON.stringify(alarm));
 }
-export async function takePendingAlarm(): Promise<string | null> {
+export async function takePendingAlarm(): Promise<AlarmRouteParams | null> {
   const v = await AsyncStorage.getItem(PENDING);
   if (v) await AsyncStorage.removeItem(PENDING);
-  return v;
+  if (!v) return null;
+  try {
+    const parsed = JSON.parse(v) as AlarmRouteParams;
+    return typeof parsed?.scheduleId === "string" ? parsed : null;
+  } catch {
+    // Backward compatibility with the previous schedule-id-only value.
+    return { scheduleId: v };
+  }
 }

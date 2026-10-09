@@ -14,6 +14,7 @@ import { stopAlarm } from "../lib/notifications";
 import { startRinging, stopRinging } from "../lib/alarmRinger";
 import { doseSlot } from "../lib/schedule";
 import { colors, fontSizes, spacing, shadows } from "../theme/tokens";
+import type { AlarmRouteParams } from "../lib/alarmPayload";
 
 const INTAKE_ART = require("../../assets/illustrations/intake-complete.png");
 
@@ -21,8 +22,17 @@ export function AlarmScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
   const insets = useSafeAreaInsets();
-  const scheduleId: string | undefined = route.params?.scheduleId;
-  const [schedule, setSchedule] = useState<Schedule | null>(null);
+  const alarmParams = (route.params ?? {}) as AlarmRouteParams;
+  const scheduleId = alarmParams.scheduleId;
+  const [schedule, setSchedule] = useState<Pick<Schedule, "medicine_name" | "time_of_day" | "hour" | "minute"> | null>(() => {
+    if (!scheduleId || alarmParams.hour === undefined || alarmParams.minute === undefined) return null;
+    return {
+      medicine_name: alarmParams.medicineName || "약",
+      time_of_day: alarmParams.timeOfDay ?? "아침",
+      hour: alarmParams.hour,
+      minute: alarmParams.minute,
+    };
+  });
   const [completionVisible, setCompletionVisible] = useState(false);
   const savedRef = useRef(false);
   const undoneRef = useRef(false);
@@ -40,7 +50,7 @@ export function AlarmScreen() {
       await stopAlarm(scheduleId); // 화면 진입=인지 → 알림측 소리/반복 정지
       const { data } = await supabase.from("schedules").select("*").eq("id", scheduleId).single();
       if (cancelled) return;
-      setSchedule(data);
+      if (data) setSchedule(data);
       if (data) {
         // 알파 지표: 알람이 실제 발생(화면 진입)한 시각을 예정 슬롯과 함께 남긴다.
         // 베스트에포트 — 실패해도 알람 흐름을 막지 않는다.
@@ -94,17 +104,18 @@ export function AlarmScreen() {
       completionArgsRef.current = { patientId: pid, scheduleId, scheduledFor: slot, previous: null };
       setCompletionVisible(true);
     }
+    // Device-local alarm control must not wait on the network record below.
+    await stopAlarm(scheduleId);
     try {
       if (status === "completed") {
         // 재발화·재탭으로 이 슬롯에 이미 응답(미루기/건너뛰기)이 있으면 되돌리기 때 복원해야 한다.
         completionArgsRef.current!.previous = await readIntake({ patientId: pid, scheduleId, scheduledFor: slot });
       }
       await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status, method: "버튼" });
-      await stopAlarm(scheduleId);
     } catch {
       setCompletionVisible(false);
       setBusyBoth(false);
-      Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
+      Alert.alert("저장에 실패했어요", "알람은 멈췄지만 복약 기록은 저장하지 못했어요. 인터넷 연결 후 기록 화면에서 확인해 주세요.");
       return;
     }
     if (status === "completed") {
