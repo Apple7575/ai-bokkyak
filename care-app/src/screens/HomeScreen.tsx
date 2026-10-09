@@ -61,7 +61,8 @@ export function HomeScreen() {
   // 아직 한 번도 묻지 않은 사람(iOS는 묻기 전엔 설정에 토글조차 없다)은 먼저 묻고,
   // 거부된 상태면 OS 설정으로 데려간다.
   const fixNotifications = async () => {
-    const ok = await ensurePermission().catch(() => false);
+    const granted = await ensurePermission().catch(() => false);
+    const ok = granted && (await hasNotificationPermission());
     setNotifOk(ok);
     if (!ok) await openNotificationSettings();
   };

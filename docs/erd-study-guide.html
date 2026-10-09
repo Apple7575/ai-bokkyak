@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>모두의 복약 DB 공부방</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Gowun+Batang:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* 레이아웃: 왼쪽 고정 목차 + 오른쪽 본문. 폰에서는 목차가 위로 접힘. 표는 카드로 펼치고, 따라가기는 단계별 하이라이트. */
+:root{
+  --bg:#F3F6F4; --paper:#FFFFFF; --ink:#1B2A2F; --ink2:#44565C; --ink3:#7A8B90;
+  --line:#D9E2DF; --accent:#1F7A5C; --accent-soft:#E2F1EA; --accent-ink:#0F4D38;
+  --signal:#C8771A; --signal-soft:#FBEEDC; --danger:#B4402F; --danger-soft:#F9E4E0;
+  --public:#2C6E8A; --public-soft:#E1EEF4; --inter:#6B4FA0; --inter-soft:#ECE6F6;
+  --code:#EDF2F0; --shadow:0 1px 2px rgba(27,42,47,.06),0 8px 24px rgba(27,42,47,.06);
+  --display:"Gowun Batang","Nanum Myeongjo",Georgia,serif;
+  --body:"Noto Sans KR","Pretendard","Malgun Gothic",system-ui,sans-serif;
+  --mono:"JetBrains Mono",Consolas,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121A1C; --paper:#1A2427; --ink:#E6ECEA; --ink2:#B1BEC2; --ink3:#7F8E93;
+  --line:#2C3A3E; --accent:#5FBF9A; --accent-soft:#1E3A31; --accent-ink:#A8E3CC;
+  --signal:#E7A24B; --signal-soft:#3A2B16; --danger:#E27A68; --danger-soft:#3C2320;
+  --public:#79B8D3; --public-soft:#1C313B; --inter:#B49BE0; --inter-soft:#2B2340;
+  --code:#222E31; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121A1C; --paper:#1A2427; --ink:#E6ECEA; --ink2:#B1BEC2; --ink3:#7F8E93;
+  --line:#2C3A3E; --accent:#5FBF9A; --accent-soft:#1E3A31; --accent-ink:#A8E3CC;
+  --signal:#E7A24B; --signal-soft:#3A2B16; --danger:#E27A68; --danger-soft:#3C2320;
+  --public:#79B8D3; --public-soft:#1C313B; --inter:#B49BE0; --inter-soft:#2B2340;
+  --code:#222E31; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3); color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.75;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code,pre{font-family:var(--mono)}
+code{font-size:.86em;background:var(--code);padding:2px 6px;border-radius:5px;color:var(--accent-ink)}
+pre{background:var(--code);padding:14px 16px;border-radius:10px;overflow-x:auto;font-size:14px;line-height:1.6;margin:12px 0}
+pre code{background:none;padding:0;color:inherit}
+h1,h2,h3,h4{font-family:var(--display);text-wrap:balance;line-height:1.3;margin:0}
+h1{font-size:clamp(30px,4.2vw,44px);font-weight:700}
+h2{font-size:28px;font-weight:700;margin-top:64px;padding-top:28px;border-top:1px solid var(--line)}
+h3{font-size:21px;font-weight:700;margin-top:34px}
+h4{font-family:var(--body);font-size:17px;font-weight:700;color:var(--accent-ink);margin-top:22px}
+p{margin:12px 0;max-width:72ch}
+ul,ol{max-width:72ch;padding-left:24px}
+li{margin:6px 0}
+strong{font-weight:700}
+.eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);font-weight:700}
+
+.shell{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1240px;margin:0 auto;padding-block:32px 120px;padding-inline:20px}
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);align-self:start;max-height:calc(100vh - 24px);overflow:auto;padding-top:12px}
+nav.toc .eyebrow{margin-bottom:10px}
+nav.toc a{display:block;padding:6px 10px;border-left:2px solid var(--line);color:var(--ink2);font-size:14px;line-height:1.45}
+nav.toc a.on{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft)}
+main{min-width:0}
+
+.hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:32px;align-items:center;margin-bottom:36px}
+.hero p.lead{font-size:19px;color:var(--ink2);max-width:60ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px;color:var(--ink3);margin-top:14px}
+.meta code{font-size:13px}
+.aibox{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+.aibox h3{margin:0 0 6px;font-size:18px}
+.aibox ul{padding-left:18px;margin:8px 0 0;font-size:15px}
+.aibox li{margin:4px 0}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin:14px 0 20px;background:var(--paper)}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:560px}
+th,td{padding:10px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th{background:var(--code);font-weight:700;white-space:nowrap;font-size:14px}
+tr:last-child td{border-bottom:0}
+td code{white-space:nowrap}
+
+.callout{border-left:4px solid var(--accent);background:var(--accent-soft);padding:14px 18px;border-radius:0 12px 12px 0;margin:18px 0}
+.callout.signal{border-color:var(--signal);background:var(--signal-soft)}
+.callout.danger{border-color:var(--danger);background:var(--danger-soft)}
+.callout p{margin:6px 0}
+.callout p:first-child{margin-top:0}
+
+/* 두 폴더 그림 */
+.folders{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin:18px 0}
+.folder{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);position:relative;min-width:0}
+.folder::before{content:"";position:absolute;inset:0 auto 0 0;width:6px;border-radius:14px 0 0 14px;background:var(--public)}
+.folder.inter::before{background:var(--inter)}
+.folder .name{font-family:var(--mono);font-weight:600;font-size:18px;color:var(--public)}
+.folder.inter .name{color:var(--inter)}
+.folder .count{float:right;font-size:13px;color:var(--ink3);font-weight:700;margin-top:4px}
+.folder .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{display:inline-block;font-family:var(--mono);font-size:12.5px;padding:3px 9px;border-radius:999px;background:var(--public-soft);color:var(--public);border:1px solid transparent;white-space:nowrap}
+.folder.inter .chip,.chip.inter{background:var(--inter-soft);color:var(--inter)}
+.chip.pk{background:var(--signal-soft);color:var(--signal)}
+.folder .lock{margin-top:12px;font-size:14px;color:var(--ink2);display:flex;gap:8px;align-items:flex-start}
+.folder .lock svg{flex:none;margin-top:4px}
+
+/* 그림(mermaid) */
+.diagram{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;margin:16px 0;overflow-x:auto;box-shadow:var(--shadow)}
+.diagram pre.mermaid{background:none;padding:0;margin:0;display:flex;justify-content:center;min-width:0}
+.diagram svg{max-width:none;min-width:1500px;height:auto}
+.diagram .caption{margin:10px 2px 0}
+.caption{font-size:14px;color:var(--ink3);margin:6px 2px 0}
+
+/* 테이블 카드 */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin:16px 0}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:0;box-shadow:var(--shadow);min-width:0}
+.card>button{all:unset;display:flex;width:100%;gap:12px;align-items:flex-start;padding:16px 18px;cursor:pointer;border-radius:14px}
+.card>button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.card .tname{font-family:var(--mono);font-weight:600;font-size:16px;color:var(--public)}
+.card.inter .tname{color:var(--inter)}
+.card .tsub{font-size:15px;color:var(--ink2);margin-top:2px}
+.card .arrow{margin-left:auto;flex:none;transition:transform .2s;color:var(--ink3)}
+.card.open .arrow{transform:rotate(180deg)}
+.card .body{display:none;padding:0 18px 18px;font-size:15.5px;color:var(--ink);border-top:1px dashed var(--line);margin-top:0}
+.card.open .body{display:block}
+.card .body p{margin:12px 0 8px;max-width:none}
+.card .cols{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;margin-top:8px}
+.card .cols code{font-size:13px}
+.card .cols span{color:var(--ink2)}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:middle;letter-spacing:.02em}
+.badge.ro{background:var(--public-soft);color:var(--public)}
+.badge.ins{background:var(--signal-soft);color:var(--signal)}
+.badge.key{background:var(--danger-soft);color:var(--danger)}
+.badge.hub{background:var(--accent-soft);color:var(--accent-ink)}
+
+/* 앱 흐름 → 테이블 */
+.flow{display:grid;gap:10px;margin:18px 0}
+.flow .row{display:grid;grid-template-columns:minmax(0,1.1fr) 40px minmax(0,1.4fr);gap:10px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.flow .screen{font-weight:700;font-size:15px}
+.flow .screen small{display:block;font-weight:400;color:var(--ink2);font-size:13.5px}
+.flow .ar{color:var(--ink3);text-align:center;font-size:18px}
+.flow .db{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:14px;color:var(--ink2);min-width:0}
+
+/* 다섯 층 */
+.layers{display:grid;gap:10px;margin:18px 0}
+.layer{display:grid;grid-template-columns:48px minmax(0,1fr);gap:14px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 16px;min-width:0}
+.layer .num{font-family:var(--display);font-size:26px;color:var(--inter);font-weight:700;line-height:1.1;padding-top:4px}
+.layer .ttl{font-weight:700;font-size:16px}
+.layer .ttl small{font-weight:400;color:var(--ink2);margin-left:8px;font-size:14px}
+.layer .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+
+/* 따라가 보기 */
+.trace{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:18px 0;box-shadow:var(--shadow)}
+.trace .head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.trace .head h4{margin:0;color:var(--ink)}
+.trace .ctl{display:flex;gap:8px}
+.trace .ctl button{all:unset;cursor:pointer;background:var(--accent);color:#fff;font-weight:700;font-size:14px;padding:8px 14px;border-radius:9px}
+.trace .ctl button.ghost{background:var(--code);color:var(--ink)}
+.trace .ctl button:disabled{opacity:.45;cursor:default}
+.trace .ctl button:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+.trace .map{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 10px}
+.trace .map .node{font-family:var(--mono);font-size:12.5px;padding:5px 10px;border-radius:8px;border:1px solid var(--line);color:var(--ink3);background:var(--bg);transition:all .2s}
+.trace .map .node.lit{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink);font-weight:600;transform:translateY(-1px)}
+.trace .map .node.was{border-color:var(--line);color:var(--ink2);background:var(--paper)}
+.trace ol{margin:8px 0 0;padding-left:22px}
+.trace ol li{color:var(--ink3);padding:4px 6px;border-radius:8px;margin:2px 0}
+.trace ol li.lit{color:var(--ink);background:var(--accent-soft)}
+.trace ol li.was{color:var(--ink2)}
+.trace ol li b{color:inherit}
+
+/* 퀴즈 */
+.quiz{display:grid;gap:10px;margin:16px 0}
+.q{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:0;min-width:0}
+.q>button{all:unset;display:flex;width:100%;gap:12px;padding:14px 16px;cursor:pointer;align-items:flex-start;border-radius:12px}
+.q>button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.q .n{font-family:var(--display);font-weight:700;color:var(--accent);min-width:28px;font-size:18px}
+.q .qt{font-size:16px;line-height:1.55}
+.q .ans{display:none;padding:0 16px 16px 56px;color:var(--ink2);font-size:15px;border-top:1px dashed var(--line)}
+.q .ans p{margin:10px 0 0}
+.q.open .ans{display:block}
+.hint{font-size:13.5px;color:var(--ink3)}
+
+/* 낱말 */
+.gloss{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin:16px 0}
+.gloss div{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:14.5px;min-width:0}
+.gloss b{display:block;font-size:15px;margin-bottom:2px}
+
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px}
+.pill.pub{background:var(--public-soft);color:var(--public)}
+.pill.int{background:var(--inter-soft);color:var(--inter)}
+.kbd{font-family:var(--mono);font-size:13px;border:1px solid var(--line);border-bottom-width:2px;padding:1px 6px;border-radius:5px;background:var(--paper)}
+
+footer{margin-top:72px;padding-top:20px;border-top:1px solid var(--line);font-size:14px;color:var(--ink3)}
+
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr;gap:20px;padding-inline:16px}
+  nav.toc{position:static;max-height:none;display:flex;flex-wrap:wrap;gap:6px;padding:12px;background:var(--paper);border:1px solid var(--line);border-radius:12px}
+  nav.toc .eyebrow{flex-basis:100%}
+  nav.toc a{border-left:0;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px}
+  .hero{grid-template-columns:1fr}
+  h2{font-size:24px;margin-top:48px}
+  .flow .row{grid-template-columns:1fr;gap:4px}
+  .flow .ar{display:none}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="toc" aria-label="목차">
+  <div class="eyebrow">목차</div>
+  <a href="#words">1. 낱말 10개</a>
+  <a href="#big">2. 큰 그림: 폴더 두 개</a>
+  <a href="#public">3. public — 앱이 쓰는 표 9개</a>
+  <a href="#flow">4. 앱 화면 ↔ 표</a>
+  <a href="#inter">5. interaction — 약 지식 25개</a>
+  <a href="#rpc">6. 서버 함수 두 개</a>
+  <a href="#rules">7. 깨면 안 되는 약속 3개</a>
+  <a href="#trace">8. 따라가 보기</a>
+  <a href="#gaps">9. 알려진 빈틈</a>
+  <a href="#where">10. 어디에 무엇이</a>
+  <a href="#quiz">11. 연습 문제</a>
+  <a href="#gloss">12. 낱말 사전</a>
+</nav>
+
+<main>
+<section class="hero">
+  <div>
+    <div class="eyebrow">모두의 복약 · 데이터베이스 입문</div>
+    <h1>우리 앱의 DB는 어떻게 생겼나</h1>
+    <p class="lead">데이터베이스를 처음 접하는 팀원을 위해 썼다. 표가 34개지만 폴더는 두 개, 층은 다섯 개다. 이 셋만 잡으면 나머지는 따라온다.</p>
+    <div class="meta"><span>작성 2026-10-05</span><span>기준 코드 <code>origin/main 9ea9ec7</code></span><span>정식 명세 <code>docs/data-spec.md</code></span></div>
+  </div>
+  <aside class="aibox">
+    <h3>AI와 함께 읽는 법</h3>
+    <p style="margin:0;font-size:15px;color:var(--ink2)">같은 내용의 <code>erd-study-guide.md</code>를 대화창에 붙이고 이렇게 물어 보라.</p>
+    <ul>
+      <li>"patients와 schedules의 관계를 초등학생에게 설명하듯 말해 줘"</li>
+      <li>"'아스피린'과 '오메가3'를 고르면 어떤 표를 어떤 순서로 거치는지 따라가 줘"</li>
+      <li>"intake_records에 UNIQUE가 왜 필요한지 예를 들어 줘"</li>
+      <li>"11장 연습 문제를 하나씩 내고 내 답을 채점해 줘"</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- 1 -->
+<h2 id="words">1. 먼저 알아야 할 낱말 10개</h2>
+<p>전부 우리 DB에 실제로 있는 것으로 예를 들었다. 모르는 말이 나오면 여기로 돌아오면 된다.</p>
+<div class="tablewrap"><table>
+<tr><th>낱말</th><th>뜻</th><th>우리 DB의 예</th></tr>
+<tr><td><b>테이블</b> table</td><td>엑셀 시트 하나. 같은 종류의 것을 모은 표</td><td><code>patients</code>(사용자), <code>schedules</code>(복용 일정)</td></tr>
+<tr><td><b>행</b> row</td><td>표의 한 줄. 실제 데이터 한 건</td><td><code>patients</code>의 한 행 = 사용자 한 사람</td></tr>
+<tr><td><b>컬럼</b> column</td><td>표의 한 열. 어떤 정보를 담는 칸</td><td><code>schedules.hour</code> = 몇 시에 먹는지</td></tr>
+<tr><td><b>기본키</b> PK</td><td>행마다 하나씩 붙는, 절대 겹치지 않는 번호표</td><td>모든 표의 <code>id</code>. 우리는 <code>uuid</code>(아주 긴 난수)를 쓴다</td></tr>
+<tr><td><b>외래키</b> FK</td><td>다른 표의 PK를 적어 둔 칸. "이 행은 저 행의 것"이라는 화살표</td><td><code>schedules.patient_id</code> → <code>patients.id</code></td></tr>
+<tr><td><b>1:N</b></td><td>하나가 여러 개를 가진다</td><td>사용자 1명 : 일정 여러 개</td></tr>
+<tr><td><b>N:M</b></td><td>양쪽 다 여러 개. 중간에 연결 전용 표를 둔다</td><td>성분 ↔ 성분군을 잇는 <code>substance_class_member</code></td></tr>
+<tr><td><b>UNIQUE</b></td><td>"이 조합은 표 안에 한 번만" 규칙</td><td><code>intake_records (schedule_id, scheduled_for)</code></td></tr>
+<tr><td><b>upsert</b></td><td>있으면 고치고(update) 없으면 넣는다(insert)</td><td>복약 응답 저장. 두 번 눌러도 행이 하나</td></tr>
+<tr><td><b>스키마</b> schema</td><td>표를 담는 폴더</td><td><code>public</code>(앱 데이터), <code>interaction</code>(약 지식)</td></tr>
+</table></div>
+<p>셋만 더.</p>
+<ul>
+  <li><b>jsonb</b> — 칸 하나에 JSON(중괄호 묶음)을 통째로 넣는 타입. 모양이 자주 바뀌는 데이터용. <code>quick_check_results.findings</code>가 이렇다.</li>
+  <li><b>RLS</b>(행 수준 보안) — 앱이 가진 열쇠(anon 키)로 표마다 어떤 동작이 되는지 정한 규칙. 예: 지표 표는 "넣기만, 읽기 불가".</li>
+  <li><b>RPC</b>(서버 함수) — DB 안에 넣어 둔 프로그램. 앱이 이름만 부르면 서버가 실행한다. <code>quick_check_v1</code>, <code>link_kakao</code> 둘이 있다.</li>
+</ul>
+
+<!-- 2 -->
+<h2 id="big">2. 큰 그림: 폴더 두 개</h2>
+<p>DB는 Supabase Postgres 하나다. 그 안에 폴더(스키마)가 둘 있고, 성격이 완전히 다르다.</p>
+<div class="folders">
+  <div class="folder">
+    <span class="count">표 9개</span>
+    <div class="name">public</div>
+    <div style="color:var(--ink2);font-size:15px;margin-top:2px">앱이 직접 읽고 쓰는 <b>사용자 데이터</b></div>
+    <div class="chips"><span class="chip">patients</span><span class="chip">schedules</span><span class="chip">intake_records</span><span class="chip">alarm_events</span><span class="chip">voice_guide_events</span><span class="chip">quick_check_results</span><span class="chip">drug_product</span><span class="chip">dur_product_ingredient</span><span class="chip">dur_contraindication</span></div>
+    <div class="lock"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg><span>앱의 anon 키로 접근. RLS가 표마다 할 수 있는 동작을 제한한다.</span></div>
+  </div>
+  <div class="folder inter">
+    <span class="count">표 25개</span>
+    <div class="name">interaction</div>
+    <div style="color:var(--ink2);font-size:15px;margin-top:2px">약사가 검수한 <b>약 지식</b></div>
+    <div class="chips"><span class="chip">intake_class</span><span class="chip">substance</span><span class="chip">substance_class</span><span class="chip">interaction_rule</span><span class="chip">interaction_rule_side</span><span class="chip">condition</span><span class="chip">evidence</span><span class="chip">hff_product</span><span class="chip">hff_product_ingredient</span><span class="chip">ingredient_substance_map</span><span class="chip" style="opacity:.6">… 15개 더</span></div>
+    <div class="lock"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>앱은 직접 열지 못한다. 서버 함수 <code>quick_check_v1</code>을 통해서만 답을 받는다.</span></div>
+  </div>
+</div>
+<h4>왜 나눴나</h4>
+<ol>
+  <li><b>바뀌는 속도가 다르다.</b> 사용자 데이터는 매일 쌓이고, 약 지식은 약사가 검수할 때만 바뀐다.</li>
+  <li><b>권한이 다르다.</b> 앱은 자기 일정은 고쳐도 되지만 약 규칙을 고치면 안 된다. 폴더를 나누면 "interaction은 앱이 손대지 못함"을 한 줄로 막을 수 있다.</li>
+  <li><b>설명하기 쉽다.</b> 심사·검토 때 "사용자 정보는 여기 9개, 의료 지식은 저기"라고 말할 수 있다.</li>
+</ol>
+
+<!-- 3 -->
+<h2 id="public">3. <span class="pill pub">public</span> 앱이 쓰는 표 9개</h2>
+<p>선 끝의 모양이 관계다. <b>||</b>는 "하나", <b>o{</b>는 "0개 이상". <code>patients ||--o{ schedules</code>는 "사용자 한 명이 일정을 0개 이상 가진다"로 읽는다.</p>
+<div class="diagram">
+<pre class="mermaid">
+erDiagram
+  patients ||--o{ schedules : "한 사람이 일정 여러 개"
+  patients ||--o{ intake_records : "한 사람이 응답 여러 개"
+  schedules ||--o{ intake_records : "일정 하나에 회차 기록 여러 개"
+  patients ||--o{ alarm_events : "지표 로그"
+  schedules ||--o{ alarm_events : ""
+  patients ||--o{ quick_check_results : "점검 결과 여러 건"
+  drug_product ||--o{ dur_product_ingredient : "제품 하나에 성분 여러 개"
+  patients {
+    uuid id PK
+    text name
+    text kakao_id "비어 있으면 미연결"
+  }
+  schedules {
+    uuid id PK
+    uuid patient_id FK
+    text medicine_name
+    int hour
+    int minute
+    int_array repeat_days "빈 배열 = 매일"
+    boolean active
+  }
+  intake_records {
+    uuid id PK
+    uuid schedule_id FK
+    timestamptz scheduled_for "schedule_id와 함께 UNIQUE"
+    text status "completed / snoozed / skipped"
+  }
+  alarm_events {
+    uuid id PK
+    text event_type "fired / completed / snoozed / skipped / undone"
+  }
+  voice_guide_events {
+    uuid id PK
+    text step "done / skipped"
+  }
+  quick_check_results {
+    uuid id PK
+    uuid patient_id FK
+    jsonb items "무엇을 골랐나"
+    jsonb findings "무엇이 나왔나"
+  }
+  drug_product {
+    text product_code PK
+    text product_name
+    text atc_code
+  }
+  dur_product_ingredient {
+    text product_code
+    text ingredient "= interaction.substance.code"
+  }
+  dur_contraindication {
+    text ingredient_a
+    text ingredient_b
+    text reason
+  }
+</pre>
+</div>
+<p class="caption">컬럼은 공부에 필요한 것만 그렸다. 전체 컬럼은 정식 명세에 있다. 그림이 넓으면 옆으로 밀어서 본다.</p>
+
+<h3>표 하나씩 눌러 보기</h3>
+<p class="hint">카드를 누르면 설명과 주요 컬럼이 펼쳐진다. 배지: <span class="badge ro">읽기 전용</span> 앱이 읽기만 · <span class="badge ins">넣기 전용</span> 앱이 넣기만 · <span class="badge key">약속</span> 설계 결정이 걸린 표</p>
+<div class="cards" id="pubCards">
+  <div class="card"><button type="button" aria-expanded="false"><div><div class="tname">patients</div><div class="tsub">사용자. 한 행이 한 사람</div></div><svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="body"><p>회원가입이 없어 비밀번호·이메일이 없다. 처음 쓸 때 행 하나를 만들고 그 <code>id</code>를 휴대폰에 저장해 두고, 다음부터 "내 행"을 그 id로 찾는다. 카카오로 연결하면 <code>kakao_id</code>가 채워지고, 휴대폰을 바꿨을 때 이 번호로 자기 행을 되찾는다.</p><p><code>gender</code>, <code>birth_date</code>, <code>patient_code</code> 칸이 남아 있지만 <b>옛 설계의 흔적이라 비어 있다</b>(보호자 기능·생년월일 입력은 회의에서 삭제).</p>
+    <div class="cols"><code>id</code><span>uuid PK</span><code>name</code><span>이름. 유일하게 받는 개인정보</span><code>kakao_id</code><span>카카오 회원번호. UNIQUE, NULL이면 미연결. link_kakao 함수만 고칠 수 있다</span><code>created_at</code><span>만든 시각</span></div></div></div>
+
+  <div class="card"><button type="button" aria-expanded="false"><div><div class="tname">schedules <span class="badge key">약속 1</span></div><div class="tsub">복용 일정. "약 하나 × 시간 하나"가 한 행</div></div><svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="body"><p>아침 8시 혈압약과 저녁 7시 혈압약은 두 행이다. 알람은 전부 이 표에서 나온다. <code>repeat_days</code>는 요일 배열(0=일 … 6=토)인데 <b>빈 배열이면 매일</b>이다. 앱 전체가 이 약속을 전제로 짜여 있다. <code>active=false</code>면 지운 것처럼 숨기되 과거 기록은 남긴다.</p>
+    <div class="cols"><code>patient_id</code><span>FK → patients. 사용자 삭제 시 함께 삭제(cascade)</span><code>medicine_name</code><span>약 이름</span><code>time_of_day</code><span>아침/점심/저녁/자기 전</span><code>hour, minute</code><span>울릴 시각</span><code>repeat_days</code><span>int[] · [] = 매일</span><code>dose_amount</code><span>"1정" 같은 표시용</span></div></div></div>
+
+  <div class="card"><button type="button" aria-expanded="false"><div><div class="tname">intake_records <span class="badge key">약속 2</span></div><div class="tsub">복약 응답 기록. 알람에 버튼을 누르면 한 행</div></div><svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="body"><p>"어떤 일정의 어느 회차에 무엇을 눌렀나". 핵심은 <code>(schedule_id, scheduled_for)</code> UNIQUE다. 알람은 같은 회차에 여러 번 울릴 수 있고(재알림, 다시 탭) 사용자가 두 번 누를 수도 있는데, 그래도 <b>한 회차에 행은 하나</b>여야 복약률이 맞다. 그래서 앱은 insert가 아니라 항상 <b>upsert</b>로 쓴다.</p>
+    <div class="cols"><code>schedule_id</code><span>FK → schedules</span><code>scheduled_for</code><span>이 회차의 예정 시각</span><code>status</code><span>completed / snoozed / skipped</span><code>responded_at</code><span>누른 시각</span></div></div></div>
+
+  <div class="card"><button type="button" aria-expanded="false"><div><div class="tname">alarm_events <span class="badge ins">넣기 전용</span></div><div class="tsub">알람 지표 로그. 분석용</div></div><svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="body"><p>알람이 울린 시각(<code>fired</code>)과 응답 시각을 따로 남겨 "울리고 몇 분 뒤에 반응했나"를 볼 수 있다. 되돌리기(<code>undone</code>)도 남긴다. 앱은 넣기만 할 수 있고 읽지 못한다.</p>
+    <div class="cols"><code>event_type</code><span>fired / completed / snoozed / skipped / undone</span><code>scheduled_for</code><span>회차</span><code>event_at</code><span>일어난 시각</span></div></div></div>
+
+  <div class="card"><button type="button" aria-expanded="false"><div><div class="tname">voice_guide_events <span class="badge ins">넣기 전용</span></div><div class="tsub">알람 설정 안내를 마쳤나. 익명 집계</div></div><svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="body"><p>온보딩의 알람 설정을 끝까지 했는지(<code>done</code>) 건너뛰었는지(<code>skipped</code>)만 센다. 사용자 id가 없다. 이름에 voice가 남은 건 예전에 음성 안내가 있던 시절의 이름이고, 지금 앱에는 음성이 없다. 음성 관련 숫자 칸은 전부 0으로 들어간다.</p>
+    <div class="cols"><code>step</code><span>done / skipped</span><code>button_fallback_count</code><span>버튼으로 진행한 횟수</span><code>no_reply_count 등</code><span>항상 0 (옛 음성 지표)</span></div></div></div>
+
+  <div class="card"><button type="button" aria-expanded="false"><div><div class="tname">quick_check_results <span class="badge ins">넣기 전용</span></div><div class="tsub">1분 복용 점검 결과 한 건</div></div><svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="body"><p>고른 것(<code>items</code>)과 화면에 보인 판정(<code>findings</code>)을 JSON 그대로 저장한다. 판정 모양이 자주 바뀌고 "그때 화면에 뭐가 보였나"를 그대로 남기는 게 목적이라 jsonb를 쓴다. 임신·신장질환 같은 선택도 들어가므로 <b>건강 정보</b>로 취급한다(개인정보처리방침에 명시).</p>
+    <div class="cols"><code>items</code><span>{supplements, medicines, profile{age, conditions}, unmatched, engine …}</span><code>findings</code><span>판정 카드 배열. 서버 검수 문구 그대로</span></div></div></div>
+
+  <div class="card"><button type="button" aria-expanded="false"><div><div class="tname">drug_product <span class="badge ro">읽기 전용</span></div><div class="tsub">식약처 의약품 제품 목록 2만 2천 종</div></div><svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="body"><p>"리피토"처럼 상품명을 치면 여기서 찾는다. <code>atc_code</code>(WHO 약 분류 코드)가 있어 "이 약은 스타틴 계열"을 알 수 있다. 심평원 ATC 매핑 목록과 건수가 같다.</p>
+    <div class="cols"><code>product_code</code><span>PK</span><code>product_name</code><span>제품명</span><code>atc_code</code><span>예: C10AA05 = 아토르바스타틴</span><code>main_ingredient_code</code><span>주성분 코드</span></div></div></div>
+
+  <div class="card"><button type="button" aria-expanded="false"><div><div class="tname">dur_product_ingredient <span class="badge ro">읽기 전용</span></div><div class="tsub">제품 → 성분. 두 폴더를 잇는 다리</div></div><svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="body"><p>식약처 DUR 자료. 제품 코드 하나에 성분 여러 줄. <code>ingredient</code> 값이 interaction 쪽 <code>substance.code</code>와 같은 영문 코드라, 제품명에서 성분으로, 성분에서 규칙으로 건너갈 수 있다.</p>
+    <div class="cols"><code>product_code</code><span>→ drug_product</span><code>product_name</code><span>부분 검색 인덱스</span><code>ingredient</code><span>= interaction.substance.code</span></div></div></div>
+
+  <div class="card"><button type="button" aria-expanded="false"><div><div class="tname">dur_contraindication <span class="badge ro">읽기 전용</span></div><div class="tsub">식약처 병용금기 성분쌍</div></div><svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="body"><p>"성분 A와 B는 같이 못 쓴다"는 공식 고시 목록. 고시번호가 있어 심사·문의 때 근거로 쓴다. 항상 <code>ingredient_a &lt; ingredient_b</code>로 정렬해 저장해 같은 쌍이 두 번 들어가지 않게 한다.</p>
+    <div class="cols"><code>ingredient_a, ingredient_b</code><span>성분 코드 쌍</span><code>reason</code><span>사용자에게 보일 이유</span><code>notice_no</code><span>고시번호</span></div></div></div>
+</div>
+
+<!-- 4 -->
+<h2 id="flow">4. 앱 화면 ↔ 표</h2>
+<p>사용자가 앱에서 하는 행동이 어느 표에 무엇을 남기는지. 왼쪽이 화면, 오른쪽이 DB다.</p>
+<div class="flow">
+  <div class="row"><div class="screen">처음 실행 · 이름 입력<small>3/3 화면 또는 이름 화면</small></div><div class="ar">→</div><div class="db"><span class="chip">patients</span> 행 1개 insert. id를 휴대폰에 저장</div></div>
+  <div class="row"><div class="screen">1분 점검 · 영양제·약·조건 고르기<small>"내 복용 분석하기"</small></div><div class="ar">→</div><div class="db"><span class="chip pk">quick_check_v1</span> 서버 함수 호출. interaction을 읽는다</div></div>
+  <div class="row"><div class="screen">점검 결과 화면<small>확인 필요 N건</small></div><div class="ar">→</div><div class="db"><span class="chip">quick_check_results</span> insert (고른 것 + 나온 것)</div></div>
+  <div class="row"><div class="screen">알람 설정 · 시간 고르기<small>알람 저장하고 홈으로</small></div><div class="ar">→</div><div class="db"><span class="chip">schedules</span> insert. 약 × 시간마다 1행</div></div>
+  <div class="row"><div class="screen">알람이 울림<small>알람 화면 열림</small></div><div class="ar">→</div><div class="db"><span class="chip">alarm_events</span> insert (fired)</div></div>
+  <div class="row"><div class="screen">"지금 약 먹기" 누름<small>건너뛰기·미루기도 같음</small></div><div class="ar">→</div><div class="db"><span class="chip">intake_records</span> <b>upsert</b> + <span class="chip">alarm_events</span> insert</div></div>
+  <div class="row"><div class="screen">카카오 연결하기<small>더보기 화면</small></div><div class="ar">→</div><div class="db"><span class="chip pk">link_kakao</span> 서버 함수 → <span class="chip">patients.kakao_id</span> 채움</div></div>
+  <div class="row"><div class="screen">휴대폰 교체 · 카카오로 불러오기</div><div class="ar">→</div><div class="db"><span class="chip">patients</span>에서 kakao_id로 내 행 찾기</div></div>
+  <div class="row"><div class="screen">모든 데이터 삭제<small>개인정보 설정</small></div><div class="ar">→</div><div class="db"><span class="chip">patients</span> 행 delete → 일정·기록·로그가 <b>cascade</b>로 함께 삭제</div></div>
+</div>
+<div class="callout"><p><b>cascade</b>: FK에 "부모가 지워지면 자식도 지워라"를 걸어 두면 사용자 행 하나만 지워도 그 사람의 일정·기록이 전부 따라 지워진다. 개인정보 삭제가 한 번에 되는 이유다.</p></div>
+
+<!-- 5 -->
+<h2 id="inter">5. <span class="pill int">interaction</span> 약 지식 25개</h2>
+<p>표가 많지만 <b>층이 다섯 개</b>뿐이다. 층 단위로 보면 쉽다. 위에서 아래로, 사용자의 버튼이 성분이 되고, 성분이 규칙에 걸리고, 규칙에는 근거가 붙는다.</p>
+<div class="layers">
+  <div class="layer"><div class="num">①</div><div><div class="ttl">입력 해석층<small>앱 버튼을 성분으로 바꾼다</small></div><div class="chips"><span class="chip inter">intake_class</span><span class="chip inter">intake_class_resolution</span></div></div></div>
+  <div class="layer"><div class="num">②</div><div><div class="ttl">성분 사전<small>허브. 약 690종</small></div><div class="chips"><span class="chip inter">substance</span><span class="chip inter">substance_class</span><span class="chip inter">substance_class_member</span></div></div></div>
+  <div class="layer"><div class="num">③</div><div><div class="ttl">규칙층<small>"주의 조합" 하나가 한 행</small></div><div class="chips"><span class="chip inter">interaction_rule</span><span class="chip inter">interaction_rule_side</span><span class="chip inter">rule_condition</span><span class="chip inter">condition</span></div></div></div>
+  <div class="layer"><div class="num">④</div><div><div class="ttl">근거층<small>책·논문·고시</small></div><div class="chips"><span class="chip inter">evidence</span><span class="chip inter">rule_evidence</span><span class="chip inter">evidence_expression</span></div></div></div>
+  <div class="layer"><div class="num">⑤</div><div><div class="ttl">건기식층<small>제품 4만 6천 · 원료 62만 줄</small></div><div class="chips"><span class="chip inter">hff_product</span><span class="chip inter">hff_product_ingredient</span><span class="chip inter">ingredient_substance_map</span><span class="chip inter">hff_stage</span></div></div></div>
+</div>
+<p>그 외 <b>약리 속성층</b>(<code>effect_axis</code>, <code>substance_effect</code>, <code>substance_relation</code>, <code>substance_limit</code>)은 "출혈 축", "흡수 방해 4시간" 같은 성분의 성질을 담는다. 지금 앱 판정은 ③ 규칙층만 읽으니 다음 단계 재료라고 보면 된다. 검수·통계용 파생 표 5개(<code>hff_product_substance</code> 등)도 앱은 읽지 않는다.</p>
+
+<h3>핵심만 그린 그림</h3>
+<div class="diagram">
+<pre class="mermaid">
+erDiagram
+  intake_class ||--o{ intake_class_resolution : "버튼 하나가 성분·성분군 여럿"
+  intake_class_resolution }o--|| substance : ""
+  intake_class_resolution }o--|| substance_class : ""
+  substance ||--o{ substance_class_member : ""
+  substance_class ||--o{ substance_class_member : "성분 ↔ 성분군 N:M"
+  substance_class |o--o| substance : "generic_substance_id 계열 대표"
+  interaction_rule ||--|{ interaction_rule_side : "규칙 하나에 항 2개 이상"
+  interaction_rule ||--o{ rule_condition : ""
+  condition ||--o{ rule_condition : ""
+  interaction_rule ||--o{ rule_evidence : ""
+  evidence ||--o{ rule_evidence : ""
+  hff_product ||--o{ hff_product_ingredient : ""
+  ingredient_substance_map }o--|| substance : "원료명 → 성분"
+  intake_class {
+    bigint id PK
+    text label_ko "버튼 글자: 혈압약, 오메가3"
+    text side "rx 약 / supplement 영양제"
+  }
+  substance {
+    bigint id PK
+    text code "영문 코드 = DUR 성분 코드"
+    text name_ko
+    text kind "성분 / drug_class_generic"
+    text_array aliases "다른 표기들"
+  }
+  substance_class {
+    bigint id PK
+    text name_ko "스타틴, 항혈소판제"
+    bigint generic_substance_id FK
+  }
+  interaction_rule {
+    bigint id PK
+    text severity "contraindicated > caution > timing > monitor > info"
+    text evidence_level "established / theoretical / limited / conflicting"
+    text summary_ko "화면에 그대로 나오는 문장"
+    text what_to_do_ko
+    boolean is_active "약사 승인 후에만 true"
+  }
+  interaction_rule_side {
+    bigint rule_id FK
+    text target_type "substance / class / intake_class / axis / condition"
+    bigint target_id "FK 없음 - 다형 참조"
+    text role "object / precipitant / either"
+  }
+  condition {
+    bigint id PK
+    text name_ko "임신, 신장질환"
+  }
+  evidence {
+    bigint id PK
+    text citation "책·논문·고시"
+    text locator "쪽수"
+  }
+</pre>
+</div>
+
+<h3>층별로 말로 풀기</h3>
+<div class="cards">
+  <div class="card inter"><button type="button" aria-expanded="false"><div><div class="tname">① 입력 해석층</div><div class="tsub">intake_class → intake_class_resolution</div></div><svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="body"><p>사용자는 성분 이름을 모른다. "혈압약" 버튼을 누른다. <code>intake_class</code>가 그 버튼이고, <code>intake_class_resolution</code>이 "혈압약 = ARB·CCB·베타차단제·이뇨제 성분군"으로 풀어 준다. "오메가3" 버튼은 성분 하나로 바로 풀린다.</p><p><b>버튼은 UI 단위, 성분은 지식 단위</b>라서 둘을 분리했다. 버튼 글자를 바꿔도 지식은 그대로다. 앱 쪽에는 버튼 글자와 DB 이름이 어긋날 때를 위한 별칭표(<code>chipAliases.ts</code>)가 따로 있다.</p></div></div>
+
+  <div class="card inter"><button type="button" aria-expanded="false"><div><div class="tname">② 성분 사전 <span class="badge hub">허브</span></div><div class="tsub">substance · substance_class · substance_class_member</div></div><svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="body"><p><code>substance</code>가 이 폴더의 허브다. 약 690종. 영문 <code>code</code>가 식약처 DUR 성분 코드와 같아 <code>public.dur_product_ingredient</code>와 바로 이어진다. <code>aliases</code>에는 "메트포르민염산염"처럼 염 표기, 영문명, 흔한 표기가 들어 있어 직접 입력한 글자를 찾을 때 쓴다.</p><p><code>substance_class</code>는 "스타틴", "항혈소판제" 같은 성분군이고, <code>substance_class_member</code>가 성분과 성분군을 N:M으로 잇는다(아스피린은 항혈소판제이자 NSAID).</p>
+    <div class="callout signal" style="margin:12px 0 0"><p><b>계열 대표 가짜 성분</b> (<code>generic_substance_id</code>) — 약사가 쓴 규칙은 "스타틴 × 홍국"처럼 <b>계열</b>을 항으로 둔다. 그런데 사용자는 "아토르바스타틴"을 입력한다. 이 둘을 잇기 위해 <code>substance</code>에 <code>kind='drug_class_generic'</code>인 "스타틴" 가짜 성분 행을 두고, <code>substance_class.generic_substance_id</code>로 성분군에서 그 가짜 성분을 가리킨다. 서버 함수는 실제 성분 → 소속 성분군 → 가짜 성분까지 집합에 넣어 규칙과 맞춘다. 2026-10-03에 이 다리가 없어 아스피린·스타틴 규칙이 전혀 걸리지 않던 일이 있었다.</p></div></div></div>
+
+  <div class="card inter"><button type="button" aria-expanded="false"><div><div class="tname">③ 규칙층</div><div class="tsub">interaction_rule · interaction_rule_side · rule_condition · condition</div></div><svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="body"><p><code>interaction_rule</code> 한 행이 "주의 조합" 하나. 화면에 나오는 문장(<code>summary_ko</code>, <code>what_to_do_ko</code>)이 여기 그대로 들어 있다. 앱이 문장을 지어내지 않는다. <code>is_active</code>는 <b>약사가 <code>review_status='approved'</code>로 승인해야만 true가 될 수 있다</b>(DB CHECK 제약). 앱은 <code>is_active=true</code>만 읽는다.</p>
+    <p>규칙의 <b>항</b>(누구와 누구)은 <code>interaction_rule_side</code>에 한 줄씩. 항은 성분·성분군·버튼·조건 중 무엇이든 될 수 있어서 <code>target_type</code> + <code>target_id</code> 두 칸으로 "어느 표의 몇 번"을 적는다. 이것이 <b>다형 참조</b>다. 보통 FK는 한 표만 가리킬 수 있어 FK를 걸 수 없고, 그래서 성분을 지우면 고아 항이 남을 위험이 있다.</p>
+    <p><code>role</code>은 판정 방식이다. <b>object(필수) 항은 전부 있어야 하고, precipitant/either 항은 하나 이상 있으면 된다.</b> 예: "PPI × (마그네슘 또는 비타민B12)"에서 PPI는 object, 영양소들은 either. PPI와 마그네슘만 골라도 걸린다. 처음에는 전부 object여서 둘 다 골라야만 걸렸고, 10월에 고쳤다.</p>
+    <p><code>rule_condition</code>은 "이소플라본은 기본 info지만 유방암 조건이면 금기로 올림" 같은 조건 수정자다. 지금은 비어 있고(0행), 임신 같은 조건은 <code>interaction_rule_side</code>에 <code>target_type='condition'</code> 항으로 직접 넣어 쓴다.</p></div></div>
+
+  <div class="card inter"><button type="button" aria-expanded="false"><div><div class="tname">④ 근거층</div><div class="tsub">evidence · rule_evidence · evidence_expression</div></div><svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="body"><p><code>evidence</code>는 책 쪽수·논문·식약처 고시 같은 출처. <code>rule_evidence</code>가 규칙과 N:M으로 잇고, <code>relation='contradicts'</code>면 "근거가 엇갈린다"는 뜻. <code>evidence_expression</code>은 근거 수준(<code>established</code> 등)을 화면 문구("연구로 확인됨")로 바꾸는 작은 표다.</p><p>심사관이 "이 경고의 근거가 무엇이냐"고 물으면 이 층에서 답한다.</p></div></div>
+
+  <div class="card inter"><button type="button" aria-expanded="false"><div><div class="tname">⑤ 건기식층</div><div class="tsub">hff_product · hff_product_ingredient · ingredient_substance_map</div></div><svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="body"><p>식약처 건강기능식품 품목 4만 6천 종(<code>hff_product</code>)과 그 원료 62만 줄(<code>hff_product_ingredient</code>). 원료명은 "홍국쌀추출분말(모나콜린K 2%)"처럼 제품마다 표기가 달라서 <code>ingredient_substance_map</code>이 원료명 원문 → 성분으로 이어 준다(자동 89% + 약사 검수).</p><p>사용자가 "OO 홍국 캡슐"이라는 제품명을 치면 이 층을 거쳐 성분 "홍국"이 된다. <code>hff_stage</code>는 CSV를 적재할 때 쓴 임시 표고 서비스는 읽지 않는다.</p></div></div>
+</div>
+
+<!-- 6 -->
+<h2 id="rpc">6. 서버 함수 두 개</h2>
+<h4>quick_check_v1(p_names, p_age, p_conditions) — 1분 점검의 두뇌</h4>
+<p>앱은 interaction 폴더를 직접 못 열고 이 함수만 부른다(<b>security definer</b>: 함수가 자기 권한으로 읽어 결과만 돌려준다). 안에서 하는 일:</p>
+<ol>
+  <li>입력 이름 하나하나를 <b>버튼 → 성분(이름·별칭) → 건기식 제품명 → 의약품 제품명</b> 순서로 해석해 성분 집합을 만든다.</li>
+  <li>성분이 속한 성분군의 "계열 대표 가짜 성분"을 집합에 더한다.</li>
+  <li><code>is_active</code> 규칙마다 항을 대조한다. object 전부 + precipitant/either 하나 이상.</li>
+  <li>걸린 규칙의 문장·심각도·근거 수준과, <b>해석하지 못한 입력 이름</b>, <b>판정에 쓰지 못한 조건</b>(예: 신장질환은 규칙이 아직 없음)을 함께 돌려준다. 앱은 이 "못 본 것"을 화면 아래에 그대로 보여 준다.</li>
+</ol>
+<h4>link_kakao(p_patient_id, p_kakao_id) — 카카오 연결</h4>
+<p>앱 열쇠로는 <code>patients</code>를 update할 수 없게 막아 놨기 때문에, 이 함수가 대신 <code>kakao_id</code>를 채운다. 이미 다른 카카오와 연결돼 있으면(<code>already_linked</code>), 그 카카오가 다른 사람 행에 붙어 있으면(<code>taken</code>) 실패 이유를 돌려준다.</p>
+
+<!-- 7 -->
+<h2 id="rules">7. 절대 깨면 안 되는 약속 3개</h2>
+<div class="tablewrap"><table>
+<tr><th>#</th><th>약속</th><th>어디에 걸려 있나</th><th>깨지면</th></tr>
+<tr><td>1</td><td><code>schedules.repeat_days = []</code>는 <b>매일</b></td><td>앱 전체 + 알람 예약 로직</td><td>매일 먹는 약 알람이 하나도 안 울림</td></tr>
+<tr><td>2</td><td><code>intake_records</code>는 항상 <b>upsert</b> (<code>schedule_id, scheduled_for</code>)</td><td>DB UNIQUE 제약 + 앱 저장 코드</td><td>같은 회차 행이 둘 → 복약률 틀림, insert 자체가 에러</td></tr>
+<tr><td>3</td><td>알람 응답은 <b>화면 버튼으로만</b></td><td>앱 (DB와 무관)</td><td>음성 인식 흔적이 생기면 심사·방침 위반</td></tr>
+</table></div>
+
+<!-- 8 -->
+<h2 id="trace">8. 따라가 보기</h2>
+<p>"다음" 버튼을 누르면 단계가 하나씩 켜지고, 그 단계에서 쓰는 표가 위에 불이 켜진다.</p>
+
+<div class="trace" data-trace>
+  <div class="head"><h4>① "아스피린 + 오메가3"는 어떻게 결과가 되나</h4><div class="ctl"><button type="button" class="ghost" data-prev disabled>이전</button><button type="button" data-next>다음</button></div></div>
+  <div class="map">
+    <span class="node" data-n="app">앱 화면</span><span class="node" data-n="rpc">quick_check_v1</span><span class="node" data-n="intake_class">intake_class</span><span class="node" data-n="resolution">intake_class_resolution</span><span class="node" data-n="substance">substance</span><span class="node" data-n="member">substance_class_member</span><span class="node" data-n="class">substance_class</span><span class="node" data-n="side">interaction_rule_side</span><span class="node" data-n="rule">interaction_rule</span><span class="node" data-n="qcr">quick_check_results</span>
+  </div>
+  <ol>
+    <li data-lit="app">사용자: 1/3에서 <b>오메가3</b> 버튼, 2/3에서 직접 입력 <b>아스피린</b>, 3/3에서 60대 이상·해당 없음.</li>
+    <li data-lit="app rpc">앱이 서버 함수를 부른다: <code>quick_check_v1(['오메가3','아스피린'], '60대 이상', [])</code>.</li>
+    <li data-lit="rpc intake_class resolution substance">"오메가3"는 <b>버튼</b>이라 <code>intake_class</code> → <code>intake_class_resolution</code> → 성분 <code>omega3</code>. "아스피린"은 <code>substance.name_ko</code>에서 바로 <code>aspirin</code>.</li>
+    <li data-lit="rpc substance member class">aspirin은 <code>substance_class_member</code>에서 <b>항혈소판제</b>, <b>항혈전제</b> 성분군 소속. 각 성분군의 <code>generic_substance_id</code>(가짜 성분 "항혈소판제", "항혈전제")를 집합에 추가.</li>
+    <li data-lit="rpc side rule">is_active 규칙을 돌며 <code>interaction_rule_side</code>와 대조. "항혈소판제 × 오메가3(출혈 위험)"와 "항혈전제 × 오메가3" 두 규칙의 항이 모두 채워짐.</li>
+    <li data-lit="rpc app">반환: findings 2건(문장·심각도 caution·근거 수준), 해석 못 한 이름 0, 못 본 조건 0.</li>
+    <li data-lit="app qcr">앱: 결과 화면 "확인 필요 2건" → <code>quick_check_results</code>에 items(고른 것)·findings(나온 것) insert.</li>
+  </ol>
+  <p class="hint" style="margin:12px 0 0">같은 방법으로 "암로디핀 + 자몽"을 따라가 보라. 암로디핀은 CCB 성분군 → 가짜 성분 "CCB" → "CCB × 자몽" 1건. 스타틴 규칙은 걸리지 않아야 한다(한때 복합제 제품명 때문에 암로디핀이 스타틴 성분군에 잘못 들어간 적이 있었다).</p>
+</div>
+
+<div class="trace" data-trace>
+  <div class="head"><h4>② 아침 8시 알람에 "지금 약 먹기"</h4><div class="ctl"><button type="button" class="ghost" data-prev disabled>이전</button><button type="button" data-next>다음</button></div></div>
+  <div class="map">
+    <span class="node" data-n="sch">schedules</span><span class="node" data-n="alarm">알람 화면</span><span class="node" data-n="ev">alarm_events</span><span class="node" data-n="ir">intake_records</span><span class="node" data-n="rec">기록 화면</span>
+  </div>
+  <ol>
+    <li data-lit="sch"><code>schedules</code> 행: 혈압약, hour 8, minute 0, repeat_days <code>[]</code>(매일).</li>
+    <li data-lit="sch alarm ev">08:00 알람 울림 → 알람 화면 열림 → <code>alarm_events</code> insert (<code>fired</code>, scheduled_for = 오늘 08:00).</li>
+    <li data-lit="alarm ir ev">"지금 약 먹기" → <code>intake_records</code> <b>upsert</b> {schedule_id, scheduled_for 오늘 08:00, status completed} + <code>alarm_events</code> insert (<code>completed</code>).</li>
+    <li data-lit="alarm ir ev">8초 안에 "잘못 눌렀어요" → <code>intake_records</code>의 그 행을 지우거나 이전 상태로 되돌림 + <code>alarm_events</code> insert (<code>undone</code>).</li>
+    <li data-lit="alarm ir">알림을 다시 탭해 화면이 또 열려도, 같은 (schedule_id, 오늘 08:00)이라 행이 늘지 않는다.</li>
+    <li data-lit="ir rec">기록 화면의 "약 챙겨 드신 비율" = 이 달 <code>intake_records</code>에서 completed 수 ÷ 예정 회차 수.</li>
+  </ol>
+</div>
+
+<!-- 9 -->
+<h2 id="gaps">9. 지금 알려진 빈틈</h2>
+<ul>
+  <li><code>interaction_rule_side.target_id</code>에 FK가 없다(다형 참조). 성분을 지울 때 고아 항이 생길 수 있어 점검 쿼리가 필요하다(저장소에 아직 없음).</li>
+  <li><code>intake_class</code>에 <b>여드름약·알레르기약·통증소염제</b> 버튼은 있지만 규칙이 없거나 해석이 비어 있다. 앱은 이걸 "점검하지 못한 항목"으로 보여 준다.</li>
+  <li>조건 중 <b>신장질환·간질환</b>은 규칙에 아직 없다. 역시 "확인하지 못한 정보"로 노출.</li>
+  <li><code>patients</code>에 쓰지 않는 칸(<code>gender</code>, <code>birth_date</code>, <code>patient_code</code>, <code>phone</code>, <code>region</code>)이 남아 있다. 과거 행 보존 때문에 두었고, 앱은 쓰지 않는다.</li>
+  <li>interaction의 파생 표 5개는 저장소에 만든 SQL(DDL)이 없다. DB에서 직접 만든 것이라 정리가 필요하다.</li>
+  <li><code>voice_guide_events</code>라는 이름은 옛 이름이다. 음성은 없고 "알람 설정 안내를 마쳤나"만 센다.</li>
+</ul>
+
+<!-- 10 -->
+<h2 id="where">10. 어디에 무엇이 있나</h2>
+<div class="tablewrap"><table>
+<tr><th>보고 싶은 것</th><th>파일</th></tr>
+<tr><td>모든 컬럼·타입 (정식 명세)</td><td><code>docs/data-spec.md</code></td></tr>
+<tr><td>표 만드는 SQL (public)</td><td><code>care-app/supabase/schema.sql</code>, <code>migrate-*.sql</code></td></tr>
+<tr><td>서버 함수 quick_check_v1 본문</td><td><code>care-app/supabase/migrate-quick-check-rpc.sql</code></td></tr>
+<tr><td>카카오 연결 함수</td><td><code>care-app/supabase/migrate-kakao-link.sql</code></td></tr>
+<tr><td>앱 열쇠의 권한 (RLS)</td><td><code>care-app/supabase/migrate-rls-tier1.sql</code></td></tr>
+<tr><td>성분 사전 확장·별칭·계열 다리</td><td><code>migrate-substance-expand.sql</code>, <code>migrate-substance-aliases.sql</code>, <code>migrate-class-bridge.sql</code>, <code>migrate-atc-class-members.sql</code></td></tr>
+<tr><td>앱 버튼 ↔ DB 이름 대응</td><td><code>care-app/src/lib/chipAliases.ts</code>, <code>conditionAliases.ts</code></td></tr>
+<tr><td>서버와 앱 라벨이 맞는지 자동 점검</td><td><code>cd care-app &amp;&amp; npm run check:server</code></td></tr>
+<tr><td>팀원 QA 케이스 (어떤 조합이 걸려야 하나)</td><td><code>docs/qa-quick-check-cases.md</code></td></tr>
+<tr><td>서버 쪽 남은 일</td><td><code>docs/quick-check-server-gap.md</code></td></tr>
+</table></div>
+
+<!-- 11 -->
+<h2 id="quiz">11. 연습 문제</h2>
+<p class="hint">먼저 스스로 답하고, 문제를 눌러 답을 확인하라. AI에게 채점을 받아도 좋다.</p>
+<div class="quiz">
+  <div class="q"><button type="button" aria-expanded="false"><span class="n">1</span><span class="qt">사용자 한 명이 약 3개를 아침·저녁에 먹는다. <code>schedules</code>에 행이 몇 개 생기나?</span></button><div class="ans"><p>6개. 행은 "약 × 시간"이다. 3 × 2 = 6.</p></div></div>
+  <div class="q"><button type="button" aria-expanded="false"><span class="n">2</span><span class="qt"><code>intake_records</code>에 <code>(schedule_id, scheduled_for)</code> UNIQUE가 없다면 어떤 일이 생길 수 있나?</span></button><div class="ans"><p>① 알림을 두 번 탭하거나 재알림이 와서 같은 회차에 행이 두 개 생기면 "복약 1회"가 2회로 세어져 복약률이 100%를 넘을 수 있다. ② 되돌리기가 어느 행을 되돌려야 할지 모호해진다. UNIQUE + upsert면 같은 회차는 항상 한 행만 덮어쓴다.</p></div></div>
+  <div class="q"><button type="button" aria-expanded="false"><span class="n">3</span><span class="qt"><code>repeat_days</code>가 <code>[1,3,5]</code>인 일정은 언제 울리나? <code>[]</code>이면?</span></button><div class="ans"><p>월·수·금(0=일 … 6=토). 빈 배열은 "매일"이라는 약속이다. 요일 7개를 다 고르면 앱이 <code>[]</code>로 바꿔 저장한다.</p></div></div>
+  <div class="q"><button type="button" aria-expanded="false"><span class="n">4</span><span class="qt">"혈압약" 버튼을 눌렀을 때 거치는 표를 순서대로 적어 보라.</span></button><div class="ans"><p><code>intake_class</code>(버튼) → <code>intake_class_resolution</code>(버튼 → 성분군 여러 개) → <code>substance_class</code>(ARB, CCB, 베타차단제, 이뇨제) → 각 성분군의 <code>generic_substance_id</code>가 가리키는 가짜 성분이 사용자 집합에 들어가 규칙과 맞춰진다.</p></div></div>
+  <div class="q"><button type="button" aria-expanded="false"><span class="n">5</span><span class="qt"><code>interaction_rule_side</code>에 왜 FK를 걸 수 없나? 대신 무엇으로 안전을 지키나?</span></button><div class="ans"><p>항이 성분·성분군·버튼·조건 중 어느 표든 가리킬 수 있는 다형 참조라서, "이 칸은 저 표의 PK"라고 한 표에 못 박을 수 없다. 대신 <code>target_type</code>으로 어느 표인지 적고, 고아 항이 없는지 점검 쿼리로 주기적으로 확인해야 한다.</p></div></div>
+  <div class="q"><button type="button" aria-expanded="false"><span class="n">6</span><span class="qt">규칙 "PPI × 마그네슘 / 비타민B12"에서 role을 어떻게 줘야 "PPI + 마그네슘"만 골라도 걸리나?</span></button><div class="ans"><p>PPI는 <code>object</code>(필수), 마그네슘과 비타민B12는 <code>either</code>(둘 중 하나). object는 전부, either는 하나 이상 있으면 걸린다. 셋 다 object면 세 가지를 모두 골라야만 걸린다.</p></div></div>
+  <div class="q"><button type="button" aria-expanded="false"><span class="n">7</span><span class="qt">아토르바스타틴을 입력했을 때 "스타틴 × 홍국" 규칙이 걸리기 위해 필요한 다리는?</span></button><div class="ans"><p>아토르바스타틴 → <code>substance_class_member</code>로 "스타틴" 성분군 → <code>substance_class.generic_substance_id</code>가 가리키는 가짜 성분 "스타틴"(<code>kind='drug_class_generic'</code>). 규칙의 항은 이 가짜 성분을 가리키고 있다.</p></div></div>
+  <div class="q"><button type="button" aria-expanded="false"><span class="n">8</span><span class="qt">사용자가 "모든 데이터 삭제"를 누르면 DB에서 무슨 일이 일어나나?</span></button><div class="ans"><p>앱이 <code>patients</code>의 내 행 하나를 delete한다. <code>schedules</code>, <code>intake_records</code>, <code>alarm_events</code>, <code>quick_check_results</code>의 FK에 <b>on delete cascade</b>가 걸려 있어 그 사람의 자식 행이 전부 자동으로 지워진다. 복구는 불가능하다.</p></div></div>
+  <div class="q"><button type="button" aria-expanded="false"><span class="n">9</span><span class="qt">앱이 <code>alarm_events</code>를 읽을 수 없는 이유와, 그래도 앱 동작에 문제가 없는 이유는?</span></button><div class="ans"><p>RLS가 anon 키에 insert만 허용한다. 공개 열쇠로 다른 사람의 지표를 읽거나 지우지 못하게 하려는 것이다. 앱은 이 표를 통계용으로 넣기만 하고 화면에 보여 주지 않으므로 읽기가 막혀도 상관없다. 기록 실패도 조용히 넘긴다(지표가 복약 흐름을 막으면 안 됨).</p></div></div>
+  <div class="q"><button type="button" aria-expanded="false"><span class="n">10</span><span class="qt">심사관이 "이 경고의 근거가 무엇이냐"고 물으면 어느 표에서 답을 찾나?</span></button><div class="ans"><p><code>interaction_rule</code> → <code>rule_evidence</code> → <code>evidence</code>(출처·쪽수·고시번호). 근거 수준 문구는 <code>evidence_expression</code>. 식약처 병용금기는 <code>public.dur_contraindication.notice_no</code>에 고시번호가 있다.</p></div></div>
+</div>
+
+<!-- 12 -->
+<h2 id="gloss">12. 낱말 사전</h2>
+<div class="gloss">
+  <div><b>anon 키</b>앱에 들어 있는 공개 열쇠. 누구나 가질 수 있어 RLS로 할 수 있는 일을 제한한다.</div>
+  <div><b>ATC 코드</b>WHO의 약 분류 코드. B01AC는 항혈소판제. 심평원 매핑으로 drug_product에 들어 있다.</div>
+  <div><b>cascade</b>부모 행을 지우면 자식 행도 함께 지우는 FK 옵션.</div>
+  <div><b>DUR</b>식약처 의약품 안전사용 서비스. 병용금기·성분 자료의 출처.</div>
+  <div><b>HFF</b>건강기능식품(Health Functional Food). hff_* 표.</div>
+  <div><b>security definer</b>함수가 호출자가 아니라 함수 소유자 권한으로 실행되는 옵션. 앱이 못 읽는 폴더를 함수가 대신 읽어 주는 방식.</div>
+  <div><b>upsert</b>insert + update. 충돌 기준 컬럼(onConflict)을 정해 두면 같은 키가 있을 때 덮어쓴다.</div>
+  <div><b>다형 참조</b>한 칸이 여러 표 중 하나를 가리키는 방식. 유연하지만 FK 보호가 없다.</div>
+  <div><b>파생 표</b>다른 표를 계산해 미리 풀어 둔 표. 원본이 바뀌면 다시 만들어야 한다.</div>
+  <div><b>jsonb</b>JSON을 통째로 담는 Postgres 타입. 안의 키로 검색도 된다.</div>
+</div>
+
+<footer>모두의 복약 · DB 공부방 · 2026-10-05 · 정식 명세는 <code>docs/data-spec.md</code>, 같은 내용의 글 버전은 <code>docs/erd-study-guide.md</code></footer>
+</main>
+</div>
+
+<script>
+(function(){
+  // mermaid: cdnjs 먼저, 안 되면 jsdelivr·unpkg 순으로 시도. 전부 실패하면 글자 그대로 보여 준다.
+  var dark = document.documentElement.getAttribute('data-theme') === 'dark' ||
+    (document.documentElement.getAttribute('data-theme') !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  var srcs = ['https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.6.0/mermaid.min.js',
+              'https://cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.min.js',
+              'https://unpkg.com/mermaid@11.6.0/dist/mermaid.min.js'];
+  function showText(){ document.querySelectorAll('pre.mermaid').forEach(function(p){ p.style.whiteSpace='pre'; p.style.fontFamily='var(--mono)'; p.style.fontSize='13px'; p.style.justifyContent='flex-start'; p.insertAdjacentHTML('beforebegin','<p class="caption">그림 라이브러리를 불러오지 못해 글자로 보인다(인터넷 연결 필요). 관계 표기는 글자만으로도 읽을 수 있다.</p>'); }); }
+  function loadMermaid(k){
+    if (k >= srcs.length) { showText(); return; }
+    var sc = document.createElement('script'); sc.src = srcs[k];
+    sc.onload = function(){
+      try {
+        mermaid.initialize({ startOnLoad: false, theme: dark ? 'dark' : 'neutral', securityLevel: 'loose', er: { useMaxWidth: false, fontSize: 14, entityPadding: 12 },
+          themeVariables: dark ? { fontFamily: 'Noto Sans KR, sans-serif', primaryColor: '#1E3A31', primaryTextColor: '#E6ECEA', primaryBorderColor: '#5FBF9A', lineColor: '#7F8E93', tertiaryColor: '#1A2427' }
+                               : { fontFamily: 'Noto Sans KR, sans-serif', primaryColor: '#E2F1EA', primaryTextColor: '#1B2A2F', primaryBorderColor: '#1F7A5C', lineColor: '#44565C', tertiaryColor: '#F3F6F4' } });
+        mermaid.run({ querySelector: 'pre.mermaid' }).catch(showText);
+      } catch (e) { showText(); }
+    };
+    sc.onerror = function(){ loadMermaid(k + 1); };
+    document.head.appendChild(sc);
+  }
+  loadMermaid(0);
+
+  // 카드·퀴즈 펼치기
+  document.querySelectorAll('.card > button, .q > button').forEach(function(b){
+    b.addEventListener('click', function(){
+      var box = b.parentElement, open = box.classList.toggle('open');
+      b.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  });
+
+  // 따라가 보기
+  document.querySelectorAll('[data-trace]').forEach(function(t){
+    var steps = Array.prototype.slice.call(t.querySelectorAll('ol > li'));
+    var nodes = Array.prototype.slice.call(t.querySelectorAll('.node'));
+    var prev = t.querySelector('[data-prev]'), next = t.querySelector('[data-next]');
+    var i = -1;
+    function render(){
+      steps.forEach(function(li, k){ li.classList.toggle('lit', k === i); li.classList.toggle('was', k < i); });
+      var litSet = i >= 0 ? steps[i].getAttribute('data-lit').split(' ') : [];
+      var wasSet = {};
+      for (var k = 0; k < i; k++) steps[k].getAttribute('data-lit').split(' ').forEach(function(n){ wasSet[n] = 1; });
+      nodes.forEach(function(n){ var id = n.getAttribute('data-n'); n.classList.toggle('lit', litSet.indexOf(id) >= 0); n.classList.toggle('was', litSet.indexOf(id) < 0 && !!wasSet[id]); });
+      prev.disabled = i < 0;
+      next.textContent = i >= steps.length - 1 ? '처음부터' : (i < 0 ? '시작' : '다음');
+    }
+    next.addEventListener('click', function(){ i = i >= steps.length - 1 ? -1 : i + 1; render(); });
+    prev.addEventListener('click', function(){ if (i >= 0) { i--; render(); } });
+    render();
+  });
+
+  // 목차 현재 위치
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+  var heads = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  function onScroll(){
+    var y = window.scrollY + 120, cur = 0;
+    heads.forEach(function(h, k){ if (h && h.offsetTop <= y) cur = k; });
+    links.forEach(function(a, k){ a.classList.toggle('on', k === cur); });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+})();
+</script>
+</body>
+</html>
