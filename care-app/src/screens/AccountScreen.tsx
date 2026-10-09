@@ -2,7 +2,7 @@ import React, { useCallback, useState } from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LogOut, Trash2 } from "lucide-react-native";
+import { LogOut } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { getPatientName } from "../lib/storage";
 import { currentUser, loginProviderLabel } from "../lib/auth";
@@ -90,23 +90,19 @@ export function AccountScreen() {
         <View style={styles.group}>
           <Pressable accessibilityRole="button" onPress={onLogout} disabled={busy !== null}
             style={({ pressed }) => [styles.rowItem, pressed && { opacity: 0.9 }]}>
-            <View style={[styles.iconBox, { backgroundColor: colors.primarySoft }]}>
-              <LogOut size={22} color={colors.primaryBlue} />
+            <View style={[styles.iconBox, { backgroundColor: colors.dangerSoft }]}>
+              <LogOut size={22} color={colors.dangerRed} />
             </View>
-            <Text style={styles.rowLabel}>{busy === "logout" ? "로그아웃하는 중…" : "로그아웃"}</Text>
+            <Text style={[styles.rowLabel, { color: colors.dangerRed }]}>{busy === "logout" ? "로그아웃하는 중…" : "로그아웃"}</Text>
           </Pressable>
         </View>
 
-        <View style={styles.group}>
-          <Pressable accessibilityRole="button" onPress={onDelete} disabled={busy !== null}
-            style={({ pressed }) => [styles.rowItem, pressed && { opacity: 0.9 }]}>
-            <View style={[styles.iconBox, { backgroundColor: colors.dangerSoft }]}>
-              <Trash2 size={22} color={colors.dangerRed} />
-            </View>
-            <Text style={[styles.rowLabel, { color: colors.dangerRed }]}>{busy === "delete" ? "삭제하는 중…" : "계정 삭제"}</Text>
-          </Pressable>
-        </View>
-        <Text style={styles.note}>계정을 삭제하면 등록한 약, 알람, 복약 기록, 점검 결과가 모두 지워지고 되돌릴 수 없어요.</Text>
+        {/* 계정 삭제 — 눈에 덜 띄는 회색 글자 링크로(회의 2026-10-09). 실수로 누르지 않게 하되 찾을 수는 있어야 한다
+            (App Store 5.1.1(v)). 무엇이 지워지는지는 확인창이 알린다. 글자는 작아도 누르는 자리는 손가락 크기로. */}
+        <Pressable accessibilityRole="button" accessibilityLabel="계정 삭제" onPress={onDelete} disabled={busy !== null}
+          hitSlop={8} style={({ pressed }) => [styles.deleteLink, pressed && { opacity: 0.6 }]}>
+          <Text style={styles.deleteText}>{busy === "delete" ? "삭제하는 중…" : "계정 삭제"}</Text>
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -140,5 +136,6 @@ const styles = StyleSheet.create({
   rowItem: { flexDirection: "row", alignItems: "center", gap: spacing.md, minHeight: 72, paddingHorizontal: spacing.md, paddingVertical: 14 },
   iconBox: { width: 48, height: 48, borderRadius: 17, alignItems: "center", justifyContent: "center" },
   rowLabel: { flex: 1, fontSize: 19, fontWeight: "700", color: colors.text },
-  note: { fontSize: fontSizes.body, lineHeight: 26, color: colors.textSecondary, paddingHorizontal: spacing.xs },
+  deleteLink: { alignSelf: "center", minHeight: 48, justifyContent: "center", paddingHorizontal: spacing.md, marginTop: spacing.sm },
+  deleteText: { fontSize: 16, color: colors.textSecondary, textDecorationLine: "underline" },
 });
