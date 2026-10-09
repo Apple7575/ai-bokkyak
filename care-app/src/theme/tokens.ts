@@ -40,6 +40,9 @@ export const colors = {
   dangerMark: "#F7ADA5",
   kakao: "#FEE500",
   kakaoInk: "#3C1E1E",
+  // 카카오 로그인 버튼 공식 규격(디자인 가이드): 심볼 검정, 글자 검정 85%.
+  kakaoSymbol: "#000000",
+  kakaoLabel: "rgba(0,0,0,0.85)",
   kakaoShadow: "#B9A100",
 } as const;
 

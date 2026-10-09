@@ -5,9 +5,13 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RootStackParamList, TabParamList } from "./types";
-import { getPatientId, getOnboarded } from "../lib/storage";
+import { getOnboarded } from "../lib/storage";
+import { resolveSignedIn } from "./startup";
 import { IntroScreen } from "../screens/IntroScreen";
-import { NameEntryScreen } from "../screens/NameEntryScreen";
+import { LoginScreen } from "../screens/LoginScreen";
+import { ConsentScreen } from "../screens/ConsentScreen";
+import { AccountScreen } from "../screens/AccountScreen";
+import { QuickCheckHistoryScreen } from "../screens/QuickCheckHistoryScreen";
 import { AlarmPromptScreen } from "../screens/AlarmPromptScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { RecordScreen } from "../screens/RecordScreen";
@@ -64,21 +68,23 @@ function PatientTabs() {
 }
 
 export function RootNavigator() {
-  const [init, setInit] = useState<{ signedUp: boolean; onboarded: boolean } | "loading">("loading");
+  const [init, setInit] = useState<{ signedIn: boolean; onboarded: boolean } | "loading">("loading");
   const [alarmSid, setAlarmSid] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
-      const signedUp = (await getPatientId()) !== null;
+      // 옛 빌드 정리(clearLocalSession)가 onboarded 표시를 다시 세우므로 정리 전에 읽는다.
       const onboarded = await getOnboarded();
+      const signedIn = await resolveSignedIn().catch(() => false);
       try {
         const initial = await notifee.getInitialNotification();
         const sid = initial?.notification?.data?.scheduleId as string | undefined;
-        if (sid) setAlarmSid(sid);
+        // 로그아웃 상태면 알람 화면을 열지 않는다 — 기록할 환자가 없다.
+        if (sid && signedIn) setAlarmSid(sid);
       } catch {
         // 알림으로 시작하지 않은 일반 진입은 그대로 진행한다.
       }
-      setInit({ signedUp, onboarded });
+      setInit({ signedIn, onboarded });
     })();
   }, []);
 
@@ -86,21 +92,18 @@ export function RootNavigator() {
     return <View style={styles.loading}><ActivityIndicator size="large" color={colors.primaryBlue} /></View>;
   }
 
-  const initialRouteName: keyof RootStackParamList = alarmSid
-    ? "Alarm"
-    : !init.signedUp && !init.onboarded
-      ? "Intro"
-      : !init.signedUp
-        ? "NameEntry"
-        : "Tabs";
+  // 로그인 전이면 인트로 — 소개를 이미 본 사람은 시작 장(1분 점검 · 건너뛰기 · 로그인)부터.
+  const initialRouteName: keyof RootStackParamList = alarmSid ? "Alarm" : init.signedIn ? "Tabs" : "Intro";
+  const introParams = !init.signedIn && init.onboarded ? { slide: "cta" as const } : undefined;
 
   return (
     <Stack.Navigator
       initialRouteName={initialRouteName}
       screenOptions={{ headerShown: false, contentStyle: styles.stack, animation: "slide_from_right" }}
     >
-      <Stack.Screen name="Intro" component={IntroScreen} />
-      <Stack.Screen name="NameEntry" component={NameEntryScreen} />
+      <Stack.Screen name="Intro" component={IntroScreen} initialParams={introParams} />
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Consent" component={ConsentScreen} />
       <Stack.Screen name="AlarmPrompt" component={AlarmPromptScreen} />
       <Stack.Screen name="Tabs" component={PatientTabs} />
       <Stack.Screen name="VoiceGuide" component={VoiceGuideScreen} />
@@ -115,6 +118,8 @@ export function RootNavigator() {
       <Stack.Screen name="Checkup" component={CheckupScreen} />
       <Stack.Screen name="AlarmSound" component={AlarmSoundScreen} />
       <Stack.Screen name="Privacy" component={PrivacyScreen} />
+      <Stack.Screen name="Account" component={AccountScreen} />
+      <Stack.Screen name="QuickCheckHistory" component={QuickCheckHistoryScreen} />
       <Stack.Screen name="MedicineDetail" component={MedicineDetailScreen} />
       <Stack.Screen name="Interaction" component={InteractionScreen} />
       <Stack.Screen name="QuickCheckInput" component={QuickCheckInputScreen} />

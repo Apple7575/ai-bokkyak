@@ -6,7 +6,17 @@
 ## 무엇을 만드는가
 
 - **앱:** React Native + Expo (managed), TypeScript. 코드는 `care-app/`에 있다.
-- **백엔드:** Supabase Postgres, **인증 없음**. 쓰는 사람은 본인(환자) 한 종류다.
+- **백엔드:** Supabase Postgres + **Supabase Auth 간편 로그인**(안드로이드 카카오, iOS 카카오+Apple —
+  이메일·전화·비밀번호 없음, 회의 2026-10-08). 1분 점검은 로그인 없이 되고, 결과 저장·알람부터
+  로그인한다(처음이면 동의 화면). 로그인 계정 하나에 환자 행 하나(`patients.user_id`).
+  로그인은 `lib/auth.ts`, 내 환자·로그아웃·계정 삭제는 `lib/account.ts`에 가둔다.
+  **카카오는 Supabase의 카카오 로그인(provider kakao)을 쓰지 않는다** — 그 기능은 `account_email`을
+  늘 요청하는데 우리 카카오 앱은 비즈 앱이 아니라 KOE205로 막힌다(2026-10-09, 카카오 콘솔·Supabase 설정은
+  지금 바꾸지 않기로 함). 앱은 `profile_nickname`만 요청하는 직접 연동으로 인가 코드를 받고, 엣지 함수
+  `?op=kakao-session`이 그 코드를 확인해 Supabase 계정(가짜 이메일 `kakao-<회원번호>@kakao.modubokyak.com`,
+  메일은 보내지 않음, `app_metadata.login = "kakao"`)과 세션을 만들어 준다. 옛 빌드용 `?op=kakao-login`은 그대로 둔다.
+  Apple은 Supabase `signInWithIdToken`을 그대로 쓴다.
+  쓰는 사람은 본인(환자) 한 종류다.
   **보호자 기능은 없다** — 6자리 `patient_code`로 보호자가 읽기 전용 열람하는
   기능은 회의 결정으로 제거됐다. 되살리자는 제안을 하지 말 것. 코드에도 흔적이
   없어야 한다(`patient_code`, 역할 구분, 코드 입력 화면).
@@ -72,6 +82,8 @@ npm run check:server  # 네트워크 필요: 라이브 quick_check_v1(읽기 전
 ## 보안 한계 (의도적, MVP)
 
 - API 키가 클라이언트(`app.json` extra)에 있다 — 데모용. 운영 시 서버 뒤로 이동.
-- 인증 없음, 코드 기반 연결 — 운영 시 Supabase Auth + RLS로 강화.
+- RLS는 두 단계다: `supabase/migrate-auth-1-additive.sql`(로그인 사용자 본인 행 정책 추가, 옛 빌드 유지)
+  → 새 빌드 출시일에 `migrate-auth-2-lockdown.sql`(옛 anon 정책 제거). 2단계 전까지는 옛 anon 정책이
+  열려 있으므로 앱은 `user_id`·`patient_id` 조건을 직접 건다.
 이 한계는 알고 수용한 것이니 리뷰에서 "키를 노출했다"는 식의 지적은 불필요.
 대신 **위 3개 설계 결정 위반·정확성 버그**에 집중하라.

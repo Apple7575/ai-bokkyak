@@ -20,7 +20,8 @@ export function ScreenHeader({ title, showBack = true }: { title: string; showBa
       ) : (
         <View style={styles.side} />
       )}
-      <Text style={styles.title} numberOfLines={1}>{title}</Text>
+      {/* 긴 제목(예: 「내 복용분석 결과 보기」)이 좁은 휴대폰에서 「…」로 잘리지 않게 글자를 조금 줄여 맞춘다 */}
+      <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{title}</Text>
       <View style={styles.side} />
     </View>
   );

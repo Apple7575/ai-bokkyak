@@ -3,12 +3,11 @@ import { View, Text, ScrollView, StyleSheet, Pressable, Image, Alert } from "rea
 import notifee from "@notifee/react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { User, Clock, Pencil, ClipboardCheck, ChevronRight, AlertTriangle, X } from "lucide-react-native";
+import { User, Clock, Pencil, ClipboardCheck, ChevronRight, AlertTriangle } from "lucide-react-native";
 import { MedicineMark } from "../components/MedicineMark";
 import { BigButton } from "../components/BigButton";
 import { supabase, Schedule, IntakeRecord } from "../lib/supabase";
-import { getPatientId, getPatientName, getKakaoBannerDismissed, setKakaoBannerDismissed } from "../lib/storage";
-import { isKakaoLinked, linkKakao } from "../lib/kakaoAccount";
+import { getPatientId, getPatientName } from "../lib/storage";
 import { commitQuickCheckDraft } from "../lib/quickCheckDraft";
 import { nextNotificationTime, todaySlot } from "../lib/schedule";
 import { relativeDay } from "../lib/repeatDays";
@@ -70,37 +69,9 @@ export function HomeScreen() {
   // 일정 조회 실패(인터넷 끊김 등). 빈 화면("오늘 드실 약이 없어요")으로 보이면 안 된다.
   const [loadError, setLoadError] = useState(false);
   const [warnCount, setWarnCount] = useState(0);
-  // 인사말에 쓰는 이름 — 3/3·NameEntry에서 저장한 것. 없으면 이름 없이 인사한다.
+  // 인사말에 쓰는 이름 — 처음 로그인 때 동의 화면에서 받은 것. 없으면 이름 없이 인사한다.
+  // (옛 「카카오 연결」 배너는 회의 2026-10-08에 없앴다 — 로그인이 그 일을 대신한다.)
   const [name, setName] = useState<string | null>(null);
-  // 카카오 "연결" 배너 — 회의 2026-09-10: 카카오는 기기 이전용 연결. 미연결(false)이고 약이 하나라도
-  // 있고 ✕로 닫지 않았을 때만. null(조회 실패)이면 띄우지 않는다(더보기에서 연결할 수 있다).
-  const [linked, setLinked] = useState<boolean | null>(null);
-  const [bannerDismissed, setBannerDismissed] = useState(true);
-  const [linking, setLinking] = useState(false);
-
-  const onLink = useCallback(async () => {
-    if (linking) return;
-    const pid = await getPatientId();
-    if (!pid) return;
-    setLinking(true);
-    try {
-      const r = await linkKakao(pid);
-      if (r.ok) {
-        setLinked(true);
-        Alert.alert("연결됐어요", "휴대폰을 바꿔도 이 정보를 그대로 쓸 수 있어요.");
-      } else if (!r.canceled) {
-        Alert.alert("카카오 연결하기", r.message);
-      }
-    } finally {
-      setLinking(false);
-    }
-  }, [linking]);
-
-  const dismissBanner = () => {
-    // 즉시 숨기고 저장은 뒤에서 — 버튼이 저장을 기다리지 않는다.
-    setBannerDismissed(true);
-    void setKakaoBannerDismissed();
-  };
 
   // 점검 직후 결과 저장에 실패해 기기에 남은 초안이 있으면 홈이 뜰 때마다 다시 시도한다.
   // 성공하면 조용히 배너만 내린다(결과는 점검 때 이미 봤다 — 홈에 들어왔는데 결과 화면이 다시 열리면
@@ -133,8 +104,6 @@ export function HomeScreen() {
     const pid = await getPatientId();
     if (!pid) return;
     void retryDraft(pid);
-    void isKakaoLinked(pid).then(setLinked);
-    void getKakaoBannerDismissed().then(setBannerDismissed);
     // 권한 배너는 네트워크와 무관하므로 조회 성패와 상관없이 갱신한다.
     void hasExactAlarm().then(setAlarmOk);
     void hasNotificationPermission().then(setNotifOk);
@@ -236,26 +205,6 @@ export function HomeScreen() {
 
       <Text style={styles.greet}>{name ? `${name}님, 안녕하세요` : "안녕하세요!"}</Text>
       <Text style={styles.greetSub}>오늘도 건강한 하루 보내세요.</Text>
-
-      {/* 카카오 연결 배너 — 한 줄: 문구 · 연결 · ✕ */}
-      {linked === false && total >= 1 && !bannerDismissed ? (
-        <View style={styles.kakaoBanner}>
-          <Text style={styles.kakaoBannerText}>휴대폰을 바꿔도 그대로 쓰시려면</Text>
-          <Pressable
-            onPress={() => { void onLink(); }}
-            disabled={linking}
-            style={({ pressed }) => [styles.kakaoBannerLink, pressed && { opacity: 0.85 }]}
-            accessibilityRole="button"
-            accessibilityLabel="카카오 연결하기"
-          >
-            <Text style={styles.kakaoBannerLinkText}>{linking ? "연결 중…" : "연결"}</Text>
-          </Pressable>
-          <Pressable onPress={dismissBanner} style={styles.kakaoBannerClose} hitSlop={8}
-            accessibilityRole="button" accessibilityLabel="닫기">
-            <X size={22} color={colors.textSecondary} />
-          </Pressable>
-        </View>
-      ) : null}
 
       {/* OS 알림 권한 경고 — 꺼져 있으면 알람이 하나도 울리지 않는다 */}
       {!notifOk ? (
@@ -451,15 +400,6 @@ const styles = StyleSheet.create({
   },
   greet: { fontSize: 32, fontWeight: "800", color: colors.primaryNavy, marginTop: -spacing.xs, letterSpacing: -0.8 },
   greetSub: { fontSize: 19, lineHeight: 28, color: colors.textSecondary, marginTop: -spacing.sm },
-  kakaoBanner: {
-    flexDirection: "row", alignItems: "center", gap: spacing.sm, minHeight: minTouch,
-    backgroundColor: colors.surfaceRaised, borderColor: colors.border, borderWidth: 1,
-    borderRadius: radii.card, paddingLeft: spacing.md, paddingRight: spacing.sm, paddingVertical: spacing.sm,
-  },
-  kakaoBannerText: { flex: 1, fontSize: fontSizes.body, lineHeight: 26, color: colors.text },
-  kakaoBannerLink: { minHeight: minTouch, paddingHorizontal: spacing.sm, justifyContent: "center" },
-  kakaoBannerLinkText: { fontSize: fontSizes.body, fontWeight: "800", color: colors.primaryBlue },
-  kakaoBannerClose: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   warnPerm: {
     flexDirection: "row", gap: spacing.sm, alignItems: "center",
     backgroundColor: colors.dangerSoft, borderColor: colors.dangerRed, borderWidth: 1,

@@ -1,4 +1,5 @@
 import "react-native-url-polyfill/auto";
+import { AppState } from "react-native";
 import { createClient } from "@supabase/supabase-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
@@ -15,18 +16,51 @@ const anonKey = (extra.supabaseAnonKey as string) ?? "";
 export const isSupabaseConfigured =
   /^https?:\/\/.+/.test(url) && !url.startsWith("REPLACE") && anonKey.length > 0 && !anonKey.startsWith("REPLACE");
 
+// 로그인 세션을 기기에 둘 때 쓰는 키. 이름을 정해 두는 건 인터넷이 없어 서버 로그아웃이
+// 실패했을 때 기기 세션만이라도 지울 수 있게 하려는 것(auth.ts signOut).
+export const AUTH_STORAGE_KEY = "care.auth";
+
+// 로그인은 Supabase Auth(카카오·Apple 간편 로그인)로 한다 — 회의 2026-10-08.
+// 서버가 사용자를 구분해야 RLS로 "내 행만"을 걸 수 있다(migrate-auth-1-additive.sql).
+// 세션은 AsyncStorage에 남겨 앱을 다시 열어도 로그인이 유지된다. 세션은 auth.ts가 직접 받아 앉히므로
+// (카카오: 엣지 함수가 만든 세션을 setSession, Apple: signInWithIdToken) URL에서 세션을 읽지 않는다.
 export const supabase = createClient(
   isSupabaseConfigured ? url : "https://placeholder.supabase.co",
   isSupabaseConfigured ? anonKey : "placeholder-anon-key",
-  // 카카오 로그인은 Supabase Auth를 쓰지 않는다(kakaoAuth.ts 주석 참고).
-  // 인증 세션을 만들지 않으므로 저장할 것도 없다.
-  { auth: { persistSession: false } }
+  {
+    auth: {
+      storage: AsyncStorage,
+      storageKey: AUTH_STORAGE_KEY,
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false,
+    },
+  }
 );
+
+// 기기에 로그인 세션이 남아 있나 — 네트워크 없이 저장소만 본다. 인터넷이 끊겨 토큰을
+// 갱신하지 못한 때에도 로그인한 사람을 로그아웃된 사람으로 착각하지 않으려고 쓴다.
+export async function hasStoredSession(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(AUTH_STORAGE_KEY)) !== null;
+  } catch {
+    return false;
+  }
+}
+
+// 토큰 자동 갱신은 앱이 화면에 있을 때만 — 뒤에 있는 동안 타이머가 멈춰 있다가 한꺼번에 돌면
+// 갱신이 꼬인다(Supabase의 React Native 권장 방식).
+AppState.addEventListener("change", (state) => {
+  if (state === "active") supabase.auth.startAutoRefresh();
+  else supabase.auth.stopAutoRefresh();
+});
 
 export type Patient = {
   id: string; name: string; created_at: string;
   gender?: string | null; birth_date?: string | null; region?: string | null; phone?: string | null;
-  kakao_id?: string | null;       // 카카오 회원번호 (없으면 카카오 없이 가입한 사용자)
+  kakao_id?: string | null;       // 옛 카카오 연결의 회원번호 — 지금 앱은 쓰지 않는다(옛 빌드 호환용으로 남은 칸)
+  user_id?: string | null;        // 로그인 계정(auth.users.id). 옛 빌드로 만든 환자는 null
+  consent?: import("./account").Consent | null; // 처음 로그인 때 받은 약관·개인정보·민감정보 동의
 };
 export type Schedule = {
   id: string; patient_id: string; medicine_name: string;

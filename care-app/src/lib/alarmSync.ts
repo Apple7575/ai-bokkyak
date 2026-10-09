@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import notifee from "@notifee/react-native";
-import { supabase } from "./supabase";
+import { supabase, hasStoredSession } from "./supabase";
 import { getPatientId } from "./storage";
 import { rescheduleNext, scheduleIosWindow } from "./notifications";
 
@@ -26,7 +26,9 @@ async function cleanLegacyTriggers(ids: string[]): Promise<void> {
 
 export async function resyncAllAlarms(): Promise<void> {
   const pid = await getPatientId();
-  if (!pid) return;
+  // 로그인 세션 없이 환자 id만 있으면 로그인 전 옛 빌드의 흔적이다 — RootNavigator가 지우는
+  // 중이므로 알람을 되살리지 않는다(지운 뒤에 다시 예약되면 로그아웃된 휴대폰에서 알람이 울린다).
+  if (!pid || !(await hasStoredSession())) return;
   const { data } = await supabase.from("schedules").select("*").eq("patient_id", pid).eq("active", true);
   const rows = data ?? [];
   await cleanLegacyTriggers(rows.map((s) => s.id));

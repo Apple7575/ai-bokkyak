@@ -5,7 +5,7 @@ import { isQuickFinding } from "./quickCheckRules";
 
 // 가입 전 "1분 복용 점검" 초안을 기기에 보관한다.
 // 판정이 끝나면 commitQuickCheckDraft()가 서버(quick_check_results)에 옮기고, 초안에는 입력(영양제·약·
-// 기본 정보)만 남긴다 — 결과 화면의 "다시 점검하기"가 같은 입력으로 다시 판정할 수 있게.
+// 기본 정보)만 남긴다 — 「복용분석 다시하기」가 앞서 고른 것을 채운 채로 다시 점검할 수 있게.
 
 const KEY = "quickcheck.draft.v1";
 
@@ -46,6 +46,18 @@ export async function loadDraft(): Promise<QuickCheckDraft | null> {
 
 export async function saveDraft(draft: QuickCheckDraft): Promise<void> {
   await AsyncStorage.setItem(KEY, JSON.stringify(draft));
+}
+
+// 저장(commit)한 초안 → 결과 화면 params. commit이 초안의 판정 결과를 비우므로 결과 화면은
+// 이 값을 params로 받아야 한다(점검 직후 Analyzing, 로그인 직후 afterLogin이 쓴다).
+export function resultParamsOf(d: QuickCheckDraft) {
+  return {
+    findings: d.findings ?? [], unmatched: d.unmatched, names: checkItems(d),
+    durUnavailable: d.durUnavailable === true,
+    unmappedIngredients: d.unmappedIngredients ?? [],
+    uncoveredConditions: d.uncoveredConditions ?? [],
+    engine: d.engine,
+  };
 }
 
 export async function clearDraft(): Promise<void> {

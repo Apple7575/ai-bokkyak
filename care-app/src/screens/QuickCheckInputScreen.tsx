@@ -16,14 +16,13 @@ import {
   toggleItem, addItem, checkItems, EMPTY_DRAFT, QuickCheckDraft,
 } from "../lib/quickCheck";
 import { loadDraft, saveDraft } from "../lib/quickCheckDraft";
-import { getPatientId, setPatient, getPatientName, setPatientName } from "../lib/storage";
-import { supabase } from "../lib/supabase";
+import { getPatientId, getPatientName } from "../lib/storage";
 import { colors, fontSizes, spacing, radii, minTouch, shadows } from "../theme/tokens";
 
 // "1분 복용 점검" 입력 — 1/3 영양제, 2/3 복용약, 3/3 기본 정보 (시안 V8 화면 8~10).
-// 고른 것은 기기 초안(quickCheckDraft)에 남긴다. 회의 2026-09-10(B안): 별도 가입 화면 없이
-// 3/3에서 이름 한 줄을 받고, "내 복용 분석하기"를 누르는 순간 환자 레코드를 만든다
-// (이미 있으면 이름만 갱신). 사진 추가(OCR)도 이름만 읽어 칩으로 넣을 뿐, 일정 저장은 하지 않는다.
+// 고른 것은 기기 초안(quickCheckDraft)에 남긴다. 점검은 로그인 없이 된다(회의 2026-10-08) —
+// 3/3은 연령대·해당 항목만 묻고, 이름과 환자 레코드는 결과를 저장할 때 로그인·동의 화면에서 받는다.
+// 사진 추가(OCR)도 이름만 읽어 칩으로 넣을 뿐, 일정 저장은 하지 않는다.
 
 type Step = "supplements" | "medicines" | "profile";
 type Panel = "none" | "search" | "manual" | "photo";
@@ -55,10 +54,8 @@ export function QuickCheckInputScreen() {
   const [medicines, setMedicines] = useState<string[]>([]);
   const [age, setAge] = useState<string | null>(null);
   const [conditions, setConditions] = useState<string[]>([]);
+  // 로그인한 사람(홈에서 다시 점검)은 3/3 인사 한 줄에 이름을 쓴다.
   const [name, setName] = useState("");
-  // 이미 환자가 있으면(홈에서 다시 점검) 3/3에 이름 칸을 두지 않는다 — 서버 이름 변경은 RLS가 막고,
-  // 기기에서만 바꾸면 서버와 어긋난다. null=아직 조회 전(그동안은 다음 버튼을 잠근다).
-  const [hasPatient, setHasPatient] = useState<boolean | null>(null);
   const [more, setMore] = useState(false); // 영양제 "더 보기" 펼침
   const [panel, setPanel] = useState<Panel>("none");
   // 저장 중 두 번 눌러 점검 화면이 두 번 열리지 않게(입력을 잠그는 게 아니라 재진입만 막는다).
@@ -81,7 +78,6 @@ export function QuickCheckInputScreen() {
   }, [panelOpen]);
 
   // 앞서 고르다 만 초안이 있으면 되살린다(앱을 껐다 켜도 처음부터 다시 고르지 않게).
-  // 이미 이름을 적은 사용자(홈에서 다시 점검)는 이름을 인사 한 줄에만 쓴다.
   useEffect(() => {
     let alive = true;
     void loadDraft().then((d) => {
@@ -93,7 +89,6 @@ export function QuickCheckInputScreen() {
       if (d.supplements.some((x) => (SUPPLEMENT_MORE as readonly string[]).includes(x))) setMore(true);
     });
     void getPatientName().then((n) => { if (alive && n) setName(n); });
-    void getPatientId().then((pid) => { if (alive) setHasPatient(pid !== null); });
     return () => { alive = false; };
   }, []);
 
@@ -105,10 +100,8 @@ export function QuickCheckInputScreen() {
   const presets: readonly string[] = step === "supplements" && more ? [...SUPPLEMENT_PRESETS, ...SUPPLEMENT_MORE] : (meta?.presets ?? []);
   const noneLabel = meta?.none ?? "";
   const customs = list.filter((x) => x !== noneLabel && !presets.includes(x));
-  // 3/3: 환자가 이미 있으면 연령대만, 없으면 이름도 있어야 한다.
-  const canNext = step === "profile"
-    ? age !== null && hasPatient !== null && (hasPatient || name.trim().length > 0)
-    : list.length > 0;
+  // 3/3: 연령대만 고르면 된다(해당 항목은 없을 수 있다).
+  const canNext = step === "profile" ? age !== null : list.length > 0;
 
   function onChip(label: string) { setList(toggleItem(list, label, noneLabel)); }
   function onAdd(label: string) { setList(addItem(list, label, noneLabel)); setPanel("none"); }
@@ -142,17 +135,15 @@ export function QuickCheckInputScreen() {
       await saveDraft({ ...EMPTY_DRAFT, committedAt: prev?.committedAt ?? null, supplements, medicines, profile: { age, conditions } });
     } catch {}
   }
-  // 점검을 떠날 때 — 이미 환자가 있으면 홈으로(홈에서 다시 점검했거나, 3/3에서 환자를 만든 뒤 결과에서
-  // 뒤로 되돌아온 경우 — 인트로로 보내면 「지금은 건너뛰기」가 환자를 하나 더 만든다).
-  // 없으면 인트로에서 왔을 때는 인트로 시작 화면으로(회의 2026-09-20), 아니면 이름 한 칸으로.
+  // 점검을 떠날 때 — 로그인한 사람(기기에 환자 id가 있다)은 홈으로, 아니면 인트로 시작 화면으로
+  // (회의 2026-09-20 · 2026-10-08: 로그인 전에는 홈이 없다).
   // 점검을 건너뛰는 길은 인트로의 「지금은 건너뛰기」 하나뿐이다 — 이 화면 상단의 「건너뛰기」는 같은 회의에서 지웠다.
   async function leave() {
     await persistDraft();
     const pid = await getPatientId();
     leavingRef.current = true;
     if (pid) nav.reset({ index: 0, routes: [{ name: "Tabs" }] });
-    else if (fromIntro) nav.reset({ index: 0, routes: [{ name: "Intro", params: { slide: "cta" } }] });
-    else nav.reset({ index: 0, routes: [{ name: "NameEntry" }] });
+    else nav.reset({ index: 0, routes: [{ name: "Intro", params: { slide: "cta" } }] });
   }
   function goBack() {
     // 3/3 저장 중에는 되돌리지 않는다 — 저장이 끝나면 분석 화면으로 넘어가므로 단계만 어긋난다.
@@ -193,29 +184,10 @@ export function QuickCheckInputScreen() {
       Alert.alert("확인할 것이 없어요", "약이나 영양제를 하나 이상 골라야 복용 조합을 점검할 수 있어요.");
       return;
     }
-    const trimmed = name.trim();
     nextBusy.current = true;
     setSaving(true);
     try {
-      // 환자 보장 — 없으면 이름 한 줄로 레코드를 만든다. 이미 있으면 이름은 건드리지 않는다
-      // (3/3에 이름 칸이 없고, 기기에서만 바꾸면 서버와 어긋난다).
-      try {
-        const pid = await getPatientId();
-        if (!pid) {
-          const { data, error } = await supabase.from("patients").insert({ name: trimmed }).select("id").single();
-          if (error || !data) {
-            console.warn("QuickCheckInput: patients insert 실패", error?.message);
-            Alert.alert("시작하지 못했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
-            return;
-          }
-          await setPatient(data.id);
-          await setPatientName(trimmed);
-        }
-      } catch (e) {
-        console.warn("QuickCheckInput: 시작 실패", (e as Error)?.message ?? e);
-        Alert.alert("시작하지 못했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
-        return;
-      }
+      // 초안만 저장하고 판정 화면으로 — 환자 레코드는 결과를 저장할 때(로그인·동의) 만든다.
       try {
         await saveDraft(draft);
       } catch {
@@ -324,23 +296,7 @@ export function QuickCheckInputScreen() {
             <Text style={styles.title}>마지막으로 몇 가지만</Text>
             <Text style={styles.sub}>나이와 상태에 따라 주의할 조합이 달라요</Text>
 
-            {hasPatient ? (
-              <Text style={styles.greetLine}>{name.trim() ? `${name.trim()}님, 몇 가지만 더 여쭤볼게요.` : "몇 가지만 더 여쭤볼게요."}</Text>
-            ) : (
-              <>
-                <Text style={styles.question}>어떻게 불러드릴까요?</Text>
-                <TextInput
-                  style={styles.nameInput}
-                  value={name}
-                  onChangeText={setName}
-                  placeholder="이름을 적어 주세요"
-                  placeholderTextColor={colors.textSecondary}
-                  maxLength={20}
-                  returnKeyType="done"
-                  accessibilityLabel="이름"
-                />
-              </>
-            )}
+            <Text style={styles.greetLine}>{name.trim() ? `${name.trim()}님, 몇 가지만 더 여쭤볼게요.` : "몇 가지만 더 여쭤볼게요."}</Text>
 
             <Text style={styles.question}>연령대가 어떻게 되세요?</Text>
             <View style={styles.gridTight}>
@@ -370,7 +326,7 @@ export function QuickCheckInputScreen() {
               })}
             </View>
 
-            <Text style={styles.helper}>복용 조합을 확인하기 위한 최소 정보입니다. 비밀번호도 이메일도 없어요.</Text>
+            <Text style={styles.helper}>복용 조합을 확인하기 위한 최소 정보입니다. 로그인하지 않아도 결과를 볼 수 있어요.</Text>
           </>
         )}
       </ScrollView>
@@ -651,12 +607,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1.5,
     borderRadius: radii.button, fontSize: fontSizes.body, padding: 14, minHeight: minTouch, color: colors.text,
   },
-  // 3/3 이미 환자가 있을 때 이름 칸 대신 보이는 인사 한 줄.
+  // 3/3 인사 한 줄(로그인한 사람은 이름을 붙인다).
   greetLine: { marginTop: spacing.md, fontSize: fontSizes.emphasis, lineHeight: 30, fontWeight: "700", color: colors.primaryNavy },
-  // 3/3 이름 칸 — NameEntry의 입력창과 같은 크기(높이 ≥56, 강조 글자).
-  nameInput: {
-    marginTop: 12, backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1.5,
-    borderRadius: radii.button, fontSize: fontSizes.emphasis, padding: 14, minHeight: minTouch, color: colors.text,
-  },
   footer: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, backgroundColor: colors.canvas },
 });
