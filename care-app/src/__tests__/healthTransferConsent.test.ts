@@ -61,4 +61,3 @@ it("로그아웃·계정 전환 정리를 위해 저장된 동의를 지울 수 
   await clearHealthTransferConsents();
   await expect(hasHealthTransferConsent("quick-check")).resolves.toBe(false);
 });
-

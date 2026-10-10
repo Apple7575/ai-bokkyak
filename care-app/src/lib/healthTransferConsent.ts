@@ -143,4 +143,3 @@ export async function requestHealthTransferConsent(scope: HealthTransferScope): 
   pendingPrompts.set(promptKey, pending);
   return pending;
 }
-

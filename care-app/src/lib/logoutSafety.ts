@@ -16,4 +16,3 @@ export async function syncPendingIntakesForLogout(patientId: string): Promise<{
   const remaining = await pendingIntakeCount(patientId);
   return { before, sent, remaining };
 }
-
