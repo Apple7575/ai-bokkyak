@@ -68,7 +68,7 @@
 ```
 
 **카테고리** 앱 → 의료 · **태그** 복약, 알람, 건강 관리 · **기본 언어** 한국어(ko-KR)
-**연락처 이메일** 법인 메일(없으면 임시로 superstarrypassion@gmail.com) · **웹사이트** https://modubokyak.vercel.app
+**연락처 이메일** official@modubokyak.com · **웹사이트** https://modubokyak.vercel.app
 **개인정보처리방침** https://modubokyak.vercel.app/privacy.html
 
 **그래픽** `docs/store-assets/play-icon-512.png`, `play-feature-graphic-1024x500.png`. 스크린샷은 C-3.

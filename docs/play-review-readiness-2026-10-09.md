@@ -88,7 +88,7 @@ Android 신규 제출 대상은 `com.care.bokyak`이다. `com.modoobokyak.app`�
 ## 심사 입력 초안
 
 - 앱/패키지: 모두의 복약 / `com.care.bokyak`
-- 개발자 계정: Carenavi, ID 9081054576079116151, 조직 계정
+- 개발자 계정: Carenavi 조직 계정
 - 회사/문의: `(주)안팜 / AhnPharm Inc.` / `official@modubokyak.com` (정책 문서 반영 승인 필요)
 - 개인정보처리방침: `https://modubokyak.vercel.app/privacy.html`
 - 계정 삭제: `https://modubokyak.vercel.app/delete-account.html`
