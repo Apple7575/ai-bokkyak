@@ -56,4 +56,3 @@ it("로그아웃·회원 삭제의 로컬 정리는 환자 id와 건강 데이�
   expect((storage.clearAll as jest.Mock).mock.invocationCallOrder[0])
     .toBeLessThan((signOut as jest.Mock).mock.invocationCallOrder[0]);
 });
-

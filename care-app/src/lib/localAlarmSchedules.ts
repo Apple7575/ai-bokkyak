@@ -68,4 +68,3 @@ export async function removeLocalAlarmSchedule(patientId: string, scheduleId: st
 export async function clearLocalAlarmSchedules(): Promise<void> {
   await AsyncStorage.removeItem(KEY);
 }
-

@@ -42,4 +42,3 @@ it("서버 실패 전에 기록을 영구 outbox에 넣고 다음 활성화에�
     { onConflict: "schedule_id,scheduled_for" },
   );
 });
-

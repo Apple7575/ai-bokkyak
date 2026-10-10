@@ -25,4 +25,3 @@ it("DELIVERED 뒤 네트워크 조회 없이 계정별 로컬 일정으로 다�
   expect(rescheduleNext).toHaveBeenCalledWith("schedule-a", 8, 10, [1, 3, 5], "아침", "약 A");
   expect(scheduleIosWindow).toHaveBeenCalledWith("schedule-a", "아침", 8, 10, [1, 3, 5], "약 A");
 });
-

@@ -75,4 +75,3 @@ export async function acknowledgeIntakeMutation(patientId: string, key: string, 
 export async function clearIntakeOutbox(): Promise<void> {
   await locked(() => AsyncStorage.removeItem(KEY));
 }
-

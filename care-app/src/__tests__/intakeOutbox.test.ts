@@ -46,4 +46,3 @@ it("계정 간 outbox를 섞지 않고 로그아웃·회원 삭제 시 지운다
   await clearIntakeOutbox();
   expect(await listIntakeOutbox("patient-a")).toEqual([]);
 });
-

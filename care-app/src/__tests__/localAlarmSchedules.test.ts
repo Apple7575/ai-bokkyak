@@ -40,4 +40,3 @@ it("로그아웃·회원 삭제 시 로컬 건강 일정 사본을 지운다", a
   await clearLocalAlarmSchedules();
   expect(await listLocalAlarmSchedules("patient-a")).toEqual([]);
 });
-
