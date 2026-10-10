@@ -36,6 +36,14 @@ it("다른 계정으로 전환하면 이전 알람·일정 사본·outbox를 지
   expect(flushIntakeOutbox).toHaveBeenCalledWith("patient-new");
 });
 
+it("patientId만 먼저 지워진 부분 로그아웃 뒤에도 남은 건강 데이터를 새 로그인에서 정리한다", async () => {
+  (storage.getPatientId as jest.Mock).mockResolvedValue(null);
+  await adoptPatient({ id: "patient-new", name: "새 사용자" });
+  expect(clearLocalAlarmSchedules).toHaveBeenCalled();
+  expect(clearIntakeOutbox).toHaveBeenCalled();
+  expect(storage.clearPendingAlarm).toHaveBeenCalled();
+});
+
 it("로그아웃·회원 삭제의 로컬 정리는 환자 id와 건강 데이터 후 세션을 제거한다", async () => {
   await clearLocalSession();
   expect(storage.clearAll).toHaveBeenCalled();

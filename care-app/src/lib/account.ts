@@ -82,8 +82,9 @@ export async function recordMyConsent(patientId: string, name: string, consent: 
 // 로그인까지 왔으면 소개 화면은 본 것이므로 다음 실행엔 다시 보이지 않게 표시한다.
 export async function adoptPatient(row: Pick<MyPatient, "id" | "name">): Promise<void> {
   const previousPatientId = await getPatientId();
-  if (previousPatientId && previousPatientId !== row.id) {
-    // 세션이 다른 계정으로 바뀐 경우 이전 계정의 건강 데이터·알람·미전송 기록을 섞지 않는다.
+  if (previousPatientId !== row.id) {
+    // 첫 로그인 또는 다른 계정 전환 때 이전 실행의 부분 정리 실패로 남은 건강 데이터까지 지운다.
+    // envelope의 patientId 검사로 읽기는 이미 차단되지만, 디스크에 남겨 둘 이유도 없다.
     await notifee.cancelAllNotifications().catch(() => {});
     await Promise.all([
       clearLocalAlarmSchedules().catch(() => {}),
