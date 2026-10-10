@@ -45,9 +45,9 @@ Android 신규 제출 대상은 `com.care.bokyak`이다. `com.modoobokyak.app`�
 1. **AI/건강정보 고지:** 개인정보처리방침에 OpenAI 처리 목적을 사진 OCR뿐 아니라 약 정보 조회까지
    명시하고, 처리 항목·보유 여부·국외 처리/수탁 고지를 앱·웹·Console에서 같은 문구로 맞추는 안을
    승인한다. 휴면 일정 텍스트 파싱 경로를 다시 연결할 경우에는 출시 전에 고지 범위도 갱신한다.
-2. **가입 전 1분 점검:** 약 이름·나이·질환을 Supabase RPC로 보내기 직전에 별도 건강정보 고지와
-   명시적 동의를 받는 안을 권장한다. 동의하지 않으면 서버 전송을 하지 않고 입력 화면에 남길지,
-   1분 점검 자체를 로그인·동의 뒤로 옮길지는 제품 결정이 필요하다.
+2. **가입 전 1분 점검:** 로그인 없는 점검 유지와 전송 직전 범위별 명시 동의가 승인되어 로컬 앱에
+   구현됐다. 제품 검색은 검색어만 Supabase로, 점검은 선택 이름·연령대·건강 상태만 Supabase RPC로,
+   OCR은 선택 사진을 Supabase Edge Function/OpenAI로 보낸다고 구분한다. 거절 시 전송하지 않고 초안을 유지한다.
 3. **심사자 접근:** 저장·알람은 Kakao 로그인이 필요하므로 전용 심사 계정을 준비해 자격정보를
    Play Console의 보안 앱 액세스 입력란에만 넣는 안을 권장한다. 인증 우회 빌드는 별도 보안 변경이므로
    승인 없이 만들지 않는다.
@@ -75,7 +75,8 @@ Android 신규 제출 대상은 `com.care.bokyak`이다. `com.modoobokyak.app`�
 
 - Supabase: 이름, 로그인 식별자, 복약 일정, 복약 기록, 알람 이벤트,
   1분 점검 입력/결과를 저장한다.
-- OpenAI: 약 봉투 이미지 OCR, 약 이름/일정 텍스트 파싱, 약 정보 조회에 사용된다.
+- OpenAI: 현재 도달 가능한 앱 흐름에서는 약 봉투 이미지 OCR과 약 정보 조회에 사용된다.
+  일정 텍스트 파싱 helper/endpoint는 있으나 현재 앱 호출부는 확인되지 않았다.
   마이크/음성 인식 데이터는 현재 Android 앱 권한에서 차단되고 코드 경로도 사용하지 않는다.
 - Kakao: 회원번호와 닉네임을 로그인에 사용한다. Apple 로그인은 iOS 전용이다.
 - 제3자 광고/분석 SDK는 package.json에서 확인되지 않았다. 자체 `alarm_events`와
@@ -101,7 +102,7 @@ Android 신규 제출 대상은 `com.care.bokyak`이다. `com.modoobokyak.app`�
 
 ## 수행 검사
 
-- 통과: `npm exec jest -- --runInBand` — 44 suites, 449 tests.
+- 통과: `npm test -- --runInBand` — 47 suites, 460 tests.
 - 통과: `npx tsc --noEmit`.
 - 통과: Expo introspection — package/versionCode/권한/receiver 생성 확인.
 - 부분 실패: `npm run check:server` — 공개 프리셋 칩만 순차 검사하던 중 `항우울제`
@@ -116,7 +117,7 @@ Android 신규 제출 대상은 `com.care.bokyak`이다. `com.modoobokyak.app`�
   복구하고, 완료/미루기는 로컬 알람 제어 후 영구 outbox를 거쳐 서버 기록을 시도한다.
 - 한계: 자동 테스트로 로컬 재예약·outbox 재전송·계정 격리·반복 클릭을 검증했지만 실제 기기 전달과
   서버 측 “정확히 한 번” 전송을 보장한 것은 아니다.
-- 통과: `npm exec expo export -- --platform android --clear` — Android JS/Hermes 번들 생성.
+- 통과: `npx expo export --platform android --clear` — 3,320 modules, Android Hermes bundle 6.37 MB.
 - 미실행: production AAB 서명 빌드 및 16 KB 정렬 검사(원격 EAS 인증/빌드 필요).
 - 미실행: 실제 기기 알람·권한·절전·재부팅·시간대·동시성 테스트.
 - 미확인: Play Console 실시간 상태와 프로덕션 제출 자격.
@@ -139,6 +140,9 @@ Android 신규 제출 대상은 `com.care.bokyak`이다. `com.modoobokyak.app`�
 - 다음 날 이후 반복 알람의 계정별 로컬 메타데이터 재예약 흐름.
 - 복약 기록 영구 outbox, 최신 의도 token 보호, 시작·활성화·재로그인 재전송.
 - 로그아웃·계정 전환·회원 삭제의 알람/로컬 건강 데이터 정리.
+- 로그인 전 점검 입력의 지연 자동 저장·백그라운드 즉시 저장과 입력 변경 시 오래된 분석 결과 무효화.
+- 제품 검색·점검·사진 OCR·약 설명 조회의 실제 전송 범위별 버전 동의 및 계정 전환 격리.
+- 미전송 복약 기록이 있을 때 저장 완료/실패와 명시적 삭제를 구분하는 로그아웃 흐름.
 
 ### 제출 전 필수 확인
 

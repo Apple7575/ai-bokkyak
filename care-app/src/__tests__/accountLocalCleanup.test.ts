@@ -13,6 +13,7 @@ jest.mock("../lib/storage", () => ({
 jest.mock("../lib/quickCheckDraft", () => ({ clearDraft: jest.fn(() => Promise.resolve()) }));
 jest.mock("../lib/localAlarmSchedules", () => ({ clearLocalAlarmSchedules: jest.fn(() => Promise.resolve()) }));
 jest.mock("../lib/intakeOutbox", () => ({ clearIntakeOutbox: jest.fn(() => Promise.resolve()) }));
+jest.mock("../lib/healthTransferConsent", () => ({ clearHealthTransferConsents: jest.fn(() => Promise.resolve()) }));
 jest.mock("../lib/records", () => ({ flushIntakeOutbox: jest.fn(() => Promise.resolve(0)) }));
 
 import notifee from "@notifee/react-native";
@@ -20,6 +21,7 @@ import { signOut } from "../lib/auth";
 import * as storage from "../lib/storage";
 import { clearLocalAlarmSchedules } from "../lib/localAlarmSchedules";
 import { clearIntakeOutbox } from "../lib/intakeOutbox";
+import { clearHealthTransferConsents } from "../lib/healthTransferConsent";
 import { flushIntakeOutbox } from "../lib/records";
 import { adoptPatient, clearLocalSession } from "../lib/account";
 
@@ -31,6 +33,7 @@ it("다른 계정으로 전환하면 이전 알람·일정 사본·outbox를 지
   expect(notifee.cancelAllNotifications).toHaveBeenCalled();
   expect(clearLocalAlarmSchedules).toHaveBeenCalled();
   expect(clearIntakeOutbox).toHaveBeenCalled();
+  expect(clearHealthTransferConsents).toHaveBeenCalled();
   expect(storage.clearPendingAlarm).toHaveBeenCalled();
   expect(storage.setPatient).toHaveBeenCalledWith("patient-new");
   expect(flushIntakeOutbox).toHaveBeenCalledWith("patient-new");

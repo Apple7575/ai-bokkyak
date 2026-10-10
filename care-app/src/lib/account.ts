@@ -6,6 +6,7 @@ import { clearDraft } from "./quickCheckDraft";
 import { clearLocalAlarmSchedules } from "./localAlarmSchedules";
 import { clearIntakeOutbox } from "./intakeOutbox";
 import { flushIntakeOutbox } from "./records";
+import { clearHealthTransferConsents } from "./healthTransferConsent";
 
 // 내 계정(로그인) ↔ 내 환자 행(patients) — 회의 2026-10-08.
 // 로그인 계정 하나에 환자 행 하나(patients.user_id unique). 환자 id는 지금처럼 기기에도 둔다 —
@@ -90,6 +91,7 @@ export async function adoptPatient(row: Pick<MyPatient, "id" | "name">): Promise
       clearLocalAlarmSchedules().catch(() => {}),
       clearIntakeOutbox().catch(() => {}),
       clearPendingAlarm().catch(() => {}),
+      clearHealthTransferConsents().catch(() => {}),
     ]);
   }
   await setPatient(row.id);
@@ -125,6 +127,7 @@ export async function clearLocalSession(): Promise<void> {
   await Promise.all([
     clearLocalAlarmSchedules().catch(() => {}),
     clearIntakeOutbox().catch(() => {}),
+    clearHealthTransferConsents().catch(() => {}),
   ]);
   await clearDraft().catch(() => {});
   await signOut();
