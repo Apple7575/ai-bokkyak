@@ -5,12 +5,13 @@ import notifee, {
 } from "@notifee/react-native";
 import { nextDoseAt, dosesWithin } from "./doseTimes";
 import { SnoozeSpec, nextSnoozeFire } from "./snooze";
-import { supabase } from "./supabase";
 import { alarmChannelId } from "./alarmSound";
 import { slotLabel } from "./timeOfDay";
 import { getAlarmSoundSettings } from "./alarmSettings";
 import { alarmTitle, alarmBody, snoozeTitle } from "./alarmText";
 import { planWindowBursts } from "./iosAlarmWindow";
+import { getPatientId } from "./storage";
+import { getLocalAlarmSchedule, removeLocalAlarmSchedule, upsertLocalAlarmSchedule } from "./localAlarmSchedules";
 
 // 정확 알람(SCHEDULE_EXACT_ALARM)이 허용된 경우에만 alarmManager 옵션을 켠다.
 // 권한이 없는 Android(14+ 등)에서 alarmManager를 주면 Notifee가 트리거를 거부해
@@ -39,13 +40,13 @@ async function ensureChannel(tod: TOD, silent: boolean): Promise<string> {
     return notifee.createChannel({
       id: alarmChannelId(SOUND[tod], true), name: `복약 알람(${slotLabel(tod)}, 진동만)`,
       importance: AndroidImportance.HIGH, vibration: true, vibrationPattern: STRONG_VIBRATION,
-      visibility: AndroidVisibility.PUBLIC,
+      visibility: AndroidVisibility.PRIVATE,
     });
   }
   return notifee.createChannel({
     id: CH[tod], name: `복약 알람(${slotLabel(tod)})`,
     importance: AndroidImportance.HIGH, sound: SOUND[tod], vibration: true,
-    visibility: AndroidVisibility.PUBLIC,
+    visibility: AndroidVisibility.PRIVATE,
   });
 }
 
@@ -107,6 +108,9 @@ function androidAlarm(scheduleId: string, ch: string, sound: string, silent: boo
     // 무음이면 알림 자체의 소리·루프도 끈다(채널만 무음이면 알림 sound가 이긴다).
     ...(silent ? { loopSound: false } : { sound, loopSound: true }),
     vibrationPattern: STRONG_VIBRATION,
+    // Medication names and dosing instructions are health data. Respect the
+    // device's private lock-screen presentation instead of forcing them public.
+    visibility: AndroidVisibility.PRIVATE,
     asForegroundService: true,
     fullScreenAction: { id: "alarm", launchActivity: "default" },
     pressAction: { id: "alarm", launchActivity: "default" },
@@ -236,6 +240,8 @@ export async function cancelSchedule(scheduleId: string): Promise<void> {
   const ids = [`alarm-${scheduleId}`, `alarm-${scheduleId}-snooze`, `alarm-${scheduleId}-rep`];
   for (const id of ids) { try { await notifee.cancelNotification(id); } catch {} }
   await cancelIosWindow(scheduleId);
+  const patientId = await getPatientId().catch(() => null);
+  if (patientId) await removeLocalAlarmSchedule(patientId, scheduleId).catch(() => {});
 }
 
 // 포그라운드 서비스 중지 + 반복/윈도우/표시 알림 제거.
@@ -257,27 +263,23 @@ export async function stopAlarm(scheduleId: string): Promise<void> {
   // (Android는 scheduleIosWindow가 즉시 return하므로 영향 없음.)
   if (Platform.OS === "ios") {
     try {
-      const { data } = await supabase
-        .from("schedules")
-        .select("*")
-        .eq("id", scheduleId)
-        .eq("active", true)
-        .maybeSingle();
+      const patientId = await getPatientId();
+      const data = patientId ? await getLocalAlarmSchedule(patientId, scheduleId) : null;
       if (data) {
         // 정시 알람과 윈도우는 반드시 짝으로 예약한다. 윈도우는 첫 도즈의 정시
         // (b=0)를 일부러 비워 두므로, 여기서 rescheduleNext를 빼면 알림 탭(PRESS)
         // 처럼 재예약이 없는 경로에서 다음 회차 정시 알람이 사라진다.
         await rescheduleNext(
-          scheduleId, data.hour, data.minute, data.repeat_days ?? [], data.time_of_day,
-          data.medicine_name ?? ""
+          scheduleId, data.hour, data.minute, data.repeatDays, data.timeOfDay,
+          data.medicineName
         );
         await scheduleIosWindow(
           scheduleId,
-          data.time_of_day,
+          data.timeOfDay,
           data.hour,
           data.minute,
-          data.repeat_days ?? [],
-          data.medicine_name ?? ""
+          data.repeatDays,
+          data.medicineName
         );
       }
     } catch {}
@@ -306,6 +308,12 @@ export async function scheduleReminders(
   scheduleId: string, medicineName: string, hour: number, minute: number,
   repeatDays: number[], timeOfDay: string
 ): Promise<string[]> {
+  const patientId = await getPatientId();
+  if (!patientId) throw new Error("내 정보를 찾지 못했어요");
+  // OS 예약보다 먼저 저장해 앱/프로세스가 중간에 종료돼도 부팅·시간 변경 때 복구할 수 있게 한다.
+  await upsertLocalAlarmSchedule(patientId, {
+    id: scheduleId, medicineName, hour, minute, repeatDays, timeOfDay,
+  });
   await rescheduleNext(scheduleId, hour, minute, repeatDays, timeOfDay, medicineName);
   await scheduleIosWindow(scheduleId, timeOfDay, hour, minute, repeatDays, medicineName);
   return [`alarm-${scheduleId}`];

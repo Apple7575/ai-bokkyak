@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RootStackParamList, TabParamList } from "./types";
 import { getOnboarded } from "../lib/storage";
 import { resolveSignedIn } from "./startup";
+import { AlarmRouteParams, alarmRouteFromData } from "../lib/alarmPayload";
 import { IntroScreen } from "../screens/IntroScreen";
 import { LoginScreen } from "../screens/LoginScreen";
 import { ConsentScreen } from "../screens/ConsentScreen";
@@ -69,7 +70,7 @@ function PatientTabs() {
 
 export function RootNavigator() {
   const [init, setInit] = useState<{ signedIn: boolean; onboarded: boolean } | "loading">("loading");
-  const [alarmSid, setAlarmSid] = useState<string | null>(null);
+  const [alarm, setAlarm] = useState<AlarmRouteParams | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -78,9 +79,9 @@ export function RootNavigator() {
       const signedIn = await resolveSignedIn().catch(() => false);
       try {
         const initial = await notifee.getInitialNotification();
-        const sid = initial?.notification?.data?.scheduleId as string | undefined;
+        const alarmRoute = alarmRouteFromData(initial?.notification?.data);
         // 로그아웃 상태면 알람 화면을 열지 않는다 — 기록할 환자가 없다.
-        if (sid && signedIn) setAlarmSid(sid);
+        if (alarmRoute && signedIn) setAlarm(alarmRoute);
       } catch {
         // 알림으로 시작하지 않은 일반 진입은 그대로 진행한다.
       }
@@ -93,7 +94,7 @@ export function RootNavigator() {
   }
 
   // 로그인 전이면 인트로 — 소개를 이미 본 사람은 시작 장(1분 점검 · 건너뛰기 · 로그인)부터.
-  const initialRouteName: keyof RootStackParamList = alarmSid ? "Alarm" : init.signedIn ? "Tabs" : "Intro";
+  const initialRouteName: keyof RootStackParamList = alarm ? "Alarm" : init.signedIn ? "Tabs" : "Intro";
   const introParams = !init.signedIn && init.onboarded ? { slide: "cta" as const } : undefined;
 
   return (
@@ -112,7 +113,7 @@ export function RootNavigator() {
       <Stack.Screen name="OcrRegister" component={OcrRegisterScreen} />
       <Stack.Screen name="MedicineSearch" component={MedicineSearchScreen} />
       <Stack.Screen name="DoseTime" component={DoseTimeScreen} />
-      <Stack.Screen name="Alarm" component={AlarmScreen} initialParams={alarmSid ? { scheduleId: alarmSid } : undefined} options={{ animation: "fade" }} />
+      <Stack.Screen name="Alarm" component={AlarmScreen} initialParams={alarm ?? undefined} options={{ animation: "fade" }} />
       <Stack.Screen name="SnoozePicker" component={SnoozePickerScreen} options={{ presentation: "transparentModal", animation: "slide_from_bottom" }} />
       <Stack.Screen name="SnoozeCountdown" component={SnoozeCountdownScreen} />
       <Stack.Screen name="Checkup" component={CheckupScreen} />

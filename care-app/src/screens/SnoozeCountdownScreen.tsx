@@ -4,10 +4,10 @@ import { View, Text, StyleSheet, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { BigButton } from "../components/BigButton";
-import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
-import { recordIntake } from "../lib/records";
+import { isIntakeQueuedError, recordIntake } from "../lib/records";
 import { stopAlarm } from "../lib/notifications";
+import { listLocalAlarmSchedules } from "../lib/localAlarmSchedules";
 import { dueAtSlot } from "../lib/doseSlotSelect";
 import { doseSlot } from "../lib/schedule";
 import { colors, fontSizes, spacing } from "../theme/tokens";
@@ -64,16 +64,15 @@ export function SnoozeCountdownScreen() {
   async function takeAll() {
     const pid = await getPatientId();
     if (pid) {
-      const { data } = await supabase
-        .from("schedules")
-        .select("*")
-        .eq("patient_id", pid)
-        .eq("active", true);
+      const local = await listLocalAlarmSchedules(pid);
       const slot = doseSlot(p.hour, p.minute, new Date());
-      const ids = dueAtSlot(data ?? [], p.hour, p.minute, slot);
+      const ids = dueAtSlot(local.map((s) => ({
+        id: s.id, hour: s.hour, minute: s.minute, repeat_days: s.repeatDays, active: true,
+      })), p.hour, p.minute, slot);
       let failed = false;
       for (const id of ids) {
         try {
+          await stopAlarm(id);
           await recordIntake({
             patientId: pid,
             scheduleId: id,
@@ -81,8 +80,9 @@ export function SnoozeCountdownScreen() {
             status: "completed",
             method: "버튼",
           });
-          await stopAlarm(id);
-        } catch { failed = true; }
+        } catch (error) {
+          if (!isIntakeQueuedError(error)) failed = true;
+        }
       }
       if (failed) {
         Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");

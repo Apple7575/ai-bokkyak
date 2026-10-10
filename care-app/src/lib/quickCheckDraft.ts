@@ -8,8 +8,15 @@ import { isQuickFinding } from "./quickCheckRules";
 // 기본 정보)만 남긴다 — 「복용분석 다시하기」가 앞서 고른 것을 채운 채로 다시 점검할 수 있게.
 
 const KEY = "quickcheck.draft.v1";
+let storageChain: Promise<unknown> = Promise.resolve();
 
-export async function loadDraft(): Promise<QuickCheckDraft | null> {
+function locked<T>(work: () => Promise<T>): Promise<T> {
+  const next = storageChain.then(work, work);
+  storageChain = next.then(() => undefined, () => undefined);
+  return next;
+}
+
+async function readDraft(): Promise<QuickCheckDraft | null> {
   const raw = await AsyncStorage.getItem(KEY);
   if (!raw) return null;
   try {
@@ -44,8 +51,59 @@ export async function loadDraft(): Promise<QuickCheckDraft | null> {
   }
 }
 
+export async function loadDraft(): Promise<QuickCheckDraft | null> {
+  return locked(readDraft);
+}
+
 export async function saveDraft(draft: QuickCheckDraft): Promise<void> {
-  await AsyncStorage.setItem(KEY, JSON.stringify(draft));
+  await locked(() => AsyncStorage.setItem(KEY, JSON.stringify(draft)));
+}
+
+type DraftInputs = Pick<QuickCheckDraft, "supplements" | "medicines" | "profile">;
+
+function sameStrings(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
+function sameInputs(draft: DraftInputs, inputs: DraftInputs): boolean {
+  return sameStrings(draft.supplements, inputs.supplements)
+    && sameStrings(draft.medicines, inputs.medicines)
+    && draft.profile.age === inputs.profile.age
+    && sameStrings(draft.profile.conditions, inputs.profile.conditions);
+}
+
+function hasInputs(inputs: DraftInputs): boolean {
+  return inputs.supplements.length > 0 || inputs.medicines.length > 0
+    || inputs.profile.age !== null || inputs.profile.conditions.length > 0;
+}
+
+// 입력 변경 자동 저장 전용. 기존 판정 결과를 새 입력에 붙이지 않으며, 아무 입력도 남지 않으면
+// 빈 초안 대신 키를 지운다. 직렬화해 늦게 끝난 이전 저장이 최신 입력을 덮지 못하게 한다.
+export async function saveDraftInputs(inputs: DraftInputs): Promise<"saved" | "unchanged" | "cleared"> {
+  return locked(async () => {
+    const previous = await readDraft();
+    if (previous && sameInputs(previous, inputs)) return "unchanged";
+    if (!hasInputs(inputs)) {
+      if (previous) await AsyncStorage.removeItem(KEY);
+      return "cleared";
+    }
+    const next: QuickCheckDraft = {
+      ...(previous ?? EMPTY_DRAFT),
+      supplements: [...inputs.supplements],
+      medicines: [...inputs.medicines],
+      profile: { age: inputs.profile.age, conditions: [...inputs.profile.conditions] },
+      findings: null,
+      unmatched: [],
+      unmappedIngredients: undefined,
+      uncoveredConditions: undefined,
+      analyzedAt: null,
+      durUnavailable: false,
+      engine: undefined,
+      committedAt: null,
+    };
+    await AsyncStorage.setItem(KEY, JSON.stringify(next));
+    return "saved";
+  });
 }
 
 // 저장(commit)한 초안 → 결과 화면 params. commit이 초안의 판정 결과를 비우므로 결과 화면은
@@ -61,7 +119,7 @@ export function resultParamsOf(d: QuickCheckDraft) {
 }
 
 export async function clearDraft(): Promise<void> {
-  await AsyncStorage.removeItem(KEY);
+  await locked(() => AsyncStorage.removeItem(KEY));
 }
 
 // 판정 직후(QuickCheckAnalyzing)·홈 진입 시 호출. 점검을 마친 초안이 있으면 서버에 한 줄 남기고

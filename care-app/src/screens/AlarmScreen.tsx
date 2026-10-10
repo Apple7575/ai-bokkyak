@@ -6,14 +6,18 @@ import { Bell } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
 import { CompletionFeedback } from "../components/CompletionFeedback";
 import { MedicineMark } from "../components/MedicineMark";
-import { supabase, Schedule } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
-import { PriorIntake, readIntake, recordIntake, undoIntake } from "../lib/records";
+import { isIntakeQueuedError, PriorIntake, readIntake, recordIntake, undoIntake } from "../lib/records";
 import { logAlarmEvent } from "../lib/analytics";
 import { stopAlarm } from "../lib/notifications";
 import { startRinging, stopRinging } from "../lib/alarmRinger";
 import { doseSlot } from "../lib/schedule";
 import { colors, fontSizes, spacing, shadows } from "../theme/tokens";
+import type { AlarmRouteParams } from "../lib/alarmPayload";
+import {
+  alarmDisplayForRoute, fallbackAlarmSchedule, loadedAlarmSchedule, LoadedAlarmSchedule,
+} from "../lib/alarmScreenState";
 
 const INTAKE_ART = require("../../assets/illustrations/intake-complete.png");
 
@@ -21,8 +25,10 @@ export function AlarmScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
   const insets = useSafeAreaInsets();
-  const scheduleId: string | undefined = route.params?.scheduleId;
-  const [schedule, setSchedule] = useState<Schedule | null>(null);
+  const alarmParams = (route.params ?? {}) as AlarmRouteParams;
+  const scheduleId = alarmParams.scheduleId;
+  const [loadedScheduleState, setLoadedScheduleState] = useState<LoadedAlarmSchedule | null>(null);
+  const schedule = alarmDisplayForRoute(alarmParams, loadedScheduleState);
   const [completionVisible, setCompletionVisible] = useState(false);
   const savedRef = useRef(false);
   const undoneRef = useRef(false);
@@ -40,19 +46,26 @@ export function AlarmScreen() {
       await stopAlarm(scheduleId); // 화면 진입=인지 → 알림측 소리/반복 정지
       const { data } = await supabase.from("schedules").select("*").eq("id", scheduleId).single();
       if (cancelled) return;
-      setSchedule(data);
-      if (data) {
+      const fallback = fallbackAlarmSchedule(alarmParams);
+      const resolved = data ? {
+        medicine_name: data.medicine_name ?? "약",
+        time_of_day: data.time_of_day ?? "아침",
+        hour: data.hour,
+        minute: data.minute,
+      } : fallback;
+      if (data && resolved) setLoadedScheduleState(loadedAlarmSchedule(alarmParams, resolved));
+      if (resolved) {
         // 알파 지표: 알람이 실제 발생(화면 진입)한 시각을 예정 슬롯과 함께 남긴다.
         // 베스트에포트 — 실패해도 알람 흐름을 막지 않는다.
         getPatientId().then((pid) => {
           if (pid) {
             logAlarmEvent({
               patientId: pid, scheduleId,
-              scheduledFor: doseSlot(data.hour, data.minute, new Date()), type: "fired",
+              scheduledFor: doseSlot(resolved.hour, resolved.minute, new Date()), type: "fired",
             });
           }
         });
-        const todStr = data.time_of_day || "아침";
+        const todStr = resolved.time_of_day || "아침";
         // 인앱 연속 울림(소리 루프+진동). ~2.5분 자동정지.
         await startRinging(todStr, () => {});
         if (cancelled) stopRinging();
@@ -62,7 +75,7 @@ export function AlarmScreen() {
       cancelled = true;
       stopRinging();
     };
-  }, [scheduleId]);
+  }, [scheduleId, alarmParams.medicineName, alarmParams.timeOfDay, alarmParams.hour, alarmParams.minute]);
 
   // 저장 중에는 버튼을 잠근다. 완료 저장이 끝나기 전에 "되돌리기"를 누른 뒤
   // 다른 응답(건너뛰기 등)을 고르면, 뒤늦게 도착한 되돌리기 삭제가 새 기록까지
@@ -94,18 +107,27 @@ export function AlarmScreen() {
       completionArgsRef.current = { patientId: pid, scheduleId, scheduledFor: slot, previous: null };
       setCompletionVisible(true);
     }
-    try {
-      if (status === "completed") {
-        // 재발화·재탭으로 이 슬롯에 이미 응답(미루기/건너뛰기)이 있으면 되돌리기 때 복원해야 한다.
+    // Device-local alarm control must not wait on the network record below.
+    await stopAlarm(scheduleId);
+    if (status === "completed") {
+      // 오프라인이면 이전 서버 상태를 읽을 수 없지만 현재 완료 의도는 outbox에 보관해야 한다.
+      try {
         completionArgsRef.current!.previous = await readIntake({ patientId: pid, scheduleId, scheduledFor: slot });
+      } catch {
+        completionArgsRef.current!.previous = null;
       }
+    }
+    try {
       await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status, method: "버튼" });
-      await stopAlarm(scheduleId);
-    } catch {
+    } catch (error) {
+      if (isIntakeQueuedError(error)) {
+        Alert.alert("기기에 기록했어요", "인터넷이 연결되면 복약 기록을 다시 전송할게요.");
+      } else {
       setCompletionVisible(false);
       setBusyBoth(false);
-      Alert.alert("저장에 실패했어요", "인터넷 연결을 확인하고 다시 눌러 주세요.");
+      Alert.alert("저장에 실패했어요", "알람은 멈췄지만 복약 기록은 저장하지 못했어요. 인터넷 연결 후 기록 화면에서 확인해 주세요.");
       return;
+      }
     }
     if (status === "completed") {
       savedRef.current = true;
@@ -144,8 +166,13 @@ export function AlarmScreen() {
     try {
       await undoIntake(args);
       savedRef.current = false;
-    } catch {
-      Alert.alert("되돌리지 못했어요", "인터넷 연결을 확인하고 기록 화면에서 확인해 주세요.");
+    } catch (error) {
+      if (isIntakeQueuedError(error)) {
+        savedRef.current = false;
+        Alert.alert("기기에 기록했어요", "인터넷이 연결되면 되돌리기를 다시 전송할게요.");
+      } else {
+        Alert.alert("되돌리지 못했어요", "인터넷 연결을 확인하고 기록 화면에서 확인해 주세요.");
+      }
     }
     setBusyBoth(false);
   }

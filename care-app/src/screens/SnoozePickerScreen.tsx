@@ -10,7 +10,7 @@ import { scheduleSnooze } from "../lib/notifications";
 import { SnoozeSpec, nextSnoozeFire } from "../lib/snooze";
 import { spokenTime } from "../lib/spokenTime";
 import { getPatientId } from "../lib/storage";
-import { recordIntake } from "../lib/records";
+import { isIntakeQueuedError, recordIntake } from "../lib/records";
 import { doseSlot } from "../lib/schedule";
 import { colors, fontSizes, spacing, radii } from "../theme/tokens";
 
@@ -60,8 +60,12 @@ export function SnoozePickerScreen() {
         const slot = doseSlot(sch.hour, sch.minute, new Date());
         await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "snoozed", method: "버튼" });
       }
-    } catch {
-      Alert.alert("기록 저장 실패", "다시 알림은 설정됐지만 복약 기록 저장에 실패했어요.");
+    } catch (error) {
+      if (isIntakeQueuedError(error)) {
+        Alert.alert("기기에 기록했어요", "다시 알림은 설정됐고, 인터넷이 연결되면 기록을 다시 전송할게요.");
+      } else {
+        Alert.alert("기록 저장 실패", "다시 알림은 설정됐지만 복약 기록을 기기에 보관하지 못했어요.");
+      }
     }
     nav.reset({ index: 0, routes: [{ name: "SnoozeCountdown", params: { scheduleId, fireAt, hour: sch.hour, minute: sch.minute } }] });
   }

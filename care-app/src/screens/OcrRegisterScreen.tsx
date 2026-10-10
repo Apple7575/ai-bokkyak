@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, TextInput, ScrollView, StyleSheet, Alert, ActivityIndicator, Pressable, KeyboardAvoidingView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
@@ -9,6 +9,7 @@ import { IllustrationBanner } from "../components/IllustrationBanner";
 import { TimeChip } from "../components/TimeChip";
 import { RepeatPicker } from "../components/RepeatPicker";
 import { gptOcrPrescription } from "../lib/ocr";
+import { requestHealthTransferConsent } from "../lib/healthTransferConsent";
 import { ParsedSchedule } from "../lib/parse";
 import { normalizeRepeatDays } from "../lib/schedule";
 import { TIME_OF_DAYS, timeOfDayForHour, hourForTimeOfDay } from "../lib/timeOfDay";
@@ -34,6 +35,10 @@ export function OcrRegisterScreen() {
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const captureRef = useRef(false);
+  const captureSeq = useRef(0);
+  const mounted = useRef(true);
+  useEffect(() => () => { mounted.current = false; captureSeq.current += 1; }, []);
   const savingRef = useRef(false); // 더블탭 동기 가드(state는 비동기라 레이스 가능)
 
   // 인식된 이름 → 실제 제품 후보. 사진 글자는 흐리거나 일부만 찍히기 쉬워서,
@@ -61,6 +66,9 @@ export function OcrRegisterScreen() {
   }
 
   async function capture(source: "camera" | "library") {
+    if (captureRef.current) return;
+    captureRef.current = true;
+    const mine = ++captureSeq.current;
     try {
       const perm = source === "camera"
         ? await ImagePicker.requestCameraPermissionsAsync()
@@ -76,6 +84,8 @@ export function OcrRegisterScreen() {
         ? await ImagePicker.launchCameraAsync(opts)
         : await ImagePicker.launchImageLibraryAsync(opts);
       if (res.canceled || !res.assets?.[0]?.base64) return;
+      const consented = await requestHealthTransferConsent("photo-ocr");
+      if (!consented || !mounted.current || mine !== captureSeq.current) return;
       setItems([]); // 새 사진 인식 시작 — 이전 결과가 새 사진 것처럼 등록되지 않게 비운다.
       setLoading(true);
       setScanned(true);
@@ -88,10 +98,12 @@ export function OcrRegisterScreen() {
         Alert.alert("약을 찾지 못했어요", "글자가 잘 보이게 다시 촬영하거나, 버튼으로 직접 등록해 주세요.");
       }
     } catch {
+      if (!mounted.current || mine !== captureSeq.current) return;
       setItems([]); // 인식 실패 시에도 이전 결과를 남기지 않는다.
       Alert.alert("인식에 실패했어요", "인터넷 연결을 확인하고 다시 시도해 주세요.");
     } finally {
-      setLoading(false);
+      if (mine === captureSeq.current) captureRef.current = false;
+      if (mounted.current && mine === captureSeq.current) setLoading(false);
     }
   }
 
@@ -145,8 +157,8 @@ export function OcrRegisterScreen() {
         <IllustrationBanner source={OCR_ART} tone="sage" height={192} imageScale={0.84} />
         <Text style={styles.guide}>약봉투나 약 포장을 촬영하면 자동으로 읽어드려요.</Text>
 
-        <BigButton label="약봉투 촬영하기" onPress={() => capture("camera")} />
-        <BigButton label="사진 보관함에서 고르기" variant="secondary" onPress={() => capture("library")} />
+        <BigButton label="약봉투 촬영하기" disabled={loading} onPress={() => capture("camera")} />
+        <BigButton label="사진 보관함에서 고르기" variant="secondary" disabled={loading} onPress={() => capture("library")} />
 
         {loading ? (
           <View style={styles.loading}>

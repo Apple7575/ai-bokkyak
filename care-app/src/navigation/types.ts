@@ -22,7 +22,7 @@ export type RootStackParamList = {
   OcrRegister: undefined;
   MedicineSearch: undefined;
   DoseTime: { medicineName: string };
-  Alarm: { scheduleId?: string };
+  Alarm: import("../lib/alarmPayload").AlarmRouteParams;
   SnoozePicker: { scheduleId: string };
   SnoozeCountdown: { scheduleId: string; fireAt: string; hour: number; minute: number };
   Checkup: undefined;

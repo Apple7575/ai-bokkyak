@@ -1,5 +1,11 @@
 # 모두의 복약 — Play 14일 테스트 배포 묶음
 
+> **2026-10-09 재검증:** 이 문서는 조직 전환 전 작성된 테스트 자료다. Carenavi 계정은
+> 2026-10-06 조직 계정으로 전환되었으므로 12명·14일 테스트를 필수라고 단정하지 않는다.
+> Play Console의 `com.care.bokyak` 앱에 실제로 표시되는 프로덕션 접근 요건을 먼저 확인하고,
+> 비공개 테스트가 요구될 때만 아래 테스트 절차를 사용한다. 옛 앱 `com.modoobokyak.app`은
+> 이번 Android 제출 대상이 아니다. 현재 검증 기준 코드는 main `d78fab2`이다.
+
 작성 2026-10-08 · 코드 main 1f3598b(온보딩 변경 병합 포함) · 빌드 versionCode 16 (AAB, EAS production)
 
 이 문서 하나로 ① 콘솔에 붙여 넣을 글 ② 테스터에게 보낼 글 ③ 대표가 누를 순서가 끝난다.
@@ -62,7 +68,7 @@
 ```
 
 **카테고리** 앱 → 의료 · **태그** 복약, 알람, 건강 관리 · **기본 언어** 한국어(ko-KR)
-**연락처 이메일** 법인 메일(없으면 임시로 superstarrypassion@gmail.com) · **웹사이트** https://modubokyak.vercel.app
+**연락처 이메일** official@modubokyak.com · **웹사이트** https://modubokyak.vercel.app
 **개인정보처리방침** https://modubokyak.vercel.app/privacy.html
 
 **그래픽** `docs/store-assets/play-icon-512.png`, `play-feature-graphic-1024x500.png`. 스크린샷은 C-3.
@@ -87,6 +93,11 @@
 | 계정 삭제 | 앱 안: 더보기 → 개인정보 설정 → 모든 데이터 삭제. 웹: https://modubokyak.vercel.app/delete-account.html. 삭제 범위: 이름·일정·기록·점검 결과·카카오 연결·사용 로그 전부, 즉시 삭제 |
 
 ### B-3. 앱 액세스 권한 메모 / 검토 메모 (심사자용)
+
+> **현재 코드와 불일치 — 그대로 제출 금지:** 로그인 없이 1분 점검 입력·결과 확인은 가능하지만,
+> 결과 저장과 복약 알람 설정은 Android에서 Kakao 로그인이 필요하다. 아래 기존 문구의
+> “모든 기능을 바로 쓸 수 있음”, “카카오가 심사에 필요 없음”은 삭제하고, Play Console의
+> 제한 기능 접근란에 실제로 동작하는 심사 접근 수단과 영어 단계별 안내를 제공해야 한다.
 
 ```
 이 앱은 로그인이 없습니다. 첫 화면에서 "지금은 건너뛰기"를 누르고 이름을 입력하면 모든 기능을 바로 쓸 수 있습니다.

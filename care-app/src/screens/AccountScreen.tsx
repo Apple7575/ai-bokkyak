@@ -1,13 +1,14 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LogOut } from "lucide-react-native";
 import { ScreenHeader } from "../components/ScreenHeader";
-import { getPatientName } from "../lib/storage";
+import { getPatientId, getPatientName } from "../lib/storage";
 import { currentUser, loginProviderLabel } from "../lib/auth";
 import { clearLocalSession, deleteMyAccount, findMyPatient } from "../lib/account";
 import { koreanDate } from "../lib/quickCheckHistory";
+import { pendingIntakeCount, syncPendingIntakesForLogout } from "../lib/logoutSafety";
 import { colors, fontSizes, radii, spacing, shadows, minTouch } from "../theme/tokens";
 
 // 계정 관리 — 이름·로그인 수단·동의한 날, 로그아웃, 계정 삭제(App Store 5.1.1(v): 앱 안에서 삭제할 수 있어야 한다).
@@ -20,7 +21,8 @@ export function AccountScreen() {
   const [provider, setProvider] = useState<string | null>(null);
   // 동의한 날 — 서버에서 읽는다. undefined=불러오는 중, null=확인하지 못함.
   const [agreedAt, setAgreedAt] = useState<string | null | undefined>(undefined);
-  const [busy, setBusy] = useState<null | "logout" | "delete">(null);
+  const [busy, setBusy] = useState<null | "checking" | "sync" | "logout" | "delete">(null);
+  const logoutAction = useRef(false);
 
   useFocusEffect(useCallback(() => {
     let alive = true;
@@ -42,6 +44,31 @@ export function AccountScreen() {
     toIntro();
   }
 
+  async function savePendingThenLogout(patientId: string) {
+    if (logoutAction.current) return;
+    logoutAction.current = true;
+    setBusy("sync");
+    try {
+      const result = await syncPendingIntakesForLogout(patientId);
+      if (result.remaining > 0) {
+        setBusy(null);
+        Alert.alert(
+          "기록 저장을 마치지 못했어요",
+          `미전송 복약 기록 ${result.remaining}건이 이 기기에 남아 있어 로그아웃하지 않았어요. 인터넷 연결을 확인하고 다시 시도해 주세요.`,
+        );
+        return;
+      }
+      setBusy("logout");
+      await clearLocalSession();
+      toIntro();
+    } catch {
+      setBusy(null);
+      Alert.alert("기록을 확인하지 못했어요", "미전송 기록은 지우지 않았고 로그아웃하지 않았어요. 인터넷 연결을 확인해 주세요.");
+    } finally {
+      logoutAction.current = false;
+    }
+  }
+
   async function doDelete() {
     if (busy) return;
     setBusy("delete");
@@ -55,7 +82,7 @@ export function AccountScreen() {
     }
   }
 
-  const onLogout = () => {
+  const showLogoutConfirmation = () => {
     Alert.alert(
       "로그아웃할까요?",
       "이 휴대폰에서 약 알람이 울리지 않게 돼요. 같은 계정으로 다시 로그인하면 약과 기록을 그대로 불러와요.",
@@ -64,6 +91,43 @@ export function AccountScreen() {
         { text: "로그아웃", onPress: () => { void doLogout(); } },
       ],
     );
+  };
+
+  const onLogout = async () => {
+    if (busy || logoutAction.current) return;
+    logoutAction.current = true;
+    setBusy("checking");
+    try {
+      const patientId = await getPatientId();
+      if (!patientId) throw new Error("patient id 없음");
+      const pending = await pendingIntakeCount(patientId);
+      setBusy(null);
+      if (pending === 0) {
+        logoutAction.current = false;
+        showLogoutConfirmation();
+        return;
+      }
+      Alert.alert(
+        "저장되지 않은 복약 기록이 있어요",
+        `이 기기에 미전송 기록 ${pending}건이 남아 있어요. 인터넷에 연결되어 있으면 먼저 계정에 저장할 수 있어요. 기록 저장이 끝난 뒤 로그아웃을 진행합니다.`,
+        [
+          { text: "돌아가기", style: "cancel", onPress: () => { logoutAction.current = false; } },
+          {
+            text: "저장 후 로그아웃",
+            onPress: () => { logoutAction.current = false; void savePendingThenLogout(patientId); },
+          },
+          {
+            text: "기록 삭제 후 로그아웃", style: "destructive",
+            onPress: () => { logoutAction.current = false; void doLogout(); },
+          },
+        ],
+        { cancelable: true, onDismiss: () => { logoutAction.current = false; } },
+      );
+    } catch {
+      logoutAction.current = false;
+      setBusy(null);
+      Alert.alert("미전송 기록을 확인하지 못했어요", "기록을 지우거나 로그아웃하지 않았어요. 잠시 후 다시 시도해 주세요.");
+    }
   };
 
   const onDelete = () => {
@@ -93,7 +157,9 @@ export function AccountScreen() {
             <View style={[styles.iconBox, { backgroundColor: colors.dangerSoft }]}>
               <LogOut size={22} color={colors.dangerRed} />
             </View>
-            <Text style={[styles.rowLabel, { color: colors.dangerRed }]}>{busy === "logout" ? "로그아웃하는 중…" : "로그아웃"}</Text>
+            <Text style={[styles.rowLabel, { color: colors.dangerRed }]}>
+              {busy === "checking" ? "미전송 기록 확인 중…" : busy === "sync" ? "계정에 기록 저장 중…" : busy === "logout" ? "로그아웃하는 중…" : "로그아웃"}
+            </Text>
           </Pressable>
         </View>
 

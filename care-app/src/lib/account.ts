@@ -1,8 +1,12 @@
 import notifee from "@notifee/react-native";
 import { supabase } from "./supabase";
 import { signOut, hasStoredSession } from "./auth";
-import { clearAll, getPatientId, setOnboarded, setPatient, setPatientName } from "./storage";
+import { clearAll, clearPendingAlarm, getPatientId, setOnboarded, setPatient, setPatientName } from "./storage";
 import { clearDraft } from "./quickCheckDraft";
+import { clearLocalAlarmSchedules } from "./localAlarmSchedules";
+import { clearIntakeOutbox } from "./intakeOutbox";
+import { flushIntakeOutbox } from "./records";
+import { clearHealthTransferConsents } from "./healthTransferConsent";
 
 // 내 계정(로그인) ↔ 내 환자 행(patients) — 회의 2026-10-08.
 // 로그인 계정 하나에 환자 행 하나(patients.user_id unique). 환자 id는 지금처럼 기기에도 둔다 —
@@ -78,9 +82,23 @@ export async function recordMyConsent(patientId: string, name: string, consent: 
 // 이 기기를 그 환자로 맞춘다 — 기존 화면들이 쓰는 환자 id·이름 자리를 채운다.
 // 로그인까지 왔으면 소개 화면은 본 것이므로 다음 실행엔 다시 보이지 않게 표시한다.
 export async function adoptPatient(row: Pick<MyPatient, "id" | "name">): Promise<void> {
+  const previousPatientId = await getPatientId();
+  if (previousPatientId !== row.id) {
+    // 첫 로그인 또는 다른 계정 전환 때 이전 실행의 부분 정리 실패로 남은 건강 데이터까지 지운다.
+    // envelope의 patientId 검사로 읽기는 이미 차단되지만, 디스크에 남겨 둘 이유도 없다.
+    await notifee.cancelAllNotifications().catch(() => {});
+    await Promise.all([
+      clearLocalAlarmSchedules().catch(() => {}),
+      clearIntakeOutbox().catch(() => {}),
+      clearPendingAlarm().catch(() => {}),
+      clearHealthTransferConsents().catch(() => {}),
+    ]);
+  }
   await setPatient(row.id);
   await setPatientName(row.name);
   await setOnboarded();
+  // 같은 계정으로 오프라인 사용 뒤 재로그인한 경우 남은 기록을 재전송한다.
+  void flushIntakeOutbox(row.id).catch(() => {});
 }
 
 // 로그인했나 — 기기에 환자 id가 있고 로그인 세션도 남아 있을 때.
@@ -104,9 +122,15 @@ export async function isSignedIn(): Promise<boolean> {
 // 각 단계 실패는 다음 단계를 막지 않는다(하나라도 더 지우는 편이 낫다).
 export async function clearLocalSession(): Promise<void> {
   await notifee.cancelAllNotifications().catch(() => {});
-  await signOut();
+  // patientId를 먼저 지워 백그라운드 알림 액션이 로그아웃 중 새 outbox를 만들지 못하게 한다.
   await clearAll().catch((e) => console.warn("account: 기기 저장값 삭제 실패", e));
+  await Promise.all([
+    clearLocalAlarmSchedules().catch(() => {}),
+    clearIntakeOutbox().catch(() => {}),
+    clearHealthTransferConsents().catch(() => {}),
+  ]);
   await clearDraft().catch(() => {});
+  await signOut();
   await setOnboarded().catch(() => {});
 }
 

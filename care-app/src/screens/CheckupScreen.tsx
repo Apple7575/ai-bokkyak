@@ -9,7 +9,7 @@ import { CareCheckIcon } from "../components/CareIcons";
 import { MedicineMark } from "../components/MedicineMark";
 import { supabase, Schedule, Patient } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
-import { recordIntake } from "../lib/records";
+import { isIntakeQueuedError, recordIntake } from "../lib/records";
 import { todaySlot, nextNotificationTime } from "../lib/schedule";
 import { relativeDay } from "../lib/repeatDays";
 import {
@@ -151,9 +151,9 @@ export function CheckupScreen() {
         status,
         method: "버튼",
       });
-    } catch {
+    } catch (error) {
       // 기록 실패를 조용히 삼키면 "눌렀는데 반영이 안 된" 상태가 된다. 끝 화면에서 알린다.
-      if (aliveRef.current) setSaveFailed(true);
+      if (!isIntakeQueuedError(error) && aliveRef.current) setSaveFailed(true);
     }
   }
 

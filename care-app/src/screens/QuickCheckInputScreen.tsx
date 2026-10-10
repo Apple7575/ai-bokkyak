@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View, Text, ScrollView, StyleSheet, Pressable, TextInput, Alert, ActivityIndicator,
-  KeyboardAvoidingView, Keyboard, BackHandler,
+  KeyboardAvoidingView, Keyboard, BackHandler, AppState,
 } from "react-native";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,8 +15,10 @@ import {
   NONE_SUPPLEMENT, NONE_MEDICINE, NONE_CONDITION,
   toggleItem, addItem, checkItems, EMPTY_DRAFT, QuickCheckDraft,
 } from "../lib/quickCheck";
-import { loadDraft, saveDraft } from "../lib/quickCheckDraft";
+import { loadDraft, saveDraft, saveDraftInputs } from "../lib/quickCheckDraft";
+import { requestHealthTransferConsent } from "../lib/healthTransferConsent";
 import { getPatientId, getPatientName } from "../lib/storage";
+import { createHydrationGate } from "../lib/quickCheckHydration";
 import { colors, fontSizes, spacing, radii, minTouch, shadows } from "../theme/tokens";
 
 // "1분 복용 점검" 입력 — 1/3 영양제, 2/3 복용약, 3/3 기본 정보 (시안 V8 화면 8~10).
@@ -54,6 +56,8 @@ export function QuickCheckInputScreen() {
   const [medicines, setMedicines] = useState<string[]>([]);
   const [age, setAge] = useState<string | null>(null);
   const [conditions, setConditions] = useState<string[]>([]);
+  const [hydration, setHydration] = useState<"loading" | "ready" | "failed">("loading");
+  const [hydrationGate] = useState(createHydrationGate);
   // 로그인한 사람(홈에서 다시 점검)은 3/3 인사 한 줄에 이름을 쓴다.
   const [name, setName] = useState("");
   const [more, setMore] = useState(false); // 영양제 "더 보기" 펼침
@@ -63,6 +67,8 @@ export function QuickCheckInputScreen() {
   const nextBusy = useRef(false);
   const [saving, setSaving] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+  const latestInputsRef = useRef({ supplements, medicines, profile: { age, conditions } });
+  latestInputsRef.current = { supplements, medicines, profile: { age, conditions } };
 
   // 검색·직접 입력 패널은 스크롤 맨 아래에 붙는다(칩·버튼 아래). 열리면 끝까지 스크롤해
   // 패널(이름 검색·직접 입력·사진 추가)이 열리면 화면에 들어오게 스크롤하고, 키보드가 올라와
@@ -81,12 +87,25 @@ export function QuickCheckInputScreen() {
   useEffect(() => {
     let alive = true;
     void loadDraft().then((d) => {
-      if (!alive || !d) return;
-      setSupplements(d.supplements);
-      setMedicines(d.medicines);
-      setAge(d.profile.age);
-      setConditions(d.profile.conditions);
-      if (d.supplements.some((x) => (SUPPLEMENT_MORE as readonly string[]).includes(x))) setMore(true);
+      if (!alive) return;
+      if (d) {
+        latestInputsRef.current = {
+          supplements: d.supplements,
+          medicines: d.medicines,
+          profile: { age: d.profile.age, conditions: d.profile.conditions },
+        };
+        setSupplements(d.supplements);
+        setMedicines(d.medicines);
+        setAge(d.profile.age);
+        setConditions(d.profile.conditions);
+        if (d.supplements.some((x) => (SUPPLEMENT_MORE as readonly string[]).includes(x))) setMore(true);
+      }
+      hydrationGate.succeed();
+      setHydration("ready");
+    }).catch(() => {
+      if (!alive) return;
+      hydrationGate.fail();
+      setHydration("failed");
     });
     void getPatientName().then((n) => { if (alive && n) setName(n); });
     return () => { alive = false; };
@@ -121,20 +140,25 @@ export function QuickCheckInputScreen() {
   // 붙어 홈의 "다시 저장" 이 안 맞는 행을 올리면 안 된다. 고른 게 하나도 없으면 저장하지 않는다
   // (빈 초안이 "이어서 하기" 배너를 띄운다).
   // 기기 저장 실패는 떠나는 길을 막을 이유가 못 되므로 조용히 넘긴다.
-  function sameInputs(d: QuickCheckDraft): boolean {
-    const eq = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
-    return eq(d.supplements, supplements) && eq(d.medicines, medicines)
-      && d.profile.age === age && eq(d.profile.conditions, conditions);
-  }
   async function persistDraft(): Promise<void> {
-    if (supplements.length === 0 && medicines.length === 0 && age === null && conditions.length === 0) return;
     try {
-      const prev = await loadDraft();
-      const same = !!prev && sameInputs(prev);
-      if (same) return;
-      await saveDraft({ ...EMPTY_DRAFT, committedAt: prev?.committedAt ?? null, supplements, medicines, profile: { age, conditions } });
+      await hydrationGate.runWhenReady(async () => { await saveDraftInputs(latestInputsRef.current); });
     } catch {}
   }
+
+  // 선택이 안정된 뒤 한 번만 저장한다. 초기 초안을 읽기 전에는 실행하지 않아 빈 초기값이 기존
+  // 초안을 덮지 않게 하고, 백그라운드 전환 때는 대기 중 변경을 즉시 보존한다.
+  useEffect(() => {
+    if (hydration !== "ready") return;
+    const timer = setTimeout(() => { void persistDraft(); }, 400);
+    return () => clearTimeout(timer);
+  }, [hydration, supplements, medicines, age, conditions]);
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state !== "active" && hydration === "ready") void persistDraft();
+    });
+    return () => sub.remove();
+  }, [hydration]);
   // 점검을 떠날 때 — 로그인한 사람(기기에 환자 id가 있다)은 홈으로, 아니면 인트로 시작 화면으로
   // (회의 2026-09-20 · 2026-10-08: 로그인 전에는 홈이 없다).
   // 점검을 건너뛰는 길은 인트로의 「지금은 건너뛰기」 하나뿐이다 — 이 화면 상단의 「건너뛰기」는 같은 회의에서 지웠다.
@@ -187,6 +211,8 @@ export function QuickCheckInputScreen() {
     nextBusy.current = true;
     setSaving(true);
     try {
+      const consented = await requestHealthTransferConsent("quick-check");
+      if (!consented) return;
       // 초안만 저장하고 판정 화면으로 — 환자 레코드는 결과를 저장할 때(로그인·동의) 만든다.
       try {
         await saveDraft(draft);
@@ -347,24 +373,29 @@ function SearchPanel({ onPick, onClose }: { onPick: (name: string) => void; onCl
   const [hits, setHits] = useState<ProductHit[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
+  const [consentDenied, setConsentDenied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seq = useRef(0);
 
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
+    const mine = ++seq.current;
     const text = q.trim();
     if (text.length < 2) { setHits(null); setLoading(false); return; }
+    if (consentDenied) { setLoading(false); return; }
     setLoading(true);
     timer.current = setTimeout(async () => {
-      const mine = ++seq.current;
+      const consented = await requestHealthTransferConsent("product-search");
+      if (mine !== seq.current) return;
+      if (!consented) { setConsentDenied(true); setHits(null); setLoading(false); return; }
       const r = await searchProducts(text, 12);
       if (mine !== seq.current) return;
       if (!r.ready) { setUnavailable(true); setHits([]); }
       else { setUnavailable(false); setHits(r.data); }
       setLoading(false);
     }, 350);
-    return () => { if (timer.current) clearTimeout(timer.current); };
-  }, [q]);
+    return () => { if (timer.current) clearTimeout(timer.current); if (seq.current === mine) seq.current += 1; };
+  }, [q, consentDenied]);
 
   return (
     <View style={styles.panel}>
@@ -383,6 +414,12 @@ function SearchPanel({ onPick, onClose }: { onPick: (name: string) => void; onCl
         <View style={styles.center}><ActivityIndicator color={colors.primaryBlue} /><Text style={styles.guide}>찾는 중…</Text></View>
       ) : null}
       {!loading && q.trim().length < 2 ? <Text style={styles.guide}>두 글자 이상 입력해 주세요.</Text> : null}
+      {!loading && consentDenied ? (
+        <>
+          <Text style={styles.guide}>동의하지 않아 검색어를 전송하지 않았어요. 직접 입력하거나 동의 후 검색할 수 있어요.</Text>
+          <BigButton label="동의하고 검색" variant="secondary" onPress={() => setConsentDenied(false)} />
+        </>
+      ) : null}
       {!loading && hits !== null && unavailable ? (
         <Text style={styles.guide}>약 목록을 불러오지 못했어요. 인터넷 연결을 확인하거나 직접 입력해 주세요.</Text>
       ) : null}
@@ -452,6 +489,8 @@ function PhotoPanel({ onAdd, onClose }: { onAdd: (names: string[]) => void; onCl
         : await ImagePicker.launchImageLibraryAsync(opts);
       if (res.canceled || !res.assets?.[0]?.base64) return;
       if (!alive.current || mine !== seq.current) return;
+      const consented = await requestHealthTransferConsent("photo-ocr");
+      if (!consented || !alive.current || mine !== seq.current) return;
       setState({ kind: "loading" });
       const meds = await gptOcrPrescription(res.assets[0].base64);
       if (!alive.current || mine !== seq.current) return;
