@@ -158,4 +158,3 @@ https://support.google.com/googleplay/android-developer/answer/9859455
    계약과 설정을 확인해 누가 확정할지.
 3. 오프라인 기록이 남은 상태에서 로그아웃할 때 **재전송을 먼저 요구**할지, **미전송 기록 삭제를 명시하고
    로그아웃 허용**할지.
-
