@@ -6,7 +6,7 @@ import { Bell } from "lucide-react-native";
 import { BigButton } from "../components/BigButton";
 import { CompletionFeedback } from "../components/CompletionFeedback";
 import { MedicineMark } from "../components/MedicineMark";
-import { supabase, Schedule } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
 import { isIntakeQueuedError, PriorIntake, readIntake, recordIntake, undoIntake } from "../lib/records";
 import { logAlarmEvent } from "../lib/analytics";
@@ -15,6 +15,9 @@ import { startRinging, stopRinging } from "../lib/alarmRinger";
 import { doseSlot } from "../lib/schedule";
 import { colors, fontSizes, spacing, shadows } from "../theme/tokens";
 import type { AlarmRouteParams } from "../lib/alarmPayload";
+import {
+  alarmDisplayForRoute, fallbackAlarmSchedule, loadedAlarmSchedule, LoadedAlarmSchedule,
+} from "../lib/alarmScreenState";
 
 const INTAKE_ART = require("../../assets/illustrations/intake-complete.png");
 
@@ -24,15 +27,8 @@ export function AlarmScreen() {
   const insets = useSafeAreaInsets();
   const alarmParams = (route.params ?? {}) as AlarmRouteParams;
   const scheduleId = alarmParams.scheduleId;
-  const [schedule, setSchedule] = useState<Pick<Schedule, "medicine_name" | "time_of_day" | "hour" | "minute"> | null>(() => {
-    if (!scheduleId || alarmParams.hour === undefined || alarmParams.minute === undefined) return null;
-    return {
-      medicine_name: alarmParams.medicineName || "약",
-      time_of_day: alarmParams.timeOfDay ?? "아침",
-      hour: alarmParams.hour,
-      minute: alarmParams.minute,
-    };
-  });
+  const [loadedScheduleState, setLoadedScheduleState] = useState<LoadedAlarmSchedule | null>(null);
+  const schedule = alarmDisplayForRoute(alarmParams, loadedScheduleState);
   const [completionVisible, setCompletionVisible] = useState(false);
   const savedRef = useRef(false);
   const undoneRef = useRef(false);
@@ -50,19 +46,26 @@ export function AlarmScreen() {
       await stopAlarm(scheduleId); // 화면 진입=인지 → 알림측 소리/반복 정지
       const { data } = await supabase.from("schedules").select("*").eq("id", scheduleId).single();
       if (cancelled) return;
-      if (data) setSchedule(data);
-      if (data) {
+      const fallback = fallbackAlarmSchedule(alarmParams);
+      const resolved = data ? {
+        medicine_name: data.medicine_name ?? "약",
+        time_of_day: data.time_of_day ?? "아침",
+        hour: data.hour,
+        minute: data.minute,
+      } : fallback;
+      if (data && resolved) setLoadedScheduleState(loadedAlarmSchedule(alarmParams, resolved));
+      if (resolved) {
         // 알파 지표: 알람이 실제 발생(화면 진입)한 시각을 예정 슬롯과 함께 남긴다.
         // 베스트에포트 — 실패해도 알람 흐름을 막지 않는다.
         getPatientId().then((pid) => {
           if (pid) {
             logAlarmEvent({
               patientId: pid, scheduleId,
-              scheduledFor: doseSlot(data.hour, data.minute, new Date()), type: "fired",
+              scheduledFor: doseSlot(resolved.hour, resolved.minute, new Date()), type: "fired",
             });
           }
         });
-        const todStr = data.time_of_day || "아침";
+        const todStr = resolved.time_of_day || "아침";
         // 인앱 연속 울림(소리 루프+진동). ~2.5분 자동정지.
         await startRinging(todStr, () => {});
         if (cancelled) stopRinging();
@@ -72,7 +75,7 @@ export function AlarmScreen() {
       cancelled = true;
       stopRinging();
     };
-  }, [scheduleId]);
+  }, [scheduleId, alarmParams.medicineName, alarmParams.timeOfDay, alarmParams.hour, alarmParams.minute]);
 
   // 저장 중에는 버튼을 잠근다. 완료 저장이 끝나기 전에 "되돌리기"를 누른 뒤
   // 다른 응답(건너뛰기 등)을 고르면, 뒤늦게 도착한 되돌리기 삭제가 새 기록까지

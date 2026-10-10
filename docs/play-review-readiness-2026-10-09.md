@@ -102,7 +102,10 @@ Android 신규 제출 대상은 `com.care.bokyak`이다. `com.modoobokyak.app`�
 
 ## 수행 검사
 
-- 통과: `npm test -- --runInBand` — 47 suites, 460 tests.
+- 통과: `npm test -- --runInBand` — 50 suites, 467 tests.
+- 통과: 계정 전환 중 outbox 응답, 알람 화면 경로 변경, 지연된 알람 서버 스냅샷,
+  1분 점검 초안 hydration 지연/실패의 경쟁 상태 회귀 테스트. 이는 정적·단위 재현이며
+  실제 Android 기기에서 발생 또는 해결됐음을 뜻하지 않는다.
 - 통과: `npx tsc --noEmit`.
 - 통과: Expo introspection — package/versionCode/권한/receiver 생성 확인.
 - 부분 실패: `npm run check:server` — 공개 프리셋 칩만 순차 검사하던 중 `항우울제`
@@ -117,7 +120,7 @@ Android 신규 제출 대상은 `com.care.bokyak`이다. `com.modoobokyak.app`�
   복구하고, 완료/미루기는 로컬 알람 제어 후 영구 outbox를 거쳐 서버 기록을 시도한다.
 - 한계: 자동 테스트로 로컬 재예약·outbox 재전송·계정 격리·반복 클릭을 검증했지만 실제 기기 전달과
   서버 측 “정확히 한 번” 전송을 보장한 것은 아니다.
-- 통과: `npx expo export --platform android --clear` — 3,320 modules, Android Hermes bundle 6.37 MB.
+- 통과: `npx expo export --platform android --clear` — 3,322 modules, Android Hermes bundle 6.37 MB.
 - 미실행: production AAB 서명 빌드 및 16 KB 정렬 검사(원격 EAS 인증/빌드 필요).
 - 미실행: 실제 기기 알람·권한·절전·재부팅·시간대·동시성 테스트.
 - 미확인: Play Console 실시간 상태와 프로덕션 제출 자격.

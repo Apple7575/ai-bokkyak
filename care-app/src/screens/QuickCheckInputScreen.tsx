@@ -18,6 +18,7 @@ import {
 import { loadDraft, saveDraft, saveDraftInputs } from "../lib/quickCheckDraft";
 import { requestHealthTransferConsent } from "../lib/healthTransferConsent";
 import { getPatientId, getPatientName } from "../lib/storage";
+import { createHydrationGate } from "../lib/quickCheckHydration";
 import { colors, fontSizes, spacing, radii, minTouch, shadows } from "../theme/tokens";
 
 // "1분 복용 점검" 입력 — 1/3 영양제, 2/3 복용약, 3/3 기본 정보 (시안 V8 화면 8~10).
@@ -55,7 +56,8 @@ export function QuickCheckInputScreen() {
   const [medicines, setMedicines] = useState<string[]>([]);
   const [age, setAge] = useState<string | null>(null);
   const [conditions, setConditions] = useState<string[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+  const [hydration, setHydration] = useState<"loading" | "ready" | "failed">("loading");
+  const [hydrationGate] = useState(createHydrationGate);
   // 로그인한 사람(홈에서 다시 점검)은 3/3 인사 한 줄에 이름을 쓴다.
   const [name, setName] = useState("");
   const [more, setMore] = useState(false); // 영양제 "더 보기" 펼침
@@ -87,14 +89,24 @@ export function QuickCheckInputScreen() {
     void loadDraft().then((d) => {
       if (!alive) return;
       if (d) {
+        latestInputsRef.current = {
+          supplements: d.supplements,
+          medicines: d.medicines,
+          profile: { age: d.profile.age, conditions: d.profile.conditions },
+        };
         setSupplements(d.supplements);
         setMedicines(d.medicines);
         setAge(d.profile.age);
         setConditions(d.profile.conditions);
         if (d.supplements.some((x) => (SUPPLEMENT_MORE as readonly string[]).includes(x))) setMore(true);
       }
-      setHydrated(true);
-    }).catch(() => { if (alive) setHydrated(true); });
+      hydrationGate.succeed();
+      setHydration("ready");
+    }).catch(() => {
+      if (!alive) return;
+      hydrationGate.fail();
+      setHydration("failed");
+    });
     void getPatientName().then((n) => { if (alive && n) setName(n); });
     return () => { alive = false; };
   }, []);
@@ -130,23 +142,23 @@ export function QuickCheckInputScreen() {
   // 기기 저장 실패는 떠나는 길을 막을 이유가 못 되므로 조용히 넘긴다.
   async function persistDraft(): Promise<void> {
     try {
-      await saveDraftInputs(latestInputsRef.current);
+      await hydrationGate.runWhenReady(async () => { await saveDraftInputs(latestInputsRef.current); });
     } catch {}
   }
 
   // 선택이 안정된 뒤 한 번만 저장한다. 초기 초안을 읽기 전에는 실행하지 않아 빈 초기값이 기존
   // 초안을 덮지 않게 하고, 백그라운드 전환 때는 대기 중 변경을 즉시 보존한다.
   useEffect(() => {
-    if (!hydrated) return;
+    if (hydration !== "ready") return;
     const timer = setTimeout(() => { void persistDraft(); }, 400);
     return () => clearTimeout(timer);
-  }, [hydrated, supplements, medicines, age, conditions]);
+  }, [hydration, supplements, medicines, age, conditions]);
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state) => {
-      if (state !== "active" && hydrated) void persistDraft();
+      if (state !== "active" && hydration === "ready") void persistDraft();
     });
     return () => sub.remove();
-  }, [hydrated]);
+  }, [hydration]);
   // 점검을 떠날 때 — 로그인한 사람(기기에 환자 id가 있다)은 홈으로, 아니면 인트로 시작 화면으로
   // (회의 2026-09-20 · 2026-10-08: 로그인 전에는 홈이 없다).
   // 점검을 건너뛰는 길은 인트로의 「지금은 건너뛰기」 하나뿐이다 — 이 화면 상단의 「건너뛰기」는 같은 회의에서 지웠다.

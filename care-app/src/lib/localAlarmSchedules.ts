@@ -13,6 +13,14 @@ export type LocalAlarmSchedule = {
 
 type Envelope = { patientId: string; schedules: LocalAlarmSchedule[] };
 const KEY = "care.alarmSchedules.v1";
+let storageChain: Promise<unknown> = Promise.resolve();
+let revision = 0;
+
+function locked<T>(work: () => Promise<T>): Promise<T> {
+  const next = storageChain.then(work, work);
+  storageChain = next.then(() => undefined, () => undefined);
+  return next;
+}
 
 function validSchedule(value: unknown): value is LocalAlarmSchedule {
   if (!value || typeof value !== "object") return false;
@@ -45,26 +53,49 @@ async function write(patientId: string, schedules: LocalAlarmSchedule[]): Promis
 }
 
 export async function listLocalAlarmSchedules(patientId: string): Promise<LocalAlarmSchedule[]> {
-  return read(patientId);
+  return locked(() => read(patientId));
 }
 
 export async function getLocalAlarmSchedule(patientId: string, scheduleId: string): Promise<LocalAlarmSchedule | null> {
-  return (await read(patientId)).find((s) => s.id === scheduleId) ?? null;
+  return locked(async () => (await read(patientId)).find((s) => s.id === scheduleId) ?? null);
 }
 
 export async function replaceLocalAlarmSchedules(patientId: string, schedules: LocalAlarmSchedule[]): Promise<void> {
-  await write(patientId, schedules);
+  await locked(async () => { await write(patientId, schedules); revision += 1; });
+}
+
+export function localAlarmSchedulesRevision(): number {
+  return revision;
+}
+
+export async function replaceLocalAlarmSchedulesIfUnchanged(
+  patientId: string,
+  schedules: LocalAlarmSchedule[],
+  expectedRevision: number,
+): Promise<boolean> {
+  return locked(async () => {
+    if (revision !== expectedRevision) return false;
+    await write(patientId, schedules);
+    revision += 1;
+    return true;
+  });
 }
 
 export async function upsertLocalAlarmSchedule(patientId: string, schedule: LocalAlarmSchedule): Promise<void> {
-  const schedules = await read(patientId);
-  await write(patientId, [...schedules.filter((s) => s.id !== schedule.id), schedule]);
+  await locked(async () => {
+    const schedules = await read(patientId);
+    await write(patientId, [...schedules.filter((s) => s.id !== schedule.id), schedule]);
+    revision += 1;
+  });
 }
 
 export async function removeLocalAlarmSchedule(patientId: string, scheduleId: string): Promise<void> {
-  await write(patientId, (await read(patientId)).filter((s) => s.id !== scheduleId));
+  await locked(async () => {
+    await write(patientId, (await read(patientId)).filter((s) => s.id !== scheduleId));
+    revision += 1;
+  });
 }
 
 export async function clearLocalAlarmSchedules(): Promise<void> {
-  await AsyncStorage.removeItem(KEY);
+  await locked(async () => { await AsyncStorage.removeItem(KEY); revision += 1; });
 }

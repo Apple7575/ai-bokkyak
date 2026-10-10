@@ -4,7 +4,8 @@ import { supabase, hasStoredSession } from "./supabase";
 import { getPatientId } from "./storage";
 import { rescheduleNext, scheduleIosWindow } from "./notifications";
 import {
-  getLocalAlarmSchedule, listLocalAlarmSchedules, replaceLocalAlarmSchedules,
+  getLocalAlarmSchedule, listLocalAlarmSchedules,
+  localAlarmSchedulesRevision, replaceLocalAlarmSchedulesIfUnchanged,
 } from "./localAlarmSchedules";
 import type { LocalAlarmSchedule } from "./localAlarmSchedules";
 
@@ -33,6 +34,7 @@ export async function resyncAllAlarms(): Promise<void> {
   // 로그인 세션 없이 환자 id만 있으면 로그인 전 옛 빌드의 흔적이다 — RootNavigator가 지우는
   // 중이므로 알람을 되살리지 않는다(지운 뒤에 다시 예약되면 로그아웃된 휴대폰에서 알람이 울린다).
   if (!pid || !(await hasStoredSession())) return;
+  const snapshotRevision = localAlarmSchedulesRevision();
   const { data, error } = await supabase.from("schedules").select("*").eq("patient_id", pid).eq("active", true);
   let rows: LocalAlarmSchedule[];
   if (!error && data) {
@@ -41,7 +43,8 @@ export async function resyncAllAlarms(): Promise<void> {
       hour: s.hour, minute: s.minute, repeatDays: s.repeat_days ?? [],
     }));
     // 서버가 활성 일정 0건을 돌려준 경우도 그대로 저장해 삭제된 알람을 되살리지 않는다.
-    await replaceLocalAlarmSchedules(pid, rows);
+    const applied = await replaceLocalAlarmSchedulesIfUnchanged(pid, rows, snapshotRevision);
+    if (!applied) rows = await listLocalAlarmSchedules(pid);
   } else {
     // 오프라인/서버 오류면 마지막으로 동기화한 이 계정의 일정만 사용한다.
     rows = await listLocalAlarmSchedules(pid);

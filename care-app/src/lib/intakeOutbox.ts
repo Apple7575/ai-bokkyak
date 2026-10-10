@@ -67,8 +67,10 @@ export async function listIntakeOutbox(patientId: string): Promise<IntakeOutboxE
 // 같은 슬롯에 더 최근 의도가 들어온 경우 이전 요청의 성공 응답이 새 의도를 지우지 못하게 token을 비교한다.
 export async function acknowledgeIntakeMutation(patientId: string, key: string, token: string): Promise<void> {
   await locked(async () => {
-    const entries = await read(patientId);
-    await write(patientId, entries.filter((e) => e.key !== key || e.token !== token));
+    const envelope = parseEnvelope(await AsyncStorage.getItem(KEY));
+    // 로그아웃·계정 전환 뒤 도착한 이전 계정의 성공 응답은 현재 계정 envelope를 절대 덮지 않는다.
+    if (!envelope || envelope.patientId !== patientId) return;
+    await write(patientId, envelope.entries.filter((e) => e.key !== key || e.token !== token));
   });
 }
 
