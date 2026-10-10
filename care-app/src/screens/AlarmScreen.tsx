@@ -8,7 +8,7 @@ import { CompletionFeedback } from "../components/CompletionFeedback";
 import { MedicineMark } from "../components/MedicineMark";
 import { supabase, Schedule } from "../lib/supabase";
 import { getPatientId } from "../lib/storage";
-import { PriorIntake, readIntake, recordIntake, undoIntake } from "../lib/records";
+import { isIntakeQueuedError, PriorIntake, readIntake, recordIntake, undoIntake } from "../lib/records";
 import { logAlarmEvent } from "../lib/analytics";
 import { stopAlarm } from "../lib/notifications";
 import { startRinging, stopRinging } from "../lib/alarmRinger";
@@ -106,17 +106,25 @@ export function AlarmScreen() {
     }
     // Device-local alarm control must not wait on the network record below.
     await stopAlarm(scheduleId);
-    try {
-      if (status === "completed") {
-        // 재발화·재탭으로 이 슬롯에 이미 응답(미루기/건너뛰기)이 있으면 되돌리기 때 복원해야 한다.
+    if (status === "completed") {
+      // 오프라인이면 이전 서버 상태를 읽을 수 없지만 현재 완료 의도는 outbox에 보관해야 한다.
+      try {
         completionArgsRef.current!.previous = await readIntake({ patientId: pid, scheduleId, scheduledFor: slot });
+      } catch {
+        completionArgsRef.current!.previous = null;
       }
+    }
+    try {
       await recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status, method: "버튼" });
-    } catch {
+    } catch (error) {
+      if (isIntakeQueuedError(error)) {
+        Alert.alert("기기에 기록했어요", "인터넷이 연결되면 복약 기록을 다시 전송할게요.");
+      } else {
       setCompletionVisible(false);
       setBusyBoth(false);
       Alert.alert("저장에 실패했어요", "알람은 멈췄지만 복약 기록은 저장하지 못했어요. 인터넷 연결 후 기록 화면에서 확인해 주세요.");
       return;
+      }
     }
     if (status === "completed") {
       savedRef.current = true;
@@ -155,8 +163,13 @@ export function AlarmScreen() {
     try {
       await undoIntake(args);
       savedRef.current = false;
-    } catch {
-      Alert.alert("되돌리지 못했어요", "인터넷 연결을 확인하고 기록 화면에서 확인해 주세요.");
+    } catch (error) {
+      if (isIntakeQueuedError(error)) {
+        savedRef.current = false;
+        Alert.alert("기기에 기록했어요", "인터넷이 연결되면 되돌리기를 다시 전송할게요.");
+      } else {
+        Alert.alert("되돌리지 못했어요", "인터넷 연결을 확인하고 기록 화면에서 확인해 주세요.");
+      }
     }
     setBusyBoth(false);
   }

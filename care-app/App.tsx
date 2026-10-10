@@ -11,11 +11,10 @@ import notifee, { EventType } from "@notifee/react-native";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { RootStackParamList } from "./src/navigation/types";
 import { takePendingAlarm, getPatientId } from "./src/lib/storage";
-import { recordIntake } from "./src/lib/records";
-import { ensureIOSCategory, stopAlarm, scheduleSnooze, rescheduleNext } from "./src/lib/notifications";
+import { flushIntakeOutbox, recordIntake } from "./src/lib/records";
+import { ensureIOSCategory, stopAlarm, scheduleSnooze } from "./src/lib/notifications";
 import { doseSlot } from "./src/lib/schedule";
-import { supabase } from "./src/lib/supabase";
-import { resyncAllAlarms } from "./src/lib/alarmSync";
+import { rescheduleCachedAlarm, resyncAllAlarms } from "./src/lib/alarmSync";
 import { runLocalAlarmAction } from "./src/lib/alarmResponse";
 import { AlarmRouteParams, alarmRouteFromData } from "./src/lib/alarmPayload";
 import { applyPretendard } from "./src/theme/applyPretendard";
@@ -72,10 +71,12 @@ export default function App() {
     // 초기 화면을 Alarm으로 잡아 처리한다(홈 깜빡임 방지). 여기선 중복 호출하지 않는다.
     consumePending();
     resyncAllAlarms().catch(() => {});
+    getPatientId().then(async (pid) => { if (pid) await flushIntakeOutbox(pid); }).catch(() => {});
     const appSub = AppState.addEventListener("change", (s) => {
       if (s === "active") {
         consumePending();
         resyncAllAlarms().catch(() => {});
+        getPatientId().then(async (pid) => { if (pid) await flushIntakeOutbox(pid); }).catch(() => {});
       }
     });
     const unsub = notifee.onForegroundEvent(async ({ type, detail }) => {
@@ -86,10 +87,7 @@ export default function App() {
         // 포그라운드에서 DELIVERED → 화면 이동 + 다음 회차 체이닝(백그라운드 DELIVERED와 동일)
         if (sid) {
           if (alarm) navigateToAlarm(alarm);
-          try {
-            const { data: s } = await supabase.from("schedules").select("*").eq("id", sid).eq("active", true).maybeSingle();
-            if (s) await rescheduleNext(sid, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day, s.medicine_name ?? "");
-          } catch {}
+          await rescheduleCachedAlarm(sid).catch(() => false);
         }
         return;
       }
@@ -109,12 +107,9 @@ export default function App() {
               stop: () => stopAlarm(sid),
               persist: () => recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "completed", method: "버튼" }),
             });
-            if (!result.persisted) console.warn("alarm action: intake record was not saved");
+            if (!result.persisted) console.warn("alarm action: server write deferred or local persistence failed");
             // 다음 정시 회차 재예약(멱등 — 이미 예약돼 있으면 덮어씀)
-            try {
-              const { data: s } = await supabase.from("schedules").select("*").eq("id", sid).eq("active", true).maybeSingle();
-              if (s) await rescheduleNext(sid, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day, s.medicine_name ?? "");
-            } catch {}
+            await rescheduleCachedAlarm(sid).catch(() => false);
           } else if (detail.pressAction?.id === "snooze") {
             // 알림 액션 스누즈 = 앱 안 열고 기본 10분 빠른 스누즈. stopAlarm(기존 스누즈 취소) 후 예약해야 살아남음.
             const result = await runLocalAlarmAction({
@@ -122,12 +117,9 @@ export default function App() {
               afterStop: () => scheduleSnooze(sid, String(data?.medName ?? ""), { mode: "duration", minutes: 10 }, hour, minute, String(data?.tod ?? "아침")),
               persist: () => recordIntake({ patientId: pid, scheduleId: sid, scheduledFor: slot, status: "snoozed", method: "버튼" }),
             });
-            if (!result.persisted) console.warn("alarm action: snooze record was not saved");
+            if (!result.persisted) console.warn("alarm action: snooze server write deferred or local persistence failed");
             // 다음 정시 회차 재예약(멱등)
-            try {
-              const { data: s } = await supabase.from("schedules").select("*").eq("id", sid).eq("active", true).maybeSingle();
-              if (s) await rescheduleNext(sid, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day, s.medicine_name ?? "");
-            } catch {}
+            await rescheduleCachedAlarm(sid).catch(() => false);
           } else {
             await stopAlarm(sid);
           }

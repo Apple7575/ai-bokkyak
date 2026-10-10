@@ -5,10 +5,9 @@ import notifee, { EventType } from '@notifee/react-native';
 import App from './App';
 import { setPendingAlarm, getPatientId } from './src/lib/storage';
 import { recordIntake } from './src/lib/records';
-import { scheduleRepeatFollowup, stopAlarm, scheduleSnooze, rescheduleNext } from './src/lib/notifications';
-import { supabase } from './src/lib/supabase';
+import { scheduleRepeatFollowup, stopAlarm, scheduleSnooze } from './src/lib/notifications';
 import { doseSlot } from './src/lib/schedule';
-import { resyncAllAlarms } from "./src/lib/alarmSync";
+import { rescheduleCachedAlarm, resyncAllAlarms } from "./src/lib/alarmSync";
 import { runLocalAlarmAction } from "./src/lib/alarmResponse";
 import { alarmRouteFromData } from "./src/lib/alarmPayload";
 import { foregroundServiceLifetime } from "./src/lib/foregroundService";
@@ -25,11 +24,8 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
     const seq = Number(data?.seq ?? 0);
     // 같은 회차의 30초 반복(미응답 시 끈질기게)
     await scheduleRepeatFollowup(scheduleId, String(data?.tod ?? "아침"), hour, minute, seq + 1, String(data?.medName ?? ""));
-    // 다음 정시 회차 재예약(반복 트리거 대체) — 일정의 repeat_days를 조회해서
-    try {
-      const { data: s } = await supabase.from("schedules").select("*").eq("id", scheduleId).eq("active", true).maybeSingle();
-      if (s) await rescheduleNext(scheduleId, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day, s.medicine_name ?? "");
-    } catch {}
+    // 다음 정시 회차는 계정별 로컬 일정 사본으로 예약 — 잠금화면에서 오프라인이어도 다음 날 유지.
+    await rescheduleCachedAlarm(scheduleId).catch(() => false);
     return;
   }
   if (type === EventType.PRESS) {
@@ -47,12 +43,9 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
           stop: () => stopAlarm(scheduleId),
           persist: () => recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "completed", method: "버튼" }),
         });
-        if (!result.persisted) console.warn("alarm action: intake record was not saved");
+        if (!result.persisted) console.warn("alarm action: server write deferred or local persistence failed");
         // 다음 정시 회차 재예약(멱등 — 이미 예약돼 있으면 덮어씀)
-        try {
-          const { data: s } = await supabase.from("schedules").select("*").eq("id", scheduleId).eq("active", true).maybeSingle();
-          if (s) await rescheduleNext(scheduleId, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day, s.medicine_name ?? "");
-        } catch {}
+        await rescheduleCachedAlarm(scheduleId).catch(() => false);
       } else if (detail.pressAction?.id === "snooze") {
         // 알림 액션 스누즈 = 앱 안 열고 기본 10분 빠른 스누즈
         const result = await runLocalAlarmAction({
@@ -60,12 +53,9 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
           afterStop: () => scheduleSnooze(scheduleId, String(data?.medName ?? ""), { mode: "duration", minutes: 10 }, hour, minute, String(data?.tod ?? "아침")),
           persist: () => recordIntake({ patientId: pid, scheduleId, scheduledFor: slot, status: "snoozed", method: "버튼" }),
         });
-        if (!result.persisted) console.warn("alarm action: snooze record was not saved");
+        if (!result.persisted) console.warn("alarm action: snooze server write deferred or local persistence failed");
         // 다음 정시 회차 재예약(멱등)
-        try {
-          const { data: s } = await supabase.from("schedules").select("*").eq("id", scheduleId).eq("active", true).maybeSingle();
-          if (s) await rescheduleNext(scheduleId, s.hour, s.minute, s.repeat_days ?? [], s.time_of_day, s.medicine_name ?? "");
-        } catch {}
+        await rescheduleCachedAlarm(scheduleId).catch(() => false);
       }
     } catch {}
   }

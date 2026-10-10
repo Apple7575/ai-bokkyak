@@ -13,6 +13,7 @@ const KEYS = {
   patientName: "care.patientName",
 };
 const LEGACY_KEYS = ["care.role", "care.patientCode", "care.kakaoBannerDismissed"];
+const PENDING = "care.pendingAlarm";
 
 export async function getOnboarded(): Promise<boolean> {
   return (await AsyncStorage.getItem(KEYS.onboarded)) === "1";
@@ -38,12 +39,14 @@ export async function setPatientName(name: string): Promise<void> {
 }
 
 export async function clearAll(): Promise<void> {
-  await AsyncStorage.multiRemove([...Object.values(KEYS), ...LEGACY_KEYS]);
+  await AsyncStorage.multiRemove([...Object.values(KEYS), PENDING, ...LEGACY_KEYS]);
 }
 
-const PENDING = "care.pendingAlarm";
 export async function setPendingAlarm(alarm: AlarmRouteParams): Promise<void> {
   await AsyncStorage.setItem(PENDING, JSON.stringify(alarm));
+}
+export async function clearPendingAlarm(): Promise<void> {
+  await AsyncStorage.removeItem(PENDING);
 }
 export async function takePendingAlarm(): Promise<AlarmRouteParams | null> {
   const v = await AsyncStorage.getItem(PENDING);
